@@ -1,0 +1,95 @@
+# SPEC-001: Cadastro de Usuário e Autenticação de Sessão
+
+* **Status:** Aprovada
+* **Data:** 2026-10-08
+* **Autor:** Equipe FinNova / SDD
+
+---
+
+## 1. Identificação
+* **ID:** SPEC-001
+* **Nome:** Cadastro de Usuário e Autenticação de Sessão
+* **Objetivo:** Permitir que novos usuários se cadastrem com credenciais seguras e realizem login para obter um token de sessão (JWT) de acesso ao sistema.
+* **Valor Entregue:** Estabelece o mecanismo fundamental de identidade, segurança e controle de acesso necessário para todas as funcionalidades personalizadas da plataforma.
+
+---
+
+## 2. Rastreabilidade (Baseline)
+* **Requisitos Funcionais:** RF-01 (Cadastro de usuário), RF-02 (Login e autenticação)
+* **Regras de Negócio:** RB-01 (Validação de credenciais), RB-21 (Autenticação como pré-condição)
+* **Requisitos Não Funcionais:** RNF-01 (Criptografia hash + salt em senhas, tráfego HTTPS), RNF-13 (Rate limiting), RNF-17 (Prefixagem `/api/v1`)
+* **Casos de Uso:** UC-01 (Cadastrar-se), UC-02 (Autenticar-se)
+* **Entidades do Domínio:** `Usuario`
+* **Drivers e ADRs:** DA-01, ADR-001 (Arquitetura Monolítica em Camadas com FastAPI e JWT)
+
+---
+
+## 3. Escopo
+
+### Incluído
+* Endpoint `POST /api/v1/auth/register` para criação de conta com nome, e-mail válido e senha.
+* Armazenamento seguro de senha utilizando algoritmo de hash com salt (ex: Bcrypt/Argon2).
+* Endpoint `POST /api/v1/auth/login` para autenticação.
+* Geração e retorno de token de sessão JWT assinado após login bem-sucedido.
+* Validação de formato de e-mail e unicidade de cadastro.
+
+### Fora do Escopo
+* Recuperação de senha por e-mail ou reset de credenciais (trutado em Spec futura).
+* Login social (OAuth2 com Google/Apple).
+* Quiz de perfil de investidor (tratado na SPEC-003).
+
+---
+
+## 4. Comportamento e Fluxos
+
+### Pré-condições
+* Nenhuma para o cadastro (`POST /register`) e login (`POST /login`).
+
+### Fluxo Principal 1: Cadastro de Usuário
+1. O cliente envia uma requisição `POST /api/v1/auth/register` com `nome`, `email` e `senha`.
+2. O sistema valida se o e-mail atende ao formato RFC 5322 e se a senha cumpre os requisitos mínimos (mínimo de 8 caracteres).
+3. O sistema verifica se o e-mail já está cadastrado no banco de dados.
+4. O sistema gera o hash da senha com salt e persiste o novo registro da entidade `Usuario`.
+5. O sistema responde com código HTTP `201 Created` e os dados públicos do usuário (sem retornar o hash da senha).
+
+### Fluxo Principal 2: Autenticação (Login)
+1. O cliente envia uma requisição `POST /api/v1/auth/login` com `email` e `senha`.
+2. O sistema busca o usuário pelo e-mail e verifica o hash da senha.
+3. Se válido, o sistema gera um token JWT contendo o `usuario_id` no payload e tempo de expiração configurado.
+4. O sistema retorna HTTP `200 OK` contendo o `access_token` e o tipo `bearer`.
+
+### Fluxos Alternativos e Exceções
+* **E-mail duplicado (409 Conflict):** Se o e-mail já existir na base, o sistema rejeita com mensagem clara.
+* **Credenciais inválidas (401 Unauthorized):** Se a senha estiver incorreta ou e-mail não existir, o sistema retorna erro 401 sem revelar qual dos campos falhou.
+* **Dados malformatados (422 Unprocessable Entity):** Se e-mail ou senha forem inválidos sintaticamente.
+
+---
+
+## 5. Invariantes (Regras Invioláveis)
+* **INV-01:** Senhas em texto plano jamais podem ser armazenadas no banco de dados ou registradas em logs.
+* **INV-02:** Um e-mail cadastrado deve ser único em todo o sistema.
+* **INV-03:** Todas as respostas de erro de autenticação devem ser genéricas para prevenir enumeração de usuários.
+
+---
+
+## 6. Critérios de Aceitação (Dado / Quando / Então)
+
+### Cenário 1: Cadastro com sucesso
+* **Dado** que o e-mail "usuario@finnova.com" ainda não está cadastrado no sistema
+* **Quando** uma requisição `POST /api/v1/auth/register` for enviada com nome "João Silva", e-mail "usuario@finnova.com" e senha "SenhaForte123"
+* **Então** o sistema deve retornar status HTTP `201 Created`, salvar a senha com hash e registrar a conta no banco de dados.
+
+### Cenário 2: Tentativa de cadastro com e-mail duplicado
+* **Dado** que o e-mail "usuario@finnova.com" já existe na base de dados
+* **Quando** uma nova requisição de cadastro for enviada usando o e-mail "usuario@finnova.com"
+* **Então** o sistema deve retornar status HTTP `409 Conflict` e não deve criar nenhum novo registro.
+
+### Cenário 3: Login bem-sucedido
+* **Dado** um usuário previamente cadastrado com e-mail "usuario@finnova.com" e senha "SenhaForte123"
+* **Quando** for enviada uma requisição `POST /api/v1/auth/login` com as credenciais corretas
+* **Então** o sistema deve retornar status HTTP `200 OK` contendo um token JWT válido na chave `access_token`.
+
+---
+
+## 7. Questões em Aberto
+* **OPEN-01:** Qual será o tempo padrão de expiração do Token JWT (ex: 60 minutos ou 24 horas)? *(Decisão pendente de configuração de ambiente)*.
