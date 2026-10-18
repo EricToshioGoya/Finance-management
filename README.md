@@ -32,7 +32,7 @@ Ainda não há código executável. A partir da Fase 4, esta seção trará os c
 | [Personas](docs/02-personas/personas.md) | Público-alvo: iniciante, avançado e administrador |
 | [Requisitos](docs/03-requisitos/requisitos.md) | RF, RNF e RB em EARS, modelo de dados e glossário |
 | [Casos de uso](docs/04-casos-de-uso/) | Diagramas, tabelas e fluxo principal detalhado |
-| [Modelo de domínio](docs/05-modelo-de-dominio/modelo-de-dominio.md) | Classes conceituais e rastreabilidade |
+| [Modelo de domínio](docs/modelo-dominio.md) | Classes, responsabilidades, multiplicidades e rastreabilidade; diagramas em [docs/uml](docs/uml/) |
 | [Backlog](docs/06-backlog/issues.md) | Issues do MVP (Must have) |
 | [Arquitetura](docs/07-arquitetura/arquitetura.md) | Drivers, containers, camadas e ADRs |
 | [Specs](docs/08-specs/) | Especificações SDD com cláusulas EARS |

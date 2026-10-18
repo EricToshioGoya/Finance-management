@@ -1,0 +1,116 @@
+classDiagram
+    direction TB
+
+    %% Recorte V1: RFs Must have (RF-01, RF-02, RF-06 a RF-12, RF-20 a RF-23, RF-25)
+
+    class Usuario {
+        +id
+        +nome
+        +email
+        +autenticar()
+    }
+
+    class Conta {
+        +id
+        +nome
+        +tipo
+        +saldoInicial
+        +saldoAtual()
+    }
+
+    class Cartao {
+        +id
+        +nome
+        +limite
+        +diaFechamento
+        +diaVencimento
+    }
+
+    class Categoria {
+        +id
+        +nome
+        +cor
+        +ativa
+    }
+
+    class Renda {
+        <<abstract>>
+        +id
+        +valor
+        +calcularContribuicaoMensal()
+    }
+
+    class RendaFixa {
+        +descricao
+        +ativaDesde
+    }
+
+    class RendaVariavel {
+        +descricao
+        +data
+    }
+
+    class BonusPLR {
+        +periodicidade
+        +mesReferencia
+    }
+
+    class Despesa {
+        +id
+        +valor
+        +data
+        +recorrente
+    }
+
+    class Simulacao {
+        <<abstract>>
+        +id
+        +valorInicial
+        +aporteMensal
+        +taxa
+        +prazo
+        +criadaEm
+        +calcularEvolucao()
+    }
+
+    class SimulacaoRendaFixa {
+        +produto
+    }
+
+    class SimulacaoRendaVariavel {
+        +ticker
+        +rentabilidadeEsperada
+    }
+
+    class IndicadorOficial {
+        +id
+        +tipo
+        +titulo
+        +taxa
+        +dataReferencia
+        +atualizadoEm
+        +estaDefasado()
+    }
+
+    Usuario "1" --> "*" Conta : possui
+    Usuario "1" --> "*" Cartao : possui
+    Usuario "0..1" --> "*" Categoria : personaliza
+    Usuario "1" --> "*" Renda : registra
+    Usuario "1" --> "*" Despesa : registra
+    Usuario "1" --> "*" Simulacao : executa
+
+    Renda <|-- RendaFixa
+    Renda <|-- RendaVariavel
+    Renda <|-- BonusPLR
+    Simulacao <|-- SimulacaoRendaFixa
+    Simulacao <|-- SimulacaoRendaVariavel
+
+    Despesa "*" --> "1" Categoria : pertence a
+    Despesa "*" --> "0..1" Conta : debita de
+    Despesa "*" --> "0..1" Cartao : debita de
+    Renda "*" --> "0..1" Conta : credita em
+    Renda "*" --> "0..1" Cartao : credita em
+    SimulacaoRendaFixa "*" --> "0..1" IndicadorOficial : usa taxa de
+
+    note for Despesa "{xor} Conta ou Cartao, nunca os dois (DOM-05)"
+    note for Renda "{xor} Conta ou Cartao, nunca os dois (DOM-06)"
