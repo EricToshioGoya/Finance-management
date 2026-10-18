@@ -21,27 +21,27 @@ Este documento descreve os casos de uso relacionados à administração da plata
 
 ### Painel Administrativo (acesso restrito)
 
-| Caso de uso | Requisito relacionado | Descrição |
-| --- | --- | --- |
-| Acessar painel administrativo | RF-54 | Permite ao administrador entrar no painel, após validação do papel administrativo. |
-| Validar papel de administrador (RBAC) | RB-21, RNF-21 | Valida no backend se o usuário possui o papel necessário para acessar cada rota administrativa. |
-| Listar e buscar usuários | RF-55 | Permite consultar e localizar usuários cadastrados. |
-| Consultar distribuição de perfil de investidor | RF-56 | Exibe a distribuição dos perfis de investidor dos usuários. |
-| Consultar uso por módulo/aba | RF-57 | Exibe métricas agregadas de utilização por módulo ou aba. |
-| Consultar engajamento e usuários recorrentes | RF-58 | Permite acompanhar o engajamento e identificar usuários recorrentes. |
-| Consultar trilha de auditoria | RNF-18 | Permite consultar os registros imutáveis de ações administrativas e eventos de uso. |
-| Promover usuário a administrador | RF-54 | Permite promover um usuário a administrador, respeitando as regras de autorização. |
+| ID | Caso de uso | Requisito relacionado | Descrição |
+| --- | --- | --- | --- |
+| UC-28 | Acessar painel administrativo | RF-54 | Permite ao administrador entrar no painel, após validação do papel administrativo. |
+| UC-29 | Validar papel de administrador (RBAC) | RB-21, RNF-21 | Valida no backend se o usuário possui o papel necessário para acessar cada rota administrativa. |
+| UC-30 | Listar e buscar usuários | RF-55 | Permite consultar e localizar usuários cadastrados. |
+| UC-31 | Consultar distribuição de perfil de investidor | RF-56 | Exibe a distribuição dos perfis de investidor dos usuários. |
+| UC-32 | Consultar uso por módulo/aba | RF-57 | Exibe métricas agregadas de utilização por módulo ou aba. |
+| UC-33 | Consultar engajamento e usuários recorrentes | RF-58 | Permite acompanhar o engajamento e identificar usuários recorrentes. |
+| UC-34 | Consultar trilha de auditoria | RNF-18 | Permite consultar os registros imutáveis de ações administrativas e eventos de uso. |
+| UC-35 | Promover usuário a administrador | RF-54 | Permite promover um usuário a administrador, respeitando as regras de autorização. |
 
 ### Rotinas automáticas do sistema
 
-| Caso de uso | Requisito relacionado | Ator ou integração | Descrição |
-| --- | --- | --- | --- |
-| Sincronizar documentos e indicadores da CVM | RF-30, RF-32 | Sistema / Agendador; Portal de Dados Abertos da CVM | Obtém e atualiza documentos e indicadores disponibilizados pela CVM. |
-| Sincronizar indicadores oficiais em cache | RF-23 | Sistema / Agendador; API Banco Central e Tesouro Transparente | Consulta indicadores oficiais e mantém os dados disponíveis em cache. |
-| Expurgar dados sincronizados (12 meses) | RF-33, RNF-10 | Sistema / Agendador | Remove dados sincronizados com mais de 12 meses, sem ação manual. |
-| Registrar evento de uso | RF-59 | Sistema / Agendador | Registra o usuário, o módulo, a ação e o timestamp, sem armazenar conteúdo financeiro. |
-| Registrar log de auditoria imutável | RNF-18, RB-19 | Sistema | Registra acessos e ações administrativas sem permitir alteração ou exclusão. |
-| Excluir dados de uso junto com a conta | RF-05, RF-59 | Usuário | Exclui os dados de uso agregados quando o usuário solicita a exclusão da conta. |
+| ID | Caso de uso | Requisito relacionado | Ator ou integração | Descrição |
+| --- | --- | --- | --- | --- |
+| UC-36 | Sincronizar documentos e indicadores da CVM | RF-30, RF-32 | Sistema / Agendador; Portal de Dados Abertos da CVM | Obtém e atualiza documentos e indicadores disponibilizados pela CVM. |
+| UC-37 | Sincronizar indicadores oficiais em cache | RF-23 | Sistema / Agendador; API Banco Central e Tesouro Transparente | Consulta indicadores oficiais e mantém os dados disponíveis em cache. |
+| UC-38 | Expurgar dados sincronizados (12 meses) | RF-33, RNF-10 | Sistema / Agendador | Remove dados sincronizados com mais de 12 meses, sem ação manual. |
+| UC-39 | Registrar evento de uso | RF-59 | Sistema / Agendador | Registra o usuário, o módulo, a ação e o timestamp, sem armazenar conteúdo financeiro. |
+| UC-40 | Registrar log de auditoria imutável | RNF-18, RB-19 | Sistema | Registra acessos e ações administrativas sem permitir alteração ou exclusão. |
+| UC-41 | Excluir dados de uso junto com a conta | RF-05, RF-59 | Usuário | Exclui os dados de uso agregados quando o usuário solicita a exclusão da conta. |
 
 ## Relações entre os casos de uso
 

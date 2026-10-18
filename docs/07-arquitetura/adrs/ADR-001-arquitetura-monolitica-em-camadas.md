@@ -1,4 +1,4 @@
-# ADR-001: Adopção de Arquitetura Monolítica Modular em Camadas com Backend Compartilhado
+# ADR-001: Adoção de Arquitetura Monolítica Modular em Camadas com Backend Compartilhado
 
 * **Status:** Aceito
 * **Data:** 2026-10-08

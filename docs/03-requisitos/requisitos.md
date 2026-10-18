@@ -82,7 +82,7 @@
 
 ---
 
-### 4.2 Módulo — Conta e Acesso
+### 1.2 Módulo — Conta e Acesso
 
 #### RF-01 — Cadastro de usuário
 
@@ -149,7 +149,7 @@
 
 ---
 
-### 4.3 Módulo — Administração Financeira
+### 1.3 Módulo — Administração Financeira
 
 > Aba independente na navegação principal (não é sub-aba do Simulador).
 
@@ -342,7 +342,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 ---
 
-### 4.4 Módulo — Simulador de Investimentos
+### 1.4 Módulo — Simulador de Investimentos
 
 > Aba independente na navegação principal (não é sub-aba da Administração Financeira). Pode ler o saldo calculado por lá (RF-26), mas tem sua própria tela.
 
@@ -497,7 +497,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 ---
 
-### 4.5 Módulo — Relatórios de Empresas
+### 1.5 Módulo — Relatórios de Empresas
 
 > Aba independente na navegação principal. Permite ao usuário pesquisar uma empresa de capital aberto e consultar seus relatórios oficiais (DFP, ITR, Formulário de Referência) para apoiar a decisão de investir.
 
@@ -585,7 +585,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 ---
 
-### 4.6 Módulo — Patrimônio
+### 1.6 Módulo — Patrimônio
 
 > Aba independente na navegação principal. Consolida tudo que o usuário possui (ativos) e deve (passivos) num raio-x único do patrimônio líquido, alimentado pelos dados dos módulos Administração Financeira, Simulador e Compras Financiadas.
 
@@ -676,7 +676,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 ---
 
-### 4.7 Módulo — Score de Saúde Financeira
+### 1.7 Módulo — Score de Saúde Financeira
 
 > Aba independente na navegação principal (com destaque também na tela inicial). Resume, numa única métrica, a saúde financeira do usuário a partir dos demais módulos.
 
@@ -688,7 +688,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 **Critérios de aceite:**
 
-- [ ] Deve calcular uma nota (0 a 100) combinando pelo menos: relação gasto/renda do mês (Administração Financeira), existência e tamanho da reserva de emergência (RF-35), comprometimento de renda com dívidas/fatura (RF-13, Compras Financiadas) e aderência às metas definidas (RF-14/10).
+- [ ] Deve calcular uma nota (0 a 100) combinando pelo menos: relação gasto/renda do mês (Administração Financeira), existência e tamanho da reserva de emergência (RF-35), comprometimento de renda com dívidas/fatura (RF-13, Compras Financiadas) e aderência às metas definidas (RF-14, RF-15).
 - [ ] A fórmula de ponderação de cada fator deve ser documentada e configurável (não fixa no código), para permitir ajuste sem nova implantação.
 - [ ] Deve recalcular o score automaticamente a cada mudança relevante nos módulos de origem.
 - [ ] Deve deixar explícito que o score é educativo e não constitui recomendação financeira.
@@ -707,7 +707,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 ---
 
-### 4.8 Módulo — Conteúdo Educacional
+### 1.8 Módulo — Conteúdo Educacional
 
 > Aba independente na navegação principal, complementada por ajuda contextual dentro dos outros módulos.
 
@@ -736,7 +736,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 ---
 
-### 4.9 Módulo — Simulador de Compras Financiadas
+### 1.9 Módulo — Simulador de Compras Financiadas
 
 > Aba independente na navegação principal. Estava listado como módulo futuro na visão original do FinNova e passou a fazer parte do backlog do MVP.
 
@@ -773,11 +773,11 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 **Critérios de aceite:**
 
 - [ ] Ao confirmar uma simulação de compra financiada como financiamento real, o saldo devedor deve ser refletido automaticamente como passivo no módulo Patrimônio (RF-35).
-- [ ] A parcela mensal deve poder ser lançada como despesa recorrente na categoria correspondente (RF-09/05).
+- [ ] A parcela mensal deve poder ser lançada como despesa recorrente na categoria correspondente (RF-09, RF-10).
 
 ---
 
-### 4.10 Recursos transversais — Notificações, Exportação e API Pública
+### 1.10 Recursos transversais — Notificações, Exportação e API Pública
 
 > Não são uma aba própria; funcionam em conjunto com os demais módulos.
 
@@ -789,7 +789,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 **Critérios de aceite:**
 
-- [ ] Deve notificar o usuário quando: a fatura do cartão estiver próxima do vencimento (RF-13), uma meta geral ou por categoria for ultrapassada (RF-14/10), um novo documento for identificado para uma empresa da watchlist (RF-34), ou uma despesa recorrente (RF-09, campo `recorrente`) estiver próxima da data de vencimento.
+- [ ] Deve notificar o usuário quando: a fatura do cartão estiver próxima do vencimento (RF-13), uma meta geral ou por categoria for ultrapassada (RF-14, RF-15), um novo documento for identificado para uma empresa da watchlist (RF-34), ou uma despesa recorrente (RF-09, campo `recorrente`) estiver próxima da data de vencimento.
 - [ ] O usuário deve poder habilitar/desabilitar cada tipo de notificação individualmente.
 - [ ] As notificações in-app devem ficar acessíveis num histórico (central de notificações) por, no mínimo, 30 dias.
 
@@ -857,7 +857,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 ---
 
-### 4.11 Módulo — Painel Administrativo
+### 1.11 Módulo — Painel Administrativo
 
 > Aba visível apenas para usuários com papel de **administrador**. Não aparece na navegação de um usuário comum, e o acesso é bloqueado no backend (não só escondido na interface).
 
@@ -941,7 +941,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 ---
 
-### 4.12 Módulo — Contas Compartilhadas (Casal/Família)
+### 1.12 Módulo — Contas Compartilhadas (Casal/Família)
 
 > Aba/extensão opcional de Administração Financeira: permite que dois usuários vinculem suas contas para dividir despesas comuns, mantendo os dados individuais de cada um privados por padrão.
 
@@ -969,7 +969,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 ---
 
-### 4.13 Módulo — Simulador de Aposentadoria e Previdência
+### 1.13 Módulo — Simulador de Aposentadoria e Previdência
 
 > Aba independente na navegação principal. Projeta o patrimônio do usuário na aposentadoria a partir de aportes mensais e compara modalidades de previdência privada.
 
@@ -996,7 +996,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 ---
 
-### 4.14 Módulo — Calculadora de Imposto de Renda sobre Investimentos
+### 1.14 Módulo — Calculadora de Imposto de Renda sobre Investimentos
 
 > Aba independente na navegação principal. Estima o IR devido sobre as operações simuladas/registradas no sistema e ajuda o usuário a se organizar para a declaração anual — não substitui um contador nem a Receita Federal.
 
@@ -1022,7 +1022,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 ---
 
-### 4.15 Extensão — Score de Saúde Financeira: Benchmark anônimo
+### 1.15 Extensão — Score de Saúde Financeira: Benchmark anônimo
 
 #### RF-66 — Benchmark anônimo com usuários do mesmo perfil
 
@@ -1036,7 +1036,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 ---
 
-### 4.16 Módulo — Gamificação e Conquistas
+### 1.16 Módulo — Gamificação e Conquistas
 
 > Recurso transversal e opcional (Could have): reforça o engajamento do usuário sem interferir nos cálculos financeiros dos demais módulos.
 
@@ -1055,30 +1055,32 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 *Descrevem como o sistema se comporta: restrições e qualidades do produto.*
 
-| ID | Categoria | Requisito | Enunciado EARS |
-|---|---|---|---|
-| RNF-01 | Segurança | Dados sensíveis (senha, dados financeiros) devem trafegar via HTTPS e ser armazenados de forma criptografada | Ubiquitous. THE SYSTEM SHALL transmitir dados sensíveis via HTTPS e armazená-los criptografados, com senhas protegidas por hash e salt. |
-| RNF-02 | Privacidade / LGPD | Tratamento de dados financeiros pessoais em conformidade com a LGPD, permitindo ao usuário exportar ou excluir seus dados | Ubiquitous. THE SYSTEM SHALL permitir que o usuário exporte ou exclua seus dados pessoais a qualquer momento. |
-| RNF-03 | Usabilidade | Interface responsiva, funcional em navegador desktop e em tela mobile | Ubiquitous. THE SYSTEM SHALL permitir o registro de um lançamento financeiro em, no máximo, 3 passos, em telas desktop e mobile. |
-| RNF-04 | Performance | Simulações de investimento e dashboards devem retornar resultado rapidamente, mesmo com múltiplos cenários/meses comparados | Ubiquitous. THE SYSTEM SHALL responder a simulações e dashboards em menos de 3s em 95% das requisições (P95). |
-| RNF-05 | Compatibilidade | O mesmo backend deve atender simultaneamente o cliente web e o cliente mobile | Ubiquitous. THE SYSTEM SHALL atender simultaneamente o cliente web e o cliente mobile a partir do mesmo backend. |
-| RNF-06 | Escalabilidade / extensibilidade | Arquitetura modular, permitindo adicionar novas abas sem reescrever módulos existentes | Ubiquitous. THE SYSTEM SHALL permitir a adição de um novo módulo funcional sem exigir alteração de código dos módulos existentes. |
-| RNF-07 | Manutenibilidade | Código organizado em camadas, com cobertura de testes automatizados nas regras de cálculo financeiro | Ubiquitous. THE SYSTEM SHALL manter cobertura de testes automatizados de, no mínimo, 80% nas regras de cálculo financeiro. |
-| RNF-08 | Disponibilidade | Sistema acessível sempre que o usuário tentar utilizá-lo | Ubiquitous. THE SYSTEM SHALL manter disponibilidade mínima de 99,5% no mês. |
-| RNF-09 | Atualidade de dados de mercado | Indicadores oficiais e cotações não devem ficar defasados além de um limite definido, com a defasagem sempre visível | Ubiquitous. THE SYSTEM SHALL exibir indicadores oficiais com defasagem máxima de 24h e cotações com defasagem máxima de 15 minutos, sempre visível ao usuário. |
-| RNF-10 | Ciclo de vida de dados externos | Metadados de documentos e indicadores sincronizados de fontes externas devem ter expurgo automático conforme política de retenção (RB-12), sem exigir ação manual | Ubiquitous. THE SYSTEM SHALL expurgar metadados e indicadores sincronizados de fontes externas 12 meses após a sincronização, sem exigir ação manual. |
-| RNF-11 | Acessibilidade | Interface deve seguir as diretrizes WCAG 2.1 nível AA | Ubiquitous. THE SYSTEM SHALL atender ao nível AA das diretrizes WCAG 2.1 em contraste, navegação por teclado e leitura por leitor de tela. |
-| RNF-12 | Observabilidade | Backend deve ter logging estruturado e monitoramento de erros em produção, com alertas para falhas críticas | Ubiquitous. THE SYSTEM SHALL registrar logs estruturados e reportar 100% dos erros não tratados em produção a um serviço de monitoramento. |
-| RNF-13 | Proteção da API | Endpoints devem ter rate limiting para mitigar abuso e ataques de força bruta (complementa RF-02) | Ubiquitous. THE SYSTEM SHALL limitar cada cliente a, no máximo, 100 requisições por minuto por endpoint sensível. |
-| RNF-14 | Backup e recuperação | Banco de dados deve ter backup automático periódico com plano de recuperação testado | Ubiquitous. THE SYSTEM SHALL executar backup automático diário do banco de dados, com RPO de 24h e RTO de 4h. |
-| RNF-15 | Documentação de API | A API deve ter documentação viva gerada automaticamente, mantida sincronizada com o código | Ubiquitous. THE SYSTEM SHALL disponibilizar documentação OpenAPI/Swagger sincronizada com a versão publicada da API. |
-| RNF-16 | Qualidade contínua | Pipeline de CI deve rodar testes automatizados e lint em cada pull request, bloqueando merge em caso de falha | Ubiquitous. THE SYSTEM SHALL bloquear o merge de um pull request quando os testes automatizados ou o lint falharem no pipeline de CI. |
-| RNF-17 | Versionamento de API | A API deve ser versionada desde o início para permitir evolução sem quebrar clientes existentes | Ubiquitous. THE SYSTEM SHALL expor todos os endpoints sob um prefixo de versão (ex.: `/api/v1`). |
-| RNF-18 | Auditoria | Ações sensíveis devem gerar registro de auditoria imutável, com usuário, ação e data/hora | Event-driven. WHEN uma ação sensível é executada (exclusão de conta, alteração de dado financeiro, exportação de dados) THE SYSTEM SHALL gerar um registro de auditoria imutável com usuário, ação e data/hora. |
-| RNF-19 | Personalização visual | O sistema deve oferecer tema claro e escuro, com a preferência salva por usuário | Optional feature. WHERE o usuário seleciona o tema escuro THE SYSTEM SHALL aplicar e persistir esse tema em todas as telas. |
-| RNF-20 | Internacionalização (i18n) | A interface deve suportar português (padrão) e inglês, com todos os textos externalizados desde o início | Ubiquitous. THE SYSTEM SHALL disponibilizar toda a interface em português e em inglês, sem texto fixo no código. |
-| RNF-21 | Isolamento administrativo | Rotas administrativas devem ficar isoladas, com verificação de papel em toda requisição | Ubiquitous. THE SYSTEM SHALL exigir verificação de papel de administrador em toda requisição às rotas sob o prefixo `/api/v1/admin`. |
-| RNF-22 | Modo offline (mobile) | Lançamentos feitos no cliente mobile sem conexão devem ser sincronizados automaticamente ao voltar a conexão, sem perda de dados | Event-driven. WHEN o cliente mobile recupera a conexão após operar offline THE SYSTEM SHALL sincronizar os lançamentos pendentes com o backend em até 60 segundos, sem duplicar ou perder registros. |
+| ID | Categoria | Prioridade | Requisito | Enunciado EARS |
+|---|---|---|---|---|
+| RNF-01 | Segurança | Must have | Dados sensíveis (senha, dados financeiros) devem trafegar via HTTPS e ser armazenados de forma criptografada | Ubiquitous. THE SYSTEM SHALL transmitir dados sensíveis via HTTPS e armazená-los criptografados, com senhas protegidas por hash e salt. |
+| RNF-02 | Privacidade / LGPD | Should have | Tratamento de dados financeiros pessoais em conformidade com a LGPD, permitindo ao usuário exportar ou excluir seus dados | Ubiquitous. THE SYSTEM SHALL permitir que o usuário exporte ou exclua seus dados pessoais a qualquer momento. |
+| RNF-03 | Usabilidade | Should have | Interface responsiva, funcional em navegador desktop e em tela mobile | Ubiquitous. THE SYSTEM SHALL permitir o registro de um lançamento financeiro em, no máximo, 3 passos, em telas desktop e mobile. |
+| RNF-04 | Performance | Must have | Simulações de investimento e dashboards devem retornar resultado rapidamente, mesmo com múltiplos cenários/meses comparados | Ubiquitous. THE SYSTEM SHALL responder a simulações e dashboards em menos de 3s em 95% das requisições (P95). |
+| RNF-05 | Compatibilidade | Must have | O mesmo backend deve atender simultaneamente o cliente web e o cliente mobile | Ubiquitous. THE SYSTEM SHALL atender simultaneamente o cliente web e o cliente mobile a partir do mesmo backend. |
+| RNF-06 | Escalabilidade / extensibilidade | Should have | Arquitetura modular, permitindo adicionar novas abas sem reescrever módulos existentes | Ubiquitous. THE SYSTEM SHALL permitir a adição de um novo módulo funcional sem exigir alteração de código dos módulos existentes. |
+| RNF-07 | Manutenibilidade | Must have | Código organizado em camadas, com cobertura de testes automatizados nas regras de cálculo financeiro | Ubiquitous. THE SYSTEM SHALL manter cobertura de testes automatizados de, no mínimo, 80% nas regras de cálculo financeiro. |
+| RNF-08 | Disponibilidade | Could have | Sistema acessível sempre que o usuário tentar utilizá-lo | Ubiquitous. THE SYSTEM SHALL manter disponibilidade mínima de 99,5% no mês. |
+| RNF-09 | Atualidade de dados de mercado | Should have | Indicadores oficiais e cotações não devem ficar defasados além de um limite definido, com a defasagem sempre visível | Ubiquitous. THE SYSTEM SHALL exibir indicadores oficiais com defasagem máxima de 24h e cotações com defasagem máxima de 15 minutos, sempre visível ao usuário. |
+| RNF-10 | Ciclo de vida de dados externos | Should have | Metadados de documentos e indicadores sincronizados de fontes externas devem ter expurgo automático conforme política de retenção (RB-12), sem exigir ação manual | Ubiquitous. THE SYSTEM SHALL expurgar metadados e indicadores sincronizados de fontes externas 12 meses após a sincronização, sem exigir ação manual. |
+| RNF-11 | Acessibilidade | Should have | Interface deve seguir as diretrizes WCAG 2.1 nível AA | Ubiquitous. THE SYSTEM SHALL atender ao nível AA das diretrizes WCAG 2.1 em contraste, navegação por teclado e leitura por leitor de tela. |
+| RNF-12 | Observabilidade | Should have | Backend deve ter logging estruturado e monitoramento de erros em produção, com alertas para falhas críticas | Ubiquitous. THE SYSTEM SHALL registrar logs estruturados e reportar 100% dos erros não tratados em produção a um serviço de monitoramento. |
+| RNF-13 | Proteção da API | Must have | Endpoints devem ter rate limiting para mitigar abuso e ataques de força bruta (complementa RF-02) | Ubiquitous. THE SYSTEM SHALL limitar cada cliente a, no máximo, 100 requisições por minuto por endpoint sensível. |
+| RNF-14 | Backup e recuperação | Should have | Banco de dados deve ter backup automático periódico com plano de recuperação testado | Ubiquitous. THE SYSTEM SHALL executar backup automático diário do banco de dados, com RPO de 24h e RTO de 4h. |
+| RNF-15 | Documentação de API | Should have | A API deve ter documentação viva gerada automaticamente, mantida sincronizada com o código | Ubiquitous. THE SYSTEM SHALL disponibilizar documentação OpenAPI/Swagger sincronizada com a versão publicada da API. |
+| RNF-16 | Qualidade contínua | Must have | Pipeline de CI deve rodar testes automatizados e lint em cada pull request, bloqueando merge em caso de falha | Ubiquitous. THE SYSTEM SHALL bloquear o merge de um pull request quando os testes automatizados ou o lint falharem no pipeline de CI. |
+| RNF-17 | Versionamento de API | Must have | A API deve ser versionada desde o início para permitir evolução sem quebrar clientes existentes | Ubiquitous. THE SYSTEM SHALL expor todos os endpoints sob um prefixo de versão (ex.: `/api/v1`). |
+| RNF-18 | Auditoria | Should have | Ações sensíveis devem gerar registro de auditoria imutável, com usuário, ação e data/hora | Event-driven. WHEN uma ação sensível é executada (exclusão de conta, alteração de dado financeiro, exportação de dados) THE SYSTEM SHALL gerar um registro de auditoria imutável com usuário, ação e data/hora. |
+| RNF-19 | Personalização visual | Could have | O sistema deve oferecer tema claro e escuro, com a preferência salva por usuário | Optional feature. WHERE o usuário seleciona o tema escuro THE SYSTEM SHALL aplicar e persistir esse tema em todas as telas. |
+| RNF-20 | Internacionalização (i18n) | Should have | A interface deve suportar português (padrão) e inglês, com todos os textos externalizados desde o início | Ubiquitous. THE SYSTEM SHALL disponibilizar toda a interface em português e em inglês, sem texto fixo no código. |
+| RNF-21 | Isolamento administrativo | Should have | Rotas administrativas devem ficar isoladas, com verificação de papel em toda requisição | Ubiquitous. THE SYSTEM SHALL exigir verificação de papel de administrador em toda requisição às rotas sob o prefixo `/api/v1/admin`. |
+| RNF-22 | Modo offline (mobile) | Could have | Lançamentos feitos no cliente mobile sem conexão devem ser sincronizados automaticamente ao voltar a conexão, sem perda de dados | Event-driven. WHEN o cliente mobile recupera a conexão após operar offline THE SYSTEM SHALL sincronizar os lançamentos pendentes com o backend em até 60 segundos, sem duplicar ou perder registros. |
+
+> **Critério de prioridade dos RNF (MoSCoW):** *Must have* — necessário para entregar os RF *Must have*: citado por spec aprovada (SPEC-001, SPEC-002), declarado como restrição ou item obrigatório na stack (`/docs/01-visao/visao.md`, seção 3) ou exigido pela disciplina (CI bloqueando merge); *Should have* — qualidade relevante, cuja funcionalidade associada não é *Must have* (ex.: RNF-02 depende de RF-05 e RF-50); *Could have* — pós-MVP.
 
 > **Mensurável:** todo RNF acima carrega um número ou condição verificável (percentual, tempo, contagem) — sem isso, vira bullet de proposta, não requisito testável.
 
@@ -1160,9 +1162,9 @@ Badge (id, usuario_id, tipo, conquistada_em)
 
 > `Simulacao.tipo` é estendido para incluir `aposentadoria` (RF-62), `previdencia_comparador` (RF-63) e `ir_estimativa` (RF-64) — reaproveita a tabela genérica existente, sem novas entidades específicas por simulação.
 
-> `EventoUso` alimenta os dashboards administrativos (RF-57/05) e nunca contém dado financeiro (RB-23); consultas do painel administrativo sempre agregam por módulo/período, sem expor o comportamento individual nominal de um usuário (RB-22).
+> `EventoUso` alimenta os dashboards administrativos (RF-57, RF-58) e nunca contém dado financeiro (RB-23); consultas do painel administrativo sempre agregam por módulo/período, sem expor o comportamento individual nominal de um usuário (RB-22).
 
-> `DocumentoCVM` e `IndicadorFinanceiro` guardam apenas metadados/números e um link externo — nunca o binário do PDF (RB-12) — e têm expurgo automático 12 meses após `sincronizado_em` (RF-33). `Ativo` e `Passivo` alimentam RF-35/03; entradas com `origem=automatico` são espelhos somente-leitura de Conta/Simulacao/Fatura/CompraFinanciada, recalculados a cada mudança na origem (RB-13).
+> `DocumentoCVM` e `IndicadorFinanceiro` guardam apenas metadados/números e um link externo — nunca o binário do PDF (RB-12) — e têm expurgo automático 12 meses após `sincronizado_em` (RF-33). `Ativo` e `Passivo` alimentam RF-35 e RF-37; entradas com `origem=automatico` são espelhos somente-leitura de Conta/Simulacao/Fatura/CompraFinanciada, recalculados a cada mudança na origem (RB-13).
 
 ## 5. Interfaces Externas / Integrações
 
@@ -1189,7 +1191,7 @@ Badge (id, usuario_id, tipo, conquistada_em)
 - Metadados e indicadores sincronizados da CVM são retidos por no máximo 12 meses (RF-33); após esse prazo, uma nova consulta refaz a sincronização com a fonte oficial.
 - O Simulador de Compras Financiadas passou de "módulo futuro" para o backlog do MVP (Could have), a pedido do usuário.
 - A regra de cores do mapa de calor patrimonial (RF-37 — passivo por taxa de juros, ativo por rentabilidade) é um padrão sugerido e pode ser ajustada após validação com o usuário final.
-- A API pública e os webhooks (RF-52/02) são recursos adicionais opcionais — não bloqueiam o núcleo do app caso fiquem para depois do MVP.
+- A API pública e os webhooks (RF-52, RF-53) são recursos adicionais opcionais — não bloqueiam o núcleo do app caso fiquem para depois do MVP.
 - Internacionalização (RNF-20) sendo aplicada desde o início evita retrabalho de extrair textos hardcoded mais tarde.
 - Contas Compartilhadas (RF-60/61) dependem de vínculo manual entre dois usuários já cadastrados — não há convite para não-usuários nem integração com conta conjunta bancária real.
 - A estimativa de IR (RF-64) e o comparador de previdência (RF-63) usam tabelas de alíquotas simplificadas e configuráveis internamente — não substituem apuração de contador nem consulta ao e-CAC da Receita Federal, e não constituem aconselhamento tributário.
