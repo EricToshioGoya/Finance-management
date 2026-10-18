@@ -3,14 +3,29 @@
 Plataforma **web e mobile** que unifica **controle financeiro pessoal** e **simulação de investimentos** em um só lugar. Diferente de apps que tratam essas duas frentes separadamente, o sistema conecta o controle de gastos à decisão de investir: mostra quanto sobra no orçamento e simula o que esse valor pode render, adaptando a experiência ao nível de conhecimento do usuário (iniciante ou avançado) por meio de um quiz de perfil de investidor.
 
 - **Status:** rascunho
-- **Versão do documento:** 0.5
-- **Última atualização:** 2026-08-23
+- **Versão do documento:** 0.6
+- **Última atualização:** 2026-10-18
 
-Detalhamento completo dos requisitos em `/docs/03-requisitos/requisitos.md` e das personas em `/docs/02-personas/personas.md`.
+Detalhamento completo dos requisitos em `/docs/03-requisitos/requisitos.md`, das personas em `/docs/02-personas/personas.md` e do benchmark em `/docs/01-visao/benchmark.md`.
 
 ---
 
-## 1. Escopo
+## 1. Problema e contexto
+
+**Problema.** Pessoas físicas no Brasil costumam controlar gastos e investimentos em ferramentas separadas: aplicativos de orçamento, corretoras e planilhas. Como consequência:
+
+- O usuário iniciante sabe, no máximo, quanto gastou, mas não sabe quanto sobra nem o que fazer com a sobra; por insegurança e falta de familiaridade com os termos, permanece na poupança.
+- O usuário avançado mantém dados dispersos entre corretoras e planilhas, perde tempo para consolidá-los e não consegue comparar cenários de investimento em um só lugar.
+
+**Contexto.** As soluções existentes atendem metade do problema: aplicativos de controle financeiro (ex.: Mobills, Organizze) tratam o orçamento, enquanto consolidadores (ex.: Kinvo, Gorila) atendem quem já investe. Nenhuma das soluções analisadas conecta a sobra do orçamento à simulação do investimento com taxas oficiais (Selic, CDI, IPCA). A análise completa está em `/docs/01-visao/benchmark.md`.
+
+**Público-alvo.** Investidores iniciantes e avançados, pessoas físicas, descritos em `/docs/02-personas/personas.md`.
+
+**Categoria do tema.** O FinNova se enquadra principalmente como **sistema de apoio à decisão** (simula cenários para o usuário decidir, sem aconselhar) e, de forma secundária, como **sistema de acompanhamento de progresso** (metas, patrimônio e score de saúde financeira).
+
+## 2. Escopo
+
+> **Recorte de entrega da disciplina:** para a apresentação do projeto (26/11/2026), o compromisso de entrega é o conjunto **Must have** do backlog priorizado (seção 4): RF-01, RF-02, RF-06 a RF-12, RF-20 a RF-23 e RF-25. Os demais módulos permanecem no backlog e só entram após a conclusão desse recorte.
 
 **Dentro do escopo (MVP)**
 
@@ -39,7 +54,7 @@ Detalhamento completo dos requisitos em `/docs/03-requisitos/requisitos.md` e da
 - Execução de ordens ou qualquer operação real de investimento.
 - Recomendação personalizada de investimentos (o sistema simula, não aconselha).
 
-## 2. Stack e Restrições Técnicas
+## 3. Stack e Restrições Técnicas
 
 | Item | Definição |
 |---|---|
@@ -57,7 +72,7 @@ Detalhamento completo dos requisitos em `/docs/03-requisitos/requisitos.md` e da
 | Notificações | Firebase Cloud Messaging (push) + serviço de e-mail transacional (ex.: SES/SendGrid) |
 | Restrição | Backend único (FastAPI) atendendo web e mobile via API REST compartilhada |
 
-## 3. Roadmap / Entregas
+## 4. Roadmap / Entregas
 
 Ordem sugerida: núcleo funcional primeiro (conta + lançamentos + simulações básicas), depois personalização, metas e análise visual.
 
