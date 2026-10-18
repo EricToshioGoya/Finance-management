@@ -151,7 +151,7 @@ Descrição textual, com fluxos e exceções, dos casos de uso que compõem o fl
 
 ![Diagrama de sequência do UC-13](../uml/seq-UC-13.png)
 
-Os blocos `alt` modelam as extensões 2a e 2b (estado do indicador) e a exceção 4a; o bloco `opt` modela o fluxo alternativo 3a (no ramo 2b a taxa manual é obrigatória). O diagrama detalha a seção 5.2 da `arquitetura.md` em duas chamadas (sugestão da taxa e simulação), inclui a gravação do passo 5 e mostra, em bloco separado, a rotina agendada UC-37 que alimenta o cache: a simulação nunca chama a fonte externa (ADR-003, C-08).
+Os blocos `alt` modelam as extensões 2a e 2b (estado do indicador) e a exceção 4a; o bloco `opt` modela o fluxo alternativo 3a (no ramo 2b a taxa manual é obrigatória). O diagrama detalha a seção 7.2 da `arquitetura.md` em duas chamadas (sugestão da taxa e simulação), inclui a gravação do passo 5 e mostra, em bloco separado, a rotina agendada UC-37 que alimenta o cache: a simulação nunca chama a fonte externa (ADR-003, C-08).
 
 ### Diagrama de estados do `IndicadorOficial`
 
