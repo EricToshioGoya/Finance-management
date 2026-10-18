@@ -108,12 +108,12 @@
 - Event-driven. WHEN o usuário submete e-mail e senha corretos THE SYSTEM SHALL iniciar a sessão e retornar um token de sessão.
 - State-driven. WHILE a sessão do usuário estiver ativa (token válido e não expirado) THE SYSTEM SHALL permitir o acesso às funcionalidades autenticadas sem nova solicitação de credenciais.
 - Unwanted behavior. IF as credenciais forem inválidas THEN THE SYSTEM SHALL recusar o acesso e exibir mensagem de erro genérica, sem indicar qual campo falhou.
-- Unwanted behavior. IF ocorrerem 5 tentativas de login inválidas consecutivas para a mesma conta THEN THE SYSTEM SHALL bloquear novas tentativas dessa conta por 15 minutos.
+- Unwanted behavior. IF ocorrerem 5 tentativas de login inválidas consecutivas para o mesmo e-mail, cadastrado ou não, THEN THE SYSTEM SHALL bloquear novas tentativas para esse e-mail por 15 minutos.
 
 **Critérios de aceite:**
 
 - [ ] Deve autenticar por e-mail e senha.
-- [ ] Deve bloquear novas tentativas por 15 minutos após 5 tentativas inválidas consecutivas para a mesma conta (padrão de mercado); o contador é zerado após um login bem-sucedido.
+- [ ] Deve bloquear novas tentativas por 15 minutos após 5 tentativas inválidas consecutivas para o mesmo e-mail, cadastrado ou não, para não revelar quais e-mails têm conta (padrão de mercado; SPEC-001-R09, R10 e INV-03); o contador é zerado após um login bem-sucedido.
 - [ ] Deve manter sessão ativa até logout ou expiração do token.
 
 #### RF-03 — Quiz de perfil de investidor
@@ -336,7 +336,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 **Critérios de aceite:**
 
 - [ ] Deve permitir simular CDB, Tesouro e poupança informando valor inicial, aporte mensal e prazo.
-- [ ] Deve usar o motor de cálculo de juros compostos (RF-22), alimentado pela taxa vinda dos indicadores oficiais (RF-23) — sem o usuário precisar digitar a taxa manualmente.
+- [ ] Deve usar o motor de cálculo de juros compostos (RF-22), alimentado pela taxa vinda dos indicadores oficiais (RF-23) — sem o usuário precisar digitar a taxa manualmente, exceto quando não houver valor do indicador no cache (RF-23, UC-13-E02).
 - [ ] Deve permitir ao usuário sobrepor a taxa sugerida por um valor manual, caso queira simular um cenário hipotético.
 - [ ] Deve exibir o valor bruto e, quando aplicável, o valor líquido de IR (tabela regressiva conforme prazo, exceto poupança e produtos isentos).
 - [ ] Deve exibir a data de referência do indicador usado na simulação.
@@ -394,6 +394,10 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 - Event-driven. WHEN uma simulação de renda fixa é solicitada THE SYSTEM SHALL obter a taxa do indicador oficial correspondente (Selic, CDI, IPCA ou Tesouro Direto) a partir do cache local mais recente.
 - Unwanted behavior. IF a API oficial estiver indisponível ou retornar erro na atualização THEN THE SYSTEM SHALL usar o último valor em cache e exibir aviso visual de que o dado pode estar desatualizado — nunca um valor zerado ou inventado (incorpora a antiga RB-11).
+- State-driven. WHILE o indicador oficial do produto estiver defasado (mais de 24h sem sincronização bem-sucedida) THE SYSTEM SHALL exibir, junto à taxa sugerida e ao resultado da simulação, aviso de defasagem com a data de referência (UC-13-E01).
+- Unwanted behavior. IF não houver valor do indicador oficial do produto no cache THEN THE SYSTEM SHALL exigir que o usuário informe a taxa manualmente antes de executar a simulação (UC-13-E02).
+
+> Estados do `IndicadorOficial` (SemValor, Atualizado e Defasado) e transições: `docs/uml/estados-indicador.png`; uso no fluxo: UC-13 em `docs/04-casos-de-uso/casos-de-uso-detalhados.md`.
 
 **Critérios de aceite:**
 
@@ -403,6 +407,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 - [ ] O sistema deve atualizar o cache automaticamente 1 vez por dia, após o horário de divulgação de cada indicador (padrão de mercado; atende à defasagem máxima de 24h do RNF-09).
 - [ ] Em caso de falha ou indisponibilidade da API oficial, o sistema deve usar o último valor em cache e exibir um aviso visual informando que o dado pode estar desatualizado.
 - [ ] A data de referência do indicador deve ser exibida sempre que ele for usado em uma simulação (RF-20, RF-22).
+- [ ] Na primeira execução, antes de qualquer sincronização, o sistema não deve sugerir taxa e deve exigir taxa manual para a simulação.
 
 #### RF-24 — Cotação de ações e FIIs via fonte de mercado
 
@@ -1212,3 +1217,7 @@ Nomes usados em código, specs e documentação, alinhados às classes de `/docs
 | Taxa equivalente composta | operação de `Simulacao` | Conversão de taxa entre períodos por `(1 + i)^n − 1`, nunca por divisão simples (RB-10) |
 | Aporte mensal | atributo de `Simulacao` | Valor investido ao fim de cada mês da simulação |
 | Comparação de cenários | operação sobre `Simulacao` | Exibição lado a lado de duas ou mais simulações do mesmo usuário (RF-25) |
+| Taxa sugerida | atributo de `SimulacaoRendaFixa` | Taxa do `IndicadorOficial` do produto, pré-preenchida na simulação de renda fixa; vincula a simulação ao indicador (DOM-09) |
+| Taxa manual | atributo de `SimulacaoRendaFixa` | Taxa informada pelo usuário no lugar da sugerida; a simulação fica sem vínculo com `IndicadorOficial` (DOM-09). Obrigatória quando não há valor do indicador no cache (UC-13-E02) |
+| Indicador defasado | estado de `IndicadorOficial` (`estaDefasado()`) | Estado Defasado: a última sincronização falhou ou passaram mais de 24h sem sincronização bem-sucedida; a simulação usa o último valor e exibe aviso (RF-23, RNF-09, UC-13-E01). Estados possíveis: SemValor, Atualizado e Defasado (`docs/uml/estados-indicador.png`) |
+| Bloqueio por tentativas inválidas | — (regra de autenticação) | Suspensão, por 15 minutos, das tentativas de login de um e-mail após 5 falhas consecutivas, exista ou não a conta (RF-02, SPEC-001-R09 e R10) |

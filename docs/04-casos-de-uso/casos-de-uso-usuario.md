@@ -10,11 +10,17 @@ Os identificadores `UC-NN` são sequenciais entre este documento (UC-01 a UC-27)
 
 ![Diagrama de casos de uso do usuário](casos-de-uso-usuario.png)
 
+Fonte editável (PlantUML): `casos-de-uso-usuario.puml` ([#33](https://github.com/EricToshioGoya/Finance-management/issues/33)). Para regenerar a imagem após editar a fonte, a partir de `/docs/04-casos-de-uso/`:
+
+```bash
+java -jar plantuml.jar -tpng casos-de-uso-usuario.puml
+```
+
 ## Atores
 
 - **Usuário**: utiliza a plataforma para administrar suas finanças, consultar informações e realizar simulações.
 - **Usuário vinculado (conta compartilhada)**: papel assumido por um usuário cadastrado que participa de uma associação de conta compartilhada para divisão de despesas.
-- **API Banco Central (SGS) e Tesouro Transparente**: fornece indicadores oficiais para as simulações.
+- **API Banco Central (SGS) e Tesouro Transparente**: fornece os indicadores oficiais ao cache local por meio da rotina UC-37 (diagrama do administrador); a simulação não a consulta diretamente (C-08).
 - **Portal de Dados Abertos da CVM / RAD-ENET**: fornece dados e documentos oficiais de empresas.
 - **Serviço de notificação (push / e-mail)**: entrega notificações e alertas ao usuário.
 
@@ -47,11 +53,11 @@ Os identificadores `UC-NN` são sequenciais entre este documento (UC-01 a UC-27)
 | --- | --- | --- | --- | --- |
 | UC-12 | Comparar cenários de investimento | RF-25 | Usuário | Permite comparar os resultados de diferentes cenários de investimento. |
 | UC-13 | Simular investimento em renda fixa | RF-20 | Usuário; API Banco Central e Tesouro Transparente | Simula a evolução de um investimento de renda fixa. |
-| UC-14 | Simular investimento em renda variável | RF-21 | Usuário; API Banco Central e Tesouro Transparente | Simula cenários de investimento em renda variável. |
+| UC-14 | Simular investimento em renda variável | RF-21 | Usuário; provedor de dados de mercado (RF-24, a definir) | Simula cenários de investimento em renda variável. |
 | UC-15 | Projetar objetivo financeiro | RF-26 | Usuário | Permite projetar a evolução necessária para atingir um objetivo financeiro. |
-| UC-16 | Obter indicador oficial (Selic, CDI, IPCA) | RF-23 | API Banco Central e Tesouro Transparente | Obtém os indicadores oficiais usados nas simulações. |
-| UC-17 | Calcular juros compostos | RF-22 | Usuário | Calcula a evolução dos valores aplicados com base em juros compostos. |
-| UC-18 | Usar último valor em cache | RF-23 | Sistema | Usa o último valor conhecido quando a API oficial estiver indisponível. |
+| UC-16 | Obter indicador oficial (Selic, CDI, IPCA) | RF-23 | Sistema (cache local, alimentado pela UC-37) | Lê do cache local o indicador oficial usado na simulação; a fonte externa é consultada só pela UC-37. |
+| UC-17 | Calcular juros compostos | RF-22 | — (incluído por UC-13, UC-14 e UC-15) | Calcula a evolução dos valores aplicados com base em juros compostos. |
+| UC-18 | Usar último valor em cache | RF-23 | Sistema | Usa o último valor em cache, com aviso, quando o indicador estiver Defasado (falha da sincronização UC-37 ou mais de 24h sem sucesso). |
 
 ### Relatórios de Empresas
 
@@ -81,8 +87,9 @@ Os identificadores `UC-NN` são sequenciais entre este documento (UC-01 a UC-27)
 
 - **Dividir despesa compartilhada** estende **Registrar despesa por categoria**.
 - **Comparar cenários de investimento** inclui **Simular investimento em renda fixa**.
-- **Simular investimento em renda fixa** e **Simular investimento em renda variável** incluem **Obter indicador oficial (Selic, CDI, IPCA)** e **Calcular juros compostos**, quando aplicável.
-- **Usar último valor em cache** estende **Obter indicador oficial (Selic, CDI, IPCA)** quando a consulta à fonte oficial falha.
+- **Simular investimento em renda fixa** inclui **Obter indicador oficial (Selic, CDI, IPCA)** e **Calcular juros compostos**.
+- **Simular investimento em renda variável** e **Projetar objetivo financeiro** incluem **Calcular juros compostos**.
+- **Usar último valor em cache** estende **Obter indicador oficial (Selic, CDI, IPCA)** quando o indicador em cache está Defasado (falha da sincronização UC-37 ou mais de 24h sem sucesso — `docs/uml/estados-indicador.png`).
 - **Consultar score de saúde financeira** inclui **Consultar patrimônio e mapa de calor**.
 - **Consultar documentos oficiais da empresa** depende do **Portal de Dados Abertos da CVM / RAD-ENET**.
 - **Receber notificações e alertas** utiliza o **Serviço de notificação (push / e-mail)**.

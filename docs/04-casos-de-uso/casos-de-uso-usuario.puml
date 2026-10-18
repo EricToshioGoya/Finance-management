@@ -1,0 +1,134 @@
+' Diagrama de casos de uso do usuário — FinNova
+' Fonte de verdade: tabelas e relações de casos-de-uso-usuario.md
+' Regenerar a partir de /docs/04-casos-de-uso/:
+'   java -jar plantuml.jar -tpng casos-de-uso-usuario.puml
+@startuml casos-de-uso-usuario
+!pragma layout smetana
+left to right direction
+skinparam actorStyle awesome
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #EAF1FB
+  BorderColor #2B6CB0
+  FontSize 11
+}
+skinparam package {
+  BackgroundColor #F8FAFC
+  BorderColor #94A3B8
+}
+title FinNova — Casos de Uso do Usuário
+
+actor "Usuário" as U
+actor "Usuário vinculado\n(conta compartilhada)" as UV
+actor "API Banco Central (SGS)\ne Tesouro Transparente" as BCB
+actor "Portal de Dados Abertos\nda CVM / RAD-ENET" as CVM
+actor "Serviço de notificação\n(push / e-mail)" as NOT
+
+package "Conta e Acesso" {
+  usecase "UC-01 Cadastrar-se\n(RF-01)" as UC01
+  usecase "UC-02 Autenticar-se\n(RF-02)" as UC02
+  usecase "UC-03 Responder quiz de\nperfil de investidor\n(RF-03)" as UC03
+  usecase "UC-04 Excluir conta e dados\n(RF-05)" as UC04
+}
+
+package "Administração Financeira" {
+  usecase "UC-05 Registrar renda fixa,\nvariável e bônus/PLR\n(RF-06, RF-07, RF-08)" as UC05
+  usecase "UC-06 Gerenciar categorias\nde gasto\n(RF-10)" as UC06
+  usecase "UC-07 Gerenciar contas\ne cartões\n(RF-12, RF-13)" as UC07
+  usecase "UC-08 Definir metas de\nrenda e de gasto\n(RF-14, RF-15)" as UC08
+  usecase "UC-09 Consultar dashboards\nfinanceiros\n(RF-16 a RF-19)" as UC09
+  usecase "UC-10 Dividir despesa\ncompartilhada\n(RF-60, RF-61)" as UC10
+  usecase "UC-11 Registrar despesa\npor categoria\n(RF-09, RF-11)" as UC11
+}
+
+package "Simulador de Investimentos" {
+  usecase "UC-12 Comparar cenários\nde investimento\n(RF-25)" as UC12
+  usecase "UC-13 Simular investimento\nem renda fixa\n(RF-20)" as UC13
+  usecase "UC-14 Simular investimento\nem renda variável\n(RF-21)" as UC14
+  usecase "UC-15 Projetar objetivo\nfinanceiro\n(RF-26)" as UC15
+  usecase "UC-16 Obter indicador oficial\n(Selic, CDI, IPCA)\n(RF-23)" as UC16
+  usecase "UC-17 Calcular juros\ncompostos\n(RF-22)" as UC17
+  usecase "UC-18 Usar último valor\nem cache — indicador Defasado\n(RF-23)" as UC18
+}
+
+package "Relatórios de Empresas" {
+  usecase "UC-19 Buscar empresa\nlistada em bolsa\n(RF-29)" as UC19
+  usecase "UC-20 Consultar documentos\noficiais da empresa\n(RF-30, RF-31)" as UC20
+  usecase "UC-21 Gerenciar watchlist\nde empresas\n(RF-34)" as UC21
+}
+
+package "Patrimônio e Score" {
+  usecase "UC-22 Simular cenário\nhipotético — E se...\n(RF-39)" as UC22
+  usecase "UC-23 Consultar score de\nsaúde financeira\n(RF-41, RF-42)" as UC23
+  usecase "UC-24 Consultar patrimônio\ne mapa de calor\n(RF-35, RF-37)" as UC24
+}
+
+package "Recursos transversais" {
+  usecase "UC-25 Receber notificações\ne alertas\n(RF-48, RF-49)" as UC25
+  usecase "UC-26 Exportar dados\npessoais\n(RF-50)" as UC26
+  usecase "UC-27 Consultar conteúdo\neducacional\n(RF-43, RF-44)" as UC27
+}
+
+U --> UC01
+U --> UC02
+U --> UC03
+U --> UC04
+U --> UC05
+U --> UC06
+U --> UC07
+U --> UC08
+U --> UC09
+U --> UC10
+U --> UC11
+U --> UC12
+U --> UC13
+U --> UC14
+U --> UC15
+U --> UC19
+U --> UC20
+U --> UC21
+U --> UC22
+U --> UC23
+U --> UC24
+U --> UC25
+U --> UC26
+U --> UC27
+
+UC10 -- UV
+
+UC10 ..> UC11 : <<extend>>
+UC12 ..> UC13 : <<include>>
+UC13 ..> UC16 : <<include>>
+UC13 ..> UC17 : <<include>>
+UC14 ..> UC17 : <<include>>
+UC15 ..> UC17 : <<include>>
+UC18 ..> UC16 : <<extend>>
+UC23 ..> UC24 : <<include>>
+
+note bottom of BCB
+  Alimenta o cache local pela rotina UC-37
+  (diagrama do administrador); a simulação
+  não consulta a fonte diretamente (C-08).
+end note
+UC20 -- CVM
+UC25 -- NOT
+
+note as N
+  <b>Regras de negócio e requisitos não funcionais aplicáveis</b>
+  <b>RF-02</b> — pré-condição: todos os casos de uso, exceto Cadastrar-se, exigem usuário autenticado.
+  <b>RB-07 / RB-10</b> (UC-13) — indexação a CDI/Selic/IPCA conforme o produto; taxa convertida
+  por equivalência composta, nunca proporcional simples.
+  <b>RF-23 / RNF-09</b> (UC-18) — com o indicador Defasado (falha da sincronização UC-37 ou mais
+  de 24h), usa o último valor com aviso, nunca valor zerado; defasagem sempre visível.
+  <b>RB-12 / RNF-10</b> (UC-20) — o sistema nunca hospeda o PDF: guarda metadados + link oficial
+  e expurga os dados sincronizados em 12 meses (RF-33).
+  <b>RB-24</b> (UC-10) — o saldo "quem deve quem" é recalculado a cada inclusão, edição,
+  exclusão ou acerto de contas.
+  <b>RNF-01 / RNF-13</b> (UC-02) — senha com hash + salt, tráfego via HTTPS e rate limiting contra força bruta.
+  <b>RNF-02</b> (UC-26) — LGPD: o usuário pode exportar ou excluir seus dados a qualquer momento.
+  <b>RNF-03</b> — registrar um lançamento financeiro em no máximo 3 passos, em web e mobile.
+end note
+
+@enduml

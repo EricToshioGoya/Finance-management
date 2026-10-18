@@ -1,0 +1,34 @@
+%% Diagrama de estados — IndicadorOficial (cache local de Selic, CDI, IPCA e Tesouro Direto)
+%% Regras: RF-23, RNF-09, ADR-003; operação de domínio: IndicadorOficial.estaDefasado()
+%% Eventos de sincronização vêm da rotina agendada UC-37 (fora da requisição de simulação)
+%% Regenerar a partir de /docs/uml/: mmdc -i estados-indicador.mmd -o estados-indicador.png -b white --scale 2
+stateDiagram-v2
+    direction LR
+
+    [*] --> SemValor : implantação do sistema
+
+    SemValor --> Atualizado : UC-37 sincronização ok
+    SemValor --> SemValor : UC-37 falha
+    Atualizado --> Atualizado : UC-37 sincronização ok
+    Atualizado --> Defasado : UC-37 falha
+    Atualizado --> Defasado : after(24h) [sem sincronização ok]
+    Defasado --> Atualizado : UC-37 sincronização ok
+    Defasado --> Defasado : UC-37 falha
+
+    note right of SemValor
+        Não há registro de IndicadorOficial
+        para o tipo do produto (antes da 1ª sincronização).
+        Simulação exige taxa manual (UC-13-E02).
+    end note
+
+    note right of Atualizado
+        Última sincronização ok, há no máximo 24h (RNF-09).
+        Taxa pré-preenchida com a data de referência.
+    end note
+
+    note right of Defasado
+        estaDefasado() = última sincronização falhou
+        ou agora − atualizadoEm > 24h.
+        Mantém o último valor, nunca zero (RF-23, IF/THEN).
+        Simulação exibe aviso de defasagem (UC-13-E01).
+    end note

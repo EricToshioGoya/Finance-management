@@ -1,0 +1,104 @@
+' Diagrama de casos de uso do administrador — FinNova
+' Fonte de verdade: tabelas e relações de casos-de-uso-administrador.md
+' Regenerar a partir de /docs/04-casos-de-uso/:
+'   java -jar plantuml.jar -tpng casos-de-uso-administrador.puml
+@startuml casos-de-uso-administrador
+!pragma layout smetana
+left to right direction
+skinparam actorStyle awesome
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #FDECEC
+  BorderColor #C0392B
+  FontSize 11
+}
+skinparam package {
+  BackgroundColor #F8FAFC
+  BorderColor #94A3B8
+}
+title FinNova — Casos de Uso do Administrador
+
+actor "Administrador" as ADM
+actor "Usuário" as U
+actor "Sistema / Agendador\n(rotina temporal)" as SIS
+actor "API Banco Central (SGS)\ne Tesouro Transparente" as BCB
+actor "Portal de Dados Abertos\nda CVM" as CVM
+
+ADM --|> U
+
+package "Painel Administrativo (acesso restrito)" {
+  usecase "UC-28 Acessar painel\nadministrativo\n(RF-54)" as UC28
+  usecase "UC-29 Validar papel de\nadministrador (RBAC)\n(RNF-21)" as UC29
+  usecase "UC-30 Listar e buscar\nusuários\n(RF-55)" as UC30
+  usecase "UC-31 Consultar distribuição\nde perfil de investidor\n(RF-56)" as UC31
+  usecase "UC-32 Consultar uso por\nmódulo/aba\n(RF-57)" as UC32
+  usecase "UC-33 Consultar engajamento\ne usuários recorrentes\n(RF-58)" as UC33
+  usecase "UC-34 Consultar trilha\nde auditoria\n(RNF-18)" as UC34
+  usecase "UC-35 Promover usuário a\nadministrador\n(RF-54)" as UC35
+}
+
+package "Rotinas automáticas do sistema" {
+  usecase "UC-36 Sincronizar documentos\ne indicadores da CVM\n(RF-30, RF-32)" as UC36
+  usecase "UC-37 Sincronizar indicadores\noficiais em cache\n(RF-23)" as UC37
+  usecase "UC-38 Expurgar dados\nsincronizados (12 meses)\n(RF-33, RNF-10)" as UC38
+  usecase "UC-39 Registrar evento\nde uso\n(RF-59)" as UC39
+  usecase "UC-40 Registrar log de\nauditoria imutável\n(RNF-18)" as UC40
+  usecase "UC-41 Excluir dados de uso\njunto com a conta\n(RF-05, RF-59)" as UC41
+}
+
+ADM --> UC28
+ADM --> UC30
+ADM --> UC31
+ADM --> UC32
+ADM --> UC33
+ADM --> UC34
+ADM --> UC35
+
+U --> UC41
+
+SIS --> UC36
+SIS --> UC37
+SIS --> UC38
+SIS --> UC39
+SIS --> UC40
+
+UC28 ..> UC29 : <<include>>
+UC30 ..> UC28 : <<include>>
+UC31 ..> UC28 : <<include>>
+UC32 ..> UC28 : <<include>>
+UC33 ..> UC28 : <<include>>
+UC34 ..> UC28 : <<include>>
+UC35 ..> UC28 : <<include>>
+UC28 ..> UC40 : <<include>>
+UC35 ..> UC40 : <<include>>
+UC32 ..> UC39 : <<include>>
+UC33 ..> UC39 : <<include>>
+UC41 ..> UC40 : <<include>>
+
+UC37 -- BCB
+UC36 -- CVM
+
+note as N
+  <b>Regras de negócio e requisitos não funcionais aplicáveis</b>
+  <b>RNF-21</b> (UC-29) — o acesso a qualquer rota administrativa é validado no backend por papel,
+  nunca apenas escondido na interface; toda requisição sob /api/v1/admin exige verificação de papel.
+  <b>RB-22</b> (UC-30, UC-32) — o painel nunca exibe dados financeiros individuais de um usuário:
+  apenas metadados de conta e métricas agregadas de uso.
+  <b>RB-23</b> (UC-39) — o evento guarda apenas usuário, módulo, ação e timestamp; nunca conteúdo financeiro.
+  <b>RNF-18</b> (UC-40) — registro imutável: somente inserção, nunca alteração ou exclusão.
+  Todo acesso ao painel administrativo é registrado.
+  <b>RF-54</b> (UC-35) — a promoção só pode ser feita por outro administrador ou pela configuração
+  inicial do sistema, nunca pelo cadastro público (RF-01).
+  <b>RNF-04</b> (UC-39) — a coleta é assíncrona, sem impactar a performance percebida pelo usuário.
+  <b>RNF-10 / RB-12</b> (UC-38) — metadados e indicadores sincronizados são expurgados 12 meses após
+  a sincronização, sem ação manual.
+  <b>LGPD</b> — a política de privacidade informa a coleta de dados de uso agregados; o usuário pode
+  solicitar a exclusão desses dados junto com a exclusão da conta (RF-05).
+
+  O <b>Administrador</b> é uma especialização de <b>Usuário</b>: além dos casos de uso acima,
+  executa todos os do diagrama casos-de-uso-usuario.png.
+end note
+
+@enduml

@@ -1,0 +1,87 @@
+%% Diagrama de sequência — UC-13 Simular investimento em renda fixa
+%% Fonte do caso de uso: docs/04-casos-de-uso/casos-de-uso-detalhados.md (UC-13)
+%% Participantes seguem as camadas de docs/07-arquitetura/arquitetura.md (seção 6) e detalham o fluxo da seção 7.2
+%% Regenerar a partir de /docs/uml/: mmdc -i seq-UC-13.mmd -o seq-UC-13.png -b white --scale 2
+sequenceDiagram
+    autonumber
+    actor U as Usuário
+    participant UI as Interface (web/mobile)
+    participant R as SimuladorRouter (apresentação)
+    participant C as SimularRendaFixa (caso de uso)
+    participant I as RepositorioIndicadores (infraestrutura, cache local)
+    participant IO as IndicadorOficial (domínio)
+    participant S as SimulacaoRendaFixa (domínio)
+    participant DB as RepositorioSimulacoes (infraestrutura)
+    participant EXT as API SGS / Tesouro Transparente (externo)
+
+    rect rgb(243, 244, 246)
+        Note over I,EXT: Rotina agendada UC-37, assíncrona e fora da requisição de simulação (ADR-003, C-08)
+        I->>EXT: consultar série do indicador
+        alt sucesso
+            EXT-->>I: taxa + data de referência (IndicadorOficial → Atualizado)
+        else falha ou indisponibilidade
+            EXT-->>I: erro (mantém o último valor, IndicadorOficial → Defasado)
+        end
+    end
+
+    U->>UI: escolhe o produto e informa valor inicial, aporte mensal e prazo
+    UI->>R: obterTaxaSugerida(produto)
+    R->>C: obterTaxaSugerida(produto)
+    C->>I: buscarPorTipo(tipo do indicador do produto) [RB-07]
+    I-->>C: IndicadorOficial ou nenhum registro
+
+    alt Há IndicadorOficial
+        C->>IO: estaDefasado()
+        IO-->>C: verdadeiro ou falso
+        alt Atualizado
+            C-->>R: taxa + dataReferencia
+            R-->>UI: taxa sugerida + data de referência
+            UI-->>U: pré-preenche a taxa e mostra a data de referência
+        else Defasado (extensão 2a, UC-18)
+            C-->>R: último valor + dataReferencia + aviso de defasagem
+            R-->>UI: taxa sugerida + data de referência + aviso
+            UI-->>U: pré-preenche a taxa e exibe o aviso [UC-13-E01]
+        end
+        opt Usuário substitui a taxa sugerida (alternativo 3a)
+            U->>UI: informa a taxa manual
+        end
+    else SemValor no cache (extensão 2b)
+        C-->>R: nenhuma taxa sugerida
+        R-->>UI: taxa manual obrigatória
+        UI-->>U: exige que o usuário informe a taxa [UC-13-E02]
+        U->>UI: informa a taxa manual (obrigatória)
+    end
+
+    U->>UI: confirma a simulação
+    UI->>R: simular(produto, valorInicial, aporteMensal, prazo, origemTaxa, taxaManual?)
+    R->>C: simular(parâmetros)
+
+    alt origemTaxa = INDICADOR
+        C->>I: buscarPorTipo(tipo do indicador do produto) [RB-07]
+        I-->>C: IndicadorOficial
+        C->>IO: estaDefasado()
+        IO-->>C: verdadeiro ou falso
+    else origemTaxa = MANUAL
+        Note over C: usa a taxa manual, sem vínculo com IndicadorOficial (DOM-09)
+    end
+
+    C->>S: criar SimulacaoRendaFixa(parâmetros, taxa)
+    C->>S: calcularEvolucao() com conversão por equivalência composta [RB-10]
+
+    alt Entrada inválida (exceção 4a)
+        S-->>C: erro de validação (SPEC-002-R06)
+        C-->>R: campo inválido
+        R-->>UI: erro de validação (código HTTP a definir na spec da simulação)
+        UI-->>U: indica o campo inválido
+    else Entrada válida
+        S-->>C: série mensal + valor total investido, juros e montante bruto
+        opt Quando aplicável (produto tributado)
+            C->>S: estimarIR() [RB-25, SPEC-004 futura]
+            S-->>C: valor líquido de IR
+        end
+        C->>DB: salvar(simulação) vinculada ao IndicadorOficial ou à taxa manual [DOM-09]
+        DB-->>C: simulação guardada
+        C-->>R: resultado + data de referência (+ aviso se Defasado)
+        R-->>UI: resultado (+ aviso de defasagem)
+        UI-->>U: exibe evolução, valor bruto e, quando aplicável, líquido de IR, com a data de referência (+ aviso) [UC-13-E01]
+    end

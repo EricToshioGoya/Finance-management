@@ -7,7 +7,7 @@
 >
 > Referência completa dos requisitos: `/docs/03-requisitos/requisitos.md`. Este documento cobre o **modelo de domínio (conceitual/OO)** — não deve ser confundido com o modelo de dados relacional da seção 4 de `requisitos.md`, que é o modelo de persistência (tabelas). Aqui, `Renda`, `Meta`, `Simulacao` e `PatrimonioItem` aparecem como hierarquias (generalização/especialização) para expressar comportamento comum entre subtipos — uma decisão de modelagem OO que a tabela relacional não precisa refletir 1:1.
 >
-> **Fonte e vista:** a fonte do modelo é este texto e os arquivos Mermaid em `/docs/uml/` (`dominio-v1.mmd` e `dominio-completo.mmd`). Os PNGs são apenas a vista exportada. Os termos usados aqui fazem parte do vocabulário obrigatório do glossário (`requisitos.md`, seção 8.1).
+> **Fonte e vista:** a fonte do modelo é este texto e os arquivos Mermaid em `/docs/uml/` (`dominio-v1.mmd` e `dominio-completo.mmd`; estados do `IndicadorOficial` em `estados-indicador.mmd`). Os PNGs são apenas a vista exportada. Os termos usados aqui fazem parte do vocabulário obrigatório do glossário (`requisitos.md`, seção 8.1).
 
 ---
 
@@ -53,7 +53,7 @@ Revisão de `requisitos.md` (RF-01 a RF-67) destacando os substantivos que repre
 | `SimulacaoRendaVariavel` | Projetar a evolução de ações/FIIs a partir de rentabilidade esperada, sempre como estimativa (RB-08) | RF-21 |
 | `SimulacaoAposentadoria` | Projetar o patrimônio na idade-alvo, estimar a renda mensal e comparar PGBL, VGBL e carteira própria | RF-62, RF-63 |
 | `SimulacaoEstresse` | Calcular por quantos meses o patrimônio cobre um cenário de choque, sem alterar dados reais (RB-17) | RF-39 |
-| `IndicadorOficial` | Guardar a taxa oficial (Selic, CDI, IPCA ou título do Tesouro Direto) com data de referência e indicar se está defasada (RNF-09) | RF-23 |
+| `IndicadorOficial` | Guardar a taxa oficial (Selic, CDI, IPCA ou título do Tesouro Direto) com data de referência e indicar se está defasada (RNF-09); estados SemValor, Atualizado e Defasado em [uml/estados-indicador.png](uml/estados-indicador.png) | RF-23 |
 | `EmpresaAberta` | Representar uma companhia listada em bolsa | RF-29 |
 | `DocumentoCVM` | Guardar metadados de um documento oficial e o link externo (nunca o binário) | RF-30, RF-31, RB-12 |
 | `IndicadorFinanceiro` | Guardar um indicador estruturado de uma empresa, extraído dos dados abertos da CVM (não confundir com `IndicadorOficial`) | RF-32 |
@@ -156,7 +156,7 @@ mmdc -i dominio-completo.mmd -o dominio-completo.png -b white -w 2200 -H 2400 --
 | Requisito | Issue | Classes do domínio | Cláusulas que viram teste |
 |---|---|---|---|
 | RF-01 | [#9](https://github.com/EricToshioGoya/Finance-management/issues/9) | `Usuario` | SPEC-001-R01, R02, R03, R06, R08 |
-| RF-02 | [#10](https://github.com/EricToshioGoya/Finance-management/issues/10) | `Usuario` | SPEC-001-R04, R05, R07, R08 |
+| RF-02 | [#10](https://github.com/EricToshioGoya/Finance-management/issues/10) | `Usuario` | SPEC-001-R04, R05, R07, R08, R09, R10 |
 | RF-06 | [#11](https://github.com/EricToshioGoya/Finance-management/issues/11) | `Renda`, `RendaFixa`, `Conta`, `Cartao` | DOM-03, DOM-06, DOM-07; RB-01, RB-05 (spec a criar) |
 | RF-07 | [#12](https://github.com/EricToshioGoya/Finance-management/issues/12) | `Renda`, `RendaVariavel`, `Conta`, `Cartao` | DOM-03, DOM-06, DOM-07; RB-01, RB-05 (spec a criar) |
 | RF-08 | [#13](https://github.com/EricToshioGoya/Finance-management/issues/13) | `Renda`, `BonusPLR` | DOM-03, DOM-07; RB-05, RB-06 (spec a criar) |
@@ -167,7 +167,7 @@ mmdc -i dominio-completo.mmd -o dominio-completo.png -b white -w 2200 -H 2400 --
 | RF-20 | [#18](https://github.com/EricToshioGoya/Finance-management/issues/18) | `Simulacao`, `SimulacaoRendaFixa`, `IndicadorOficial` | SPEC-002-R01 a R07; DOM-08, DOM-09; RB-07 |
 | RF-21 | [#19](https://github.com/EricToshioGoya/Finance-management/issues/19) | `Simulacao`, `SimulacaoRendaVariavel` | DOM-08; RB-08 (spec a criar) |
 | RF-22 | [#20](https://github.com/EricToshioGoya/Finance-management/issues/20) | `Simulacao` (`calcularEvolucao()`) | SPEC-002-R01 a R07; RB-10 |
-| RF-23 | [#21](https://github.com/EricToshioGoya/Finance-management/issues/21) | `IndicadorOficial` | DOM-09 (spec a criar) |
+| RF-23 | [#21](https://github.com/EricToshioGoya/Finance-management/issues/21) | `IndicadorOficial` (estados em `uml/estados-indicador.png`) | DOM-09; UC-13-E01, UC-13-E02 (spec a criar) |
 | RF-25 | [#22](https://github.com/EricToshioGoya/Finance-management/issues/22) | `Simulacao` | DOM-10 (spec a criar) |
 
 ### 6.2 Modelo completo
