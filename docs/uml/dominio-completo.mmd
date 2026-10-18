@@ -1,15 +1,14 @@
 classDiagram
     direction TB
 
+    %% Modelo completo (todos os modulos). O recorte do MVP esta em dominio-v1.mmd.
+
     class Usuario {
         +id
         +nome
         +email
-        +senhaHash
         +perfilInvestidor
         +papel
-        +idioma
-        +tema
         +autenticar()
         +definirPerfilInvestidor()
     }
@@ -104,11 +103,46 @@ classDiagram
     }
 
     class Simulacao {
+        <<abstract>>
+        +id
+        +valorInicial
+        +aporteMensal
+        +taxa
+        +prazo
+        +criadaEm
+        +calcularEvolucao()
+        +estimarIR()
+    }
+
+    class SimulacaoRendaFixa {
+        +produto
+    }
+
+    class SimulacaoRendaVariavel {
+        +ticker
+        +rentabilidadeEsperada
+    }
+
+    class SimulacaoAposentadoria {
+        +idadeAtual
+        +idadeAlvo
+        +estimarRendaMensal()
+        +compararModalidades()
+    }
+
+    class SimulacaoEstresse {
+        +tipoCenario
+        +calcularMesesDeCobertura()
+    }
+
+    class IndicadorOficial {
         +id
         +tipo
-        +parametros
-        +resultado
-        +executar()
+        +titulo
+        +taxa
+        +dataReferencia
+        +atualizadoEm
+        +estaDefasado()
     }
 
     class PatrimonioItem {
@@ -153,32 +187,6 @@ classDiagram
         +tipo
         +mensagem
         +lida
-        +enviar()
-    }
-
-    class WebhookSubscription {
-        +id
-        +url
-        +eventos
-        +segredoHmac
-        +ativo
-        +assinarPayload()
-    }
-
-    class AuditLog {
-        +id
-        +acao
-        +entidade
-        +entidadeId
-        +criadoEm
-        +registrar()
-    }
-
-    class EventoUso {
-        +id
-        +modulo
-        +acao
-        +criadoEm
     }
 
     class Badge {
@@ -239,18 +247,15 @@ classDiagram
     %% Usuario como agregador raiz
     Usuario "1" --> "*" Conta : possui
     Usuario "1" --> "*" Cartao : possui
-    Usuario "1" --> "*" Categoria : personaliza
+    Usuario "0..1" --> "*" Categoria : personaliza
     Usuario "1" --> "*" Renda : registra
     Usuario "1" --> "*" Despesa : registra
     Usuario "1" --> "*" Meta : define
     Usuario "1" --> "*" Simulacao : executa
     Usuario "1" --> "*" PatrimonioItem : possui
-    Usuario "1" --> "1" ScoreSaude : possui
+    Usuario "1" --> "*" ScoreSaude : possui historico
     Usuario "1" --> "*" CompraFinanciada : simula
     Usuario "1" --> "*" Notificacao : recebe
-    Usuario "1" --> "*" WebhookSubscription : configura
-    Usuario "1" --> "*" AuditLog : gera
-    Usuario "1" --> "*" EventoUso : gera
     Usuario "1" --> "*" Badge : conquista
     Usuario "2" --> "1" ContaCompartilhada : vincula
     Usuario "1" --> "*" Watchlist : acompanha
@@ -263,6 +268,10 @@ classDiagram
     Meta <|-- MetaCategoria
     Meta <|-- MetaFinanceira
     Meta <|-- MetaNomeada
+    Simulacao <|-- SimulacaoRendaFixa
+    Simulacao <|-- SimulacaoRendaVariavel
+    Simulacao <|-- SimulacaoAposentadoria
+    Simulacao <|-- SimulacaoEstresse
     PatrimonioItem <|-- Ativo
     PatrimonioItem <|-- Passivo
 
@@ -270,8 +279,13 @@ classDiagram
     Despesa "*" --> "1" Categoria : pertence a
     Despesa "*" --> "0..1" Conta : debita de
     Despesa "*" --> "0..1" Cartao : debita de
+    Renda "*" --> "0..1" Conta : credita em
+    Renda "*" --> "0..1" Cartao : credita em
     MetaCategoria "*" --> "1" Categoria : limita
     MetaNomeada "*" --> "1" Ativo : acompanha
+
+    %% Simulador (RF-23)
+    SimulacaoRendaFixa "*" --> "0..1" IndicadorOficial : usa taxa de
 
     %% Compras Financiadas (RB-16)
     CompraFinanciada "1" --> "0..1" Passivo : gera ao confirmar
@@ -285,3 +299,7 @@ classDiagram
     Watchlist "*" --> "1" EmpresaAberta : referencia
     EmpresaAberta "1" --> "*" DocumentoCVM : publica
     EmpresaAberta "1" --> "*" IndicadorFinanceiro : reporta
+
+    note for Despesa "{xor} Conta ou Cartao, nunca os dois (DOM-05)"
+    note for Renda "{xor} Conta ou Cartao, nunca os dois (DOM-06)"
+    note for ContaCompartilhada "Multiplicidade por usuario em aberto (RB-27)"
