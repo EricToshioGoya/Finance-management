@@ -10,7 +10,7 @@ O FinNova guarda dados financeiros pessoais e atende clientes web e mobile pela 
 
 ## Decisão
 1. **Autenticação:** token JWT assinado, sem estado no servidor, com identificador do usuário e expiração; senha armazenada com hash e salt (Bcrypt ou Argon2).
-2. **Força bruta:** bloqueio da conta por 15 minutos após 5 tentativas inválidas consecutivas e rate limit de 100 requisições por minuto por cliente nos endpoints de autenticação.
+2. **Força bruta:** bloqueio das tentativas de login para o e-mail por 15 minutos após 5 falhas consecutivas, com mensagem genérica exista ou não a conta, e rate limit de 100 requisições por minuto por cliente nos endpoints de autenticação.
 3. **Autorização por papel:** o papel (`usuario` ou `administrador`) é verificado no backend, na camada de aplicação, antes de executar o caso de uso; toda rota `/api/v1/admin/*` exige o papel de administrador.
 4. **Posse dos dados (negar por padrão):** toda leitura e alteração de dado financeiro é filtrada pelo `usuario_id` do token dentro da própria consulta do repositório. Categorias padrão, que não têm dono, são somente leitura para todos.
 
