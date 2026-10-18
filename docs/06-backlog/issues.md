@@ -4,6 +4,27 @@
 
 Labels sugeridas por módulo: `modulo:conta-acesso`, `modulo:adm-financeira`, `modulo:simulador`, mais `prioridade:must-have`.
 
+> **Status (2026-10-18):** as 14 issues abaixo foram criadas no GitHub, com critérios de aceite completos e responsável atribuído. O acompanhamento oficial passa a ser feito nas issues e no Project (Kanban); este arquivo fica como registro de origem.
+
+| Requisito | Issue no GitHub |
+|---|---|
+| RF-01 | [#9](https://github.com/EricToshioGoya/Finance-management/issues/9) |
+| RF-02 | [#10](https://github.com/EricToshioGoya/Finance-management/issues/10) |
+| RF-06 | [#11](https://github.com/EricToshioGoya/Finance-management/issues/11) |
+| RF-07 | [#12](https://github.com/EricToshioGoya/Finance-management/issues/12) |
+| RF-08 | [#13](https://github.com/EricToshioGoya/Finance-management/issues/13) |
+| RF-09 | [#14](https://github.com/EricToshioGoya/Finance-management/issues/14) |
+| RF-10 | [#15](https://github.com/EricToshioGoya/Finance-management/issues/15) |
+| RF-11 | [#16](https://github.com/EricToshioGoya/Finance-management/issues/16) |
+| RF-12 | [#17](https://github.com/EricToshioGoya/Finance-management/issues/17) |
+| RF-20 | [#18](https://github.com/EricToshioGoya/Finance-management/issues/18) |
+| RF-21 | [#19](https://github.com/EricToshioGoya/Finance-management/issues/19) |
+| RF-22 | [#20](https://github.com/EricToshioGoya/Finance-management/issues/20) |
+| RF-23 | [#21](https://github.com/EricToshioGoya/Finance-management/issues/21) |
+| RF-25 | [#22](https://github.com/EricToshioGoya/Finance-management/issues/22) |
+
+Issues de documentação e setup da Semana 1: [#2](https://github.com/EricToshioGoya/Finance-management/issues/2) (visão), [#3](https://github.com/EricToshioGoya/Finance-management/issues/3) (benchmark), [#4](https://github.com/EricToshioGoya/Finance-management/issues/4) (perfis), [#5](https://github.com/EricToshioGoya/Finance-management/issues/5) (fluxo principal), [#6](https://github.com/EricToshioGoya/Finance-management/issues/6) (setup), [#7](https://github.com/EricToshioGoya/Finance-management/issues/7) (arquitetura, segurança e testes) e [#8](https://github.com/EricToshioGoya/Finance-management/issues/8) (correções de coerência).
+
 ---
 
 ### 1. [RF-01] Cadastro de usuário

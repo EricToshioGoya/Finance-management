@@ -1,0 +1,287 @@
+classDiagram
+    direction TB
+
+    class Usuario {
+        +id
+        +nome
+        +email
+        +senhaHash
+        +perfilInvestidor
+        +papel
+        +idioma
+        +tema
+        +autenticar()
+        +definirPerfilInvestidor()
+    }
+
+    class ConteudoEducacional {
+        +id
+        +termo
+        +categoria
+        +texto
+        +nivel
+    }
+
+    class Conta {
+        +id
+        +nome
+        +tipo
+        +saldoInicial
+        +saldoAtual()
+    }
+
+    class Cartao {
+        +id
+        +nome
+        +limite
+        +diaFechamento
+        +diaVencimento
+        +limiteDisponivel()
+    }
+
+    class Categoria {
+        +id
+        +nome
+        +cor
+        +ativa
+    }
+
+    class Renda {
+        <<abstract>>
+        +id
+        +valor
+        +calcularContribuicaoMensal()
+    }
+
+    class RendaFixa {
+        +descricao
+        +ativaDesde
+    }
+
+    class RendaVariavel {
+        +descricao
+        +data
+    }
+
+    class BonusPLR {
+        +periodicidade
+        +mesReferencia
+    }
+
+    class Despesa {
+        +id
+        +valor
+        +data
+        +recorrente
+    }
+
+    class Meta {
+        <<abstract>>
+        +id
+        +valorAlvo
+        +calcularProgresso()
+    }
+
+    class MetaGeral {
+        +tipo
+        +vigenteDesde
+    }
+
+    class MetaCategoria {
+        +valorMaximo
+        +vigenteDesde
+    }
+
+    class MetaFinanceira {
+        +prazo
+        +rendimentoEstimado
+    }
+
+    class MetaNomeada {
+        +nome
+        +categoria
+        +prazo
+    }
+
+    class Simulacao {
+        +id
+        +tipo
+        +parametros
+        +resultado
+        +executar()
+    }
+
+    class PatrimonioItem {
+        <<abstract>>
+        +id
+        +valor
+        +origem
+    }
+
+    class Ativo {
+        +tipo
+        +rentabilidade
+        +corMapaCalor()
+    }
+
+    class Passivo {
+        +tipo
+        +taxaJuros
+        +corMapaCalor()
+    }
+
+    class ScoreSaude {
+        +id
+        +valor
+        +fatores
+        +calculadoEm
+        +calcular()
+    }
+
+    class CompraFinanciada {
+        +id
+        +valorBem
+        +entrada
+        +parcelas
+        +taxaJuros
+        +status
+        +confirmarComoReal()
+    }
+
+    class Notificacao {
+        +id
+        +tipo
+        +mensagem
+        +lida
+        +enviar()
+    }
+
+    class WebhookSubscription {
+        +id
+        +url
+        +eventos
+        +segredoHmac
+        +ativo
+        +assinarPayload()
+    }
+
+    class AuditLog {
+        +id
+        +acao
+        +entidade
+        +entidadeId
+        +criadoEm
+        +registrar()
+    }
+
+    class EventoUso {
+        +id
+        +modulo
+        +acao
+        +criadoEm
+    }
+
+    class Badge {
+        +id
+        +tipo
+        +conquistadaEm
+    }
+
+    class ContaCompartilhada {
+        +id
+        +status
+        +convidar()
+        +desfazerVinculo()
+    }
+
+    class DespesaCompartilhada {
+        +id
+        +divisao
+        +percentualPagador
+    }
+
+    class AcertoConta {
+        +id
+        +valor
+        +criadoEm
+    }
+
+    class Watchlist {
+        +id
+        +criadaEm
+    }
+
+    class EmpresaAberta {
+        +id
+        +ticker
+        +cnpj
+        +razaoSocial
+        +setor
+    }
+
+    class DocumentoCVM {
+        +id
+        +tipo
+        +periodoReferencia
+        +status
+        +urlDocumentoOficial
+        +sincronizadoEm
+    }
+
+    class IndicadorFinanceiro {
+        +id
+        +tipo
+        +periodo
+        +valor
+        +sincronizadoEm
+    }
+
+    %% Usuario como agregador raiz
+    Usuario "1" --> "*" Conta : possui
+    Usuario "1" --> "*" Cartao : possui
+    Usuario "1" --> "*" Categoria : personaliza
+    Usuario "1" --> "*" Renda : registra
+    Usuario "1" --> "*" Despesa : registra
+    Usuario "1" --> "*" Meta : define
+    Usuario "1" --> "*" Simulacao : executa
+    Usuario "1" --> "*" PatrimonioItem : possui
+    Usuario "1" --> "1" ScoreSaude : possui
+    Usuario "1" --> "*" CompraFinanciada : simula
+    Usuario "1" --> "*" Notificacao : recebe
+    Usuario "1" --> "*" WebhookSubscription : configura
+    Usuario "1" --> "*" AuditLog : gera
+    Usuario "1" --> "*" EventoUso : gera
+    Usuario "1" --> "*" Badge : conquista
+    Usuario "2" --> "1" ContaCompartilhada : vincula
+    Usuario "1" --> "*" Watchlist : acompanha
+
+    %% Generalizacoes
+    Renda <|-- RendaFixa
+    Renda <|-- RendaVariavel
+    Renda <|-- BonusPLR
+    Meta <|-- MetaGeral
+    Meta <|-- MetaCategoria
+    Meta <|-- MetaFinanceira
+    Meta <|-- MetaNomeada
+    PatrimonioItem <|-- Ativo
+    PatrimonioItem <|-- Passivo
+
+    %% Administracao Financeira
+    Despesa "*" --> "1" Categoria : pertence a
+    Despesa "*" --> "0..1" Conta : debita de
+    Despesa "*" --> "0..1" Cartao : debita de
+    MetaCategoria "*" --> "1" Categoria : limita
+    MetaNomeada "*" --> "1" Ativo : acompanha
+
+    %% Compras Financiadas (RB-16)
+    CompraFinanciada "1" --> "0..1" Passivo : gera ao confirmar
+
+    %% Contas Compartilhadas (RF-60, RF-61, RB-24)
+    ContaCompartilhada "1" --> "*" DespesaCompartilhada : agrupa
+    ContaCompartilhada "1" --> "*" AcertoConta : registra
+    DespesaCompartilhada "1" --> "1" Despesa : referencia
+
+    %% Relatorios de Empresas (RB-12)
+    Watchlist "*" --> "1" EmpresaAberta : referencia
+    EmpresaAberta "1" --> "*" DocumentoCVM : publica
+    EmpresaAberta "1" --> "*" IndicadorFinanceiro : reporta
