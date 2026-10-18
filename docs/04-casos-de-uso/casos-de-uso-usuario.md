@@ -4,6 +4,8 @@
 
 Este documento descreve os casos de uso disponíveis para o usuário da plataforma FinNova, incluindo o gerenciamento da conta, a administração financeira pessoal, as simulações de investimentos, os relatórios de empresas, o acompanhamento do patrimônio e os recursos transversais.
 
+Os identificadores `UC-NN` são sequenciais entre este documento (UC-01 a UC-27) e `casos-de-uso-administrador.md` (UC-28 a UC-41). Os casos de uso do fluxo principal do MVP estão descritos em texto, com fluxos e exceções, em `casos-de-uso-detalhados.md`.
+
 ## Diagrama
 
 ![Diagrama de casos de uso do usuário](casos-de-uso-usuario.png)
@@ -20,60 +22,60 @@ Este documento descreve os casos de uso disponíveis para o usuário da platafor
 
 ### Conta e Acesso
 
-| Caso de uso | Requisito relacionado | Descrição |
-| --- | --- | --- |
-| Cadastrar-se | RF-01 | Permite criar uma conta na plataforma. |
-| Autenticar-se | RF-02 | Permite acessar a plataforma com uma conta cadastrada. |
-| Responder quiz de perfil de investidor | RF-03 | Coleta informações para identificar o perfil de investidor do usuário. |
-| Excluir conta e dados | RF-05 | Permite solicitar a exclusão da conta e dos dados associados. |
+| ID | Caso de uso | Requisito relacionado | Descrição |
+| --- | --- | --- | --- |
+| UC-01 | Cadastrar-se | RF-01 | Permite criar uma conta na plataforma. |
+| UC-02 | Autenticar-se | RF-02 | Permite acessar a plataforma com uma conta cadastrada. |
+| UC-03 | Responder quiz de perfil de investidor | RF-03 | Coleta informações para identificar o perfil de investidor do usuário. |
+| UC-04 | Excluir conta e dados | RF-05 | Permite solicitar a exclusão da conta e dos dados associados. |
 
 ### Administração Financeira
 
-| Caso de uso | Requisito relacionado | Descrição |
-| --- | --- | --- |
-| Registrar renda fixa, variável e bônus/PLR | RF-06, RF-07, RF-08 | Permite registrar diferentes fontes e tipos de renda. |
-| Gerenciar categorias de gasto | RF-10 | Permite criar, editar e organizar categorias de despesas. |
-| Gerenciar contas e cartões | RF-12, RF-13 | Permite cadastrar e administrar contas e cartões financeiros. |
-| Definir metas de renda e de gasto | RF-14, RF-15 | Permite definir objetivos para receitas e despesas. |
-| Consultar dashboards financeiros | RF-16 a RF-19 | Exibe uma visão consolidada da situação financeira do usuário. |
-| Dividir despesa compartilhada | RF-60, RF-61 | Permite dividir uma despesa com um usuário vinculado à conta compartilhada. |
-| Registrar despesa por categoria | RF-09, RF-11 | Registra uma despesa e associa a ela uma categoria. |
+| ID | Caso de uso | Requisito relacionado | Descrição |
+| --- | --- | --- | --- |
+| UC-05 | Registrar renda fixa, variável e bônus/PLR | RF-06, RF-07, RF-08 | Permite registrar diferentes fontes e tipos de renda. |
+| UC-06 | Gerenciar categorias de gasto | RF-10 | Permite criar, editar e organizar categorias de despesas. |
+| UC-07 | Gerenciar contas e cartões | RF-12, RF-13 | Permite cadastrar e administrar contas e cartões financeiros. |
+| UC-08 | Definir metas de renda e de gasto | RF-14, RF-15 | Permite definir objetivos para receitas e despesas. |
+| UC-09 | Consultar dashboards financeiros | RF-16 a RF-19 | Exibe uma visão consolidada da situação financeira do usuário. |
+| UC-10 | Dividir despesa compartilhada | RF-60, RF-61 | Permite dividir uma despesa com um usuário vinculado à conta compartilhada. |
+| UC-11 | Registrar despesa por categoria | RF-09, RF-11 | Registra uma despesa e associa a ela uma categoria. |
 
 ### Simulador de Investimentos
 
-| Caso de uso | Requisito relacionado | Ator ou integração | Descrição |
-| --- | --- | --- | --- |
-| Comparar cenários de investimento | RF-25 | Usuário | Permite comparar os resultados de diferentes cenários de investimento. |
-| Simular investimento em renda fixa | RF-20 | Usuário; API Banco Central e Tesouro Transparente | Simula a evolução de um investimento de renda fixa. |
-| Simular investimento em renda variável | RF-21 | Usuário; API Banco Central e Tesouro Transparente | Simula cenários de investimento em renda variável. |
-| Projetar objetivo financeiro | RF-26 | Usuário | Permite projetar a evolução necessária para atingir um objetivo financeiro. |
-| Obter indicador oficial (Selic, CDI, IPCA) | RF-23 | API Banco Central e Tesouro Transparente | Obtém os indicadores oficiais usados nas simulações. |
-| Calcular juros compostos | RF-22 | Usuário | Calcula a evolução dos valores applied com base em juros compostos. |
-| Usar último valor em cache | RB-11 | Sistema | Usa o último valor conhecido quando a API oficial estiver indisponível. |
+| ID | Caso de uso | Requisito relacionado | Ator ou integração | Descrição |
+| --- | --- | --- | --- | --- |
+| UC-12 | Comparar cenários de investimento | RF-25 | Usuário | Permite comparar os resultados de diferentes cenários de investimento. |
+| UC-13 | Simular investimento em renda fixa | RF-20 | Usuário; API Banco Central e Tesouro Transparente | Simula a evolução de um investimento de renda fixa. |
+| UC-14 | Simular investimento em renda variável | RF-21 | Usuário; API Banco Central e Tesouro Transparente | Simula cenários de investimento em renda variável. |
+| UC-15 | Projetar objetivo financeiro | RF-26 | Usuário | Permite projetar a evolução necessária para atingir um objetivo financeiro. |
+| UC-16 | Obter indicador oficial (Selic, CDI, IPCA) | RF-23 | API Banco Central e Tesouro Transparente | Obtém os indicadores oficiais usados nas simulações. |
+| UC-17 | Calcular juros compostos | RF-22 | Usuário | Calcula a evolução dos valores aplicados com base em juros compostos. |
+| UC-18 | Usar último valor em cache | RB-11 | Sistema | Usa o último valor conhecido quando a API oficial estiver indisponível. |
 
 ### Relatórios de Empresas
 
-| Caso de uso | Requisito relacionado | Ator ou integração | Descrição |
-| --- | --- | --- | --- |
-| Buscar empresa listada em bolsa | RF-29 | Usuário | Permite localizar uma empresa listada na bolsa de valores. |
-| Consultar documentos oficiais da empresa | RF-30, RF-31 | Portal de Dados Abertos da CVM / RAD-ENET | Permite consultar documentos oficiais e acessar seus links de origem. |
-| Gerenciar watchlist de empresas | RF-34 | Usuário | Permite acompanhar uma lista personalizada de empresas. |
+| ID | Caso de uso | Requisito relacionado | Ator ou integração | Descrição |
+| --- | --- | --- | --- | --- |
+| UC-19 | Buscar empresa listada em bolsa | RF-29 | Usuário | Permite localizar uma empresa listada na bolsa de valores. |
+| UC-20 | Consultar documentos oficiais da empresa | RF-30, RF-31 | Portal de Dados Abertos da CVM / RAD-ENET | Permite consultar documentos oficiais e acessar seus links de origem. |
+| UC-21 | Gerenciar watchlist de empresas | RF-34 | Usuário | Permite acompanhar uma lista personalizada de empresas. |
 
 ### Patrimônio e Score
 
-| Caso de uso | Requisito relacionado | Descrição |
-| --- | --- | --- |
-| Simular cenário hipotético ("e se...") | RF-39 | Permite avaliar cenários hipotéticos para o patrimônio e a vida financeira. |
-| Consultar score de saúde financeira | RF-41, RF-42 | Exibe uma avaliação consolidada da saúde financeira do usuário. |
-| Consultar patrimônio e mapa de calor | RF-35, RF-37 | Exibe o patrimônio do usuário e sua distribuição em um mapa de calor. |
+| ID | Caso de uso | Requisito relacionado | Descrição |
+| --- | --- | --- | --- |
+| UC-22 | Simular cenário hipotético ("e se...") | RF-39 | Permite avaliar cenários hipotéticos para o patrimônio e a vida financeira. |
+| UC-23 | Consultar score de saúde financeira | RF-41, RF-42 | Exibe uma avaliação consolidada da saúde financeira do usuário. |
+| UC-24 | Consultar patrimônio e mapa de calor | RF-35, RF-37 | Exibe o patrimônio do usuário e sua distribuição em um mapa de calor. |
 
 ### Recursos Transversais
 
-| Caso de uso | Requisito relacionado | Ator ou integração | Descrição |
-| --- | --- | --- | --- |
-| Receber notificações e alertas | RF-48, RF-49 | Serviço de notificação (push / e-mail) | Entrega notificações e alertas relevantes ao usuário. |
-| Exportar dados pessoais | RF-50 | Usuário | Permite exportar os dados pessoais mantidos pela plataforma. |
-| Consultar conteúdo educacional | RF-43, RF-44 | Usuário | Permite acessar conteúdos de educação financeira. |
+| ID | Caso de uso | Requisito relacionado | Ator ou integração | Descrição |
+| --- | --- | --- | --- | --- |
+| UC-25 | Receber notificações e alertas | RF-48, RF-49 | Serviço de notificação (push / e-mail) | Entrega notificações e alertas relevantes ao usuário. |
+| UC-26 | Exportar dados pessoais | RF-50 | Usuário | Permite exportar os dados pessoais mantidos pela plataforma. |
+| UC-27 | Consultar conteúdo educacional | RF-43, RF-44 | Usuário | Permite acessar conteúdos de educação financeira. |
 
 ## Relações entre os casos de uso
 
