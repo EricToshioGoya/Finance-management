@@ -25,6 +25,8 @@ Labels sugeridas por módulo: `modulo:conta-acesso`, `modulo:adm-financeira`, `m
 
 Issues de documentação e setup da Semana 1: [#2](https://github.com/EricToshioGoya/Finance-management/issues/2) (visão), [#3](https://github.com/EricToshioGoya/Finance-management/issues/3) (benchmark), [#4](https://github.com/EricToshioGoya/Finance-management/issues/4) (perfis), [#5](https://github.com/EricToshioGoya/Finance-management/issues/5) (fluxo principal), [#6](https://github.com/EricToshioGoya/Finance-management/issues/6) (setup), [#7](https://github.com/EricToshioGoya/Finance-management/issues/7) (arquitetura, segurança e testes) e [#8](https://github.com/EricToshioGoya/Finance-management/issues/8) (correções de coerência).
 
+Issues de documentação da Semana 4: [#29](https://github.com/EricToshioGoya/Finance-management/issues/29) (UC-13), [#30](https://github.com/EricToshioGoya/Finance-management/issues/30) (diagrama de sequência), [#31](https://github.com/EricToshioGoya/Finance-management/issues/31) (diagrama de estados), [#32](https://github.com/EricToshioGoya/Finance-management/issues/32) (SPEC-001 R09/R10) e [#33](https://github.com/EricToshioGoya/Finance-management/issues/33) (fontes PlantUML). Os blocos abaixo registram a origem das issues; o texto vigente está no GitHub.
+
 ---
 
 ### 1. [RF-01] Cadastro de usuário
@@ -49,7 +51,7 @@ Issues de documentação e setup da Semana 1: [#2](https://github.com/EricToshio
 - Event-driven. WHEN o usuário submete e-mail e senha corretos THE SYSTEM SHALL iniciar a sessão e retornar um token de sessão.
 - State-driven. WHILE a sessão do usuário estiver ativa (token válido e não expirado) THE SYSTEM SHALL permitir o acesso às funcionalidades autenticadas sem nova solicitação de credenciais.
 - Unwanted behavior. IF as credenciais forem inválidas THEN THE SYSTEM SHALL recusar o acesso e exibir mensagem de erro genérica, sem indicar qual campo falhou.
-- Unwanted behavior. IF ocorrerem 5 tentativas de login inválidas consecutivas para a mesma conta THEN THE SYSTEM SHALL bloquear novas tentativas dessa conta por 15 minutos.
+- Unwanted behavior. IF ocorrerem 5 tentativas de login inválidas consecutivas para o mesmo e-mail, cadastrado ou não, THEN THE SYSTEM SHALL bloquear novas tentativas para esse e-mail por 15 minutos.
 
 **Critérios de aceite:** ver RF-02 em `/docs/03-requisitos/requisitos.md`.
 
@@ -207,7 +209,7 @@ gh issue create --title "[RF-02] Login e autenticação" --label "RF,modulo:cont
   --body "Event-driven. WHEN o usuário submete e-mail e senha corretos THE SYSTEM SHALL iniciar a sessão e retornar um token de sessão.
 State-driven. WHILE a sessão do usuário estiver ativa (token válido e não expirado) THE SYSTEM SHALL permitir o acesso às funcionalidades autenticadas sem nova solicitação de credenciais.
 Unwanted behavior. IF as credenciais forem inválidas THEN THE SYSTEM SHALL recusar o acesso e exibir mensagem de erro genérica, sem indicar qual campo falhou.
-Unwanted behavior. IF ocorrerem 5 tentativas de login inválidas consecutivas para a mesma conta THEN THE SYSTEM SHALL bloquear novas tentativas dessa conta por 15 minutos.
+Unwanted behavior. IF ocorrerem 5 tentativas de login inválidas consecutivas para o mesmo e-mail, cadastrado ou não, THEN THE SYSTEM SHALL bloquear novas tentativas para esse e-mail por 15 minutos.
 
 Critérios de aceite: ver RF-02 em /docs/03-requisitos/requisitos.md."
 

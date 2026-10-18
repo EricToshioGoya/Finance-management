@@ -3,7 +3,7 @@
 * **Status:** Aprovada
 * **Data:** 2026-10-08
 * **Revisão:** 2026-10-18 — correção da rastreabilidade, inclusão das cláusulas EARS (seção 5) e dos cenários 4 e 5.
-* **Revisão:** 2026-10-18 (Semana 4) — cláusulas R09 e R10 do bloqueio por tentativas inválidas (decisão da OPEN-02) e cenários 6 e 7.
+* **Revisão:** 2026-10-18 (Semana 4) — cláusulas R09 e R10 do bloqueio por tentativas inválidas (decisão da OPEN-02) e cenários 6 e 7 ([#32](https://github.com/EricToshioGoya/Finance-management/issues/32)).
 * **Autor:** Equipe FinNova / SDD
 
 ---
@@ -86,7 +86,7 @@ Cada cláusula `SHALL` tem ao menos um teste automatizado que cita o seu ID (ver
 | SPEC-001-R06 | Ubiquitous | THE SYSTEM SHALL nunca armazenar nem registrar em log a senha em texto plano. | RNF-01 | Unitário (hash) e integração (inspeção do registro e dos logs) |
 | SPEC-001-R07 | State-driven | WHILE um cliente tiver excedido 100 requisições no último minuto em um endpoint de autenticação THE SYSTEM SHALL rejeitar novas requisições desse cliente nesse endpoint com `429 Too Many Requests`. | RNF-13 | Integração |
 | SPEC-001-R08 | Ubiquitous | THE SYSTEM SHALL expor os endpoints de autenticação sob o prefixo `/api/v1`. | RNF-17 | Integração (rotas) |
-| SPEC-001-R09 | Unwanted behavior | IF ocorrerem 5 tentativas de login inválidas consecutivas para o mesmo e-mail, sem login bem-sucedido entre elas, THEN THE SYSTEM SHALL bloquear novas tentativas de login para esse e-mail por 15 minutos, esteja ele cadastrado ou não. | RF-02, INV-03 | Integração — Cenário 6 |
+| SPEC-001-R09 | Unwanted behavior | IF ocorrerem 5 tentativas de login inválidas consecutivas para o mesmo e-mail, sem login bem-sucedido entre elas, THEN THE SYSTEM SHALL bloquear novas tentativas de login para esse e-mail por 15 minutos, esteja ele cadastrado ou não. | RF-02, INV-03 | Integração — Cenários 6 e 7 |
 | SPEC-001-R10 | State-driven | WHILE o e-mail informado estiver bloqueado THE SYSTEM SHALL responder `429 Too Many Requests` com mensagem genérica a toda tentativa de login para esse e-mail, inclusive com a senha correta. | RF-02, INV-03 | Integração — Cenários 6 e 7 |
 
 ---
@@ -130,7 +130,7 @@ Cada cláusula `SHALL` tem ao menos um teste automatizado que cita o seu ID (ver
 * **Quando** forem enviadas 5 requisições de login seguidas com senha incorreta e, em seguida, uma requisição com a senha correta
 * **Então** a sexta requisição deve retornar `429 Too Many Requests` com mensagem genérica; e o mesmo comportamento, com corpo de resposta idêntico, deve ocorrer para o e-mail "inexistente@finnova.com".
 
-### Cenário 7: Fim do bloqueio (R10)
+### Cenário 7: Fim do bloqueio (R09, R10)
 * **Dado** que o e-mail "usuario@finnova.com" foi bloqueado há mais de 15 minutos
 * **Quando** for enviada uma requisição de login com a senha correta
 * **Então** o sistema deve retornar `200 OK` com o `access_token`.
@@ -139,5 +139,5 @@ Cada cláusula `SHALL` tem ao menos um teste automatizado que cita o seu ID (ver
 
 ## 8. Questões em Aberto
 * **OPEN-01:** Qual será o tempo padrão de expiração do Token JWT (ex: 60 minutos ou 24 horas)? *(Decisão pendente de configuração de ambiente)*.
-* **OPEN-02:** O RF-02 exige bloquear o acesso após N tentativas inválidas. Qual é o valor de N, por quanto tempo dura o bloqueio e ele se aplica à conta ou ao cliente? *(Complementar ao rate limiting da R07)*. **Resolvida (rev-1):** N = 5 tentativas inválidas consecutivas; bloqueio de 15 minutos; aplica-se à conta (o rate limiting da R07 continua valendo por cliente). Ver RF-02. **Formalizada na Semana 4** nas cláusulas R09 e R10: o contador considera o e-mail informado, exista ou não a conta, e a resposta durante o bloqueio é `429` com mensagem genérica, para não revelar contas (INV-03).
+* **OPEN-02:** O RF-02 exige bloquear o acesso após N tentativas inválidas. Qual é o valor de N, por quanto tempo dura o bloqueio e ele se aplica à conta ou ao cliente? *(Complementar ao rate limiting da R07)*. **Resolvida (rev-1):** N = 5 tentativas inválidas consecutivas; bloqueio de 15 minutos; aplica-se à conta (o rate limiting da R07 continua valendo por cliente). Ver RF-02. **Formalizada e refinada na Semana 4** (#32) nas cláusulas R09 e R10: o bloqueio passa a valer para o e-mail informado, exista ou não a conta (e não só para contas existentes), e a resposta durante o bloqueio é `429` com mensagem genérica, para não revelar contas (INV-03).
 * **OPEN-03:** A stack prevê JWT com access e refresh token, e o RF-02 exige manter a sessão até o logout ou a expiração. Refresh token e logout entram nesta spec ou em uma spec própria?

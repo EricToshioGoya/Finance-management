@@ -50,7 +50,7 @@ package "Simulador de Investimentos" {
   usecase "UC-15 Projetar objetivo\nfinanceiro\n(RF-26)" as UC15
   usecase "UC-16 Obter indicador oficial\n(Selic, CDI, IPCA)\n(RF-23)" as UC16
   usecase "UC-17 Calcular juros\ncompostos\n(RF-22)" as UC17
-  usecase "UC-18 Usar último valor\nem cache\n(RF-23)" as UC18
+  usecase "UC-18 Usar último valor\nem cache — indicador Defasado\n(RF-23)" as UC18
 }
 
 package "Relatórios de Empresas" {
@@ -107,7 +107,11 @@ UC15 ..> UC17 : <<include>>
 UC18 ..> UC16 : <<extend>>
 UC23 ..> UC24 : <<include>>
 
-UC16 -- BCB
+note bottom of BCB
+  Alimenta o cache local pela rotina UC-37
+  (diagrama do administrador); a simulação
+  não consulta a fonte diretamente (C-08).
+end note
 UC20 -- CVM
 UC25 -- NOT
 
@@ -116,8 +120,8 @@ note as N
   <b>RF-02</b> — pré-condição: todos os casos de uso, exceto Cadastrar-se, exigem usuário autenticado.
   <b>RB-07 / RB-10</b> (UC-13) — indexação a CDI/Selic/IPCA conforme o produto; taxa convertida
   por equivalência composta, nunca proporcional simples.
-  <b>RF-23 / RNF-09</b> (UC-18) — na falha da API oficial usa o último valor conhecido com aviso
-  de defasagem, nunca valor zerado; defasagem máxima de 24h, sempre visível.
+  <b>RF-23 / RNF-09</b> (UC-18) — com o indicador Defasado (falha da sincronização UC-37 ou mais
+  de 24h), usa o último valor com aviso, nunca valor zerado; defasagem sempre visível.
   <b>RB-12 / RNF-10</b> (UC-20) — o sistema nunca hospeda o PDF: guarda metadados + link oficial
   e expurga os dados sincronizados em 12 meses (RF-33).
   <b>RB-24</b> (UC-10) — o saldo "quem deve quem" é recalculado a cada inclusão, edição,

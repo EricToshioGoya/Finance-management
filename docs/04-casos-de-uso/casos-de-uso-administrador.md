@@ -9,7 +9,7 @@ Este documento descreve os casos de uso relacionados à administração da plata
 
 ![Diagrama de casos de uso do administrador](casos-de-uso-administrador.png)
 
-Fonte editável (PlantUML): `casos-de-uso-administrador.puml`. Para regenerar a imagem após editar a fonte, a partir de `/docs/04-casos-de-uso/`:
+Fonte editável (PlantUML): `casos-de-uso-administrador.puml` ([#33](https://github.com/EricToshioGoya/Finance-management/issues/33)). Para regenerar a imagem após editar a fonte, a partir de `/docs/04-casos-de-uso/`:
 
 ```bash
 java -jar plantuml.jar -tpng casos-de-uso-administrador.puml
@@ -53,7 +53,9 @@ java -jar plantuml.jar -tpng casos-de-uso-administrador.puml
 
 - **Acessar painel administrativo** inclui **Validar papel de administrador (RBAC)**.
 - As consultas do painel administrativo incluem **Acessar painel administrativo**.
-- **Acessar painel administrativo**, **Listar e buscar usuários**, **Consultar uso por módulo/aba**, **Consultar distribuição de perfil de investidor**, **Consultar engajamento e usuários recorrentes** e **Consultar trilha de auditoria** incluem **Registrar log de auditoria imutável**, quando aplicável.
+- **Acessar painel administrativo** inclui **Registrar log de auditoria imutável**; como as consultas do painel incluem **Acessar painel administrativo**, todo acesso a elas também é auditado (RNF-18).
+- **Promover usuário a administrador** inclui **Acessar painel administrativo** e **Registrar log de auditoria imutável** (RNF-18).
+- **Consultar uso por módulo/aba** e **Consultar engajamento e usuários recorrentes** incluem **Registrar evento de uso**, fonte das métricas que exibem (RF-59).
 - **Registrar evento de uso** é utilizado pelas rotinas do sistema e pelas ações que precisam gerar métricas de uso.
 - **Excluir dados de uso junto com a conta** inclui **Registrar log de auditoria imutável**, pois a exclusão é uma ação sensível (RNF-18).
 - **Sincronizar documentos e indicadores da CVM** e **Sincronizar indicadores oficiais em cache** podem ser executados pelo **Sistema / Agendador** e dependem das respectivas fontes externas.
