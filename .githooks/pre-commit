@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Camada 3 — Git hook local (docs/09-seguranca/governanca-agentes.md).
+# Bloqueia o commit de arquivos de segredo e de conteúdo com padrão de credencial.
+# Ativação, uma vez por clone: git config core.hooksPath .githooks
+set -u
+
+falhou=0
+
+# 1. Arquivos que nunca são versionados (CLAUDE.md C-10).
+while IFS= read -r arquivo; do
+  nome="$(basename "$arquivo")"
+  case "$nome" in
+    .env.example) ;;
+    .env|.env.*|mcp.env|*.pem|*.key|id_rsa|id_rsa.*|id_ed25519|id_ed25519.*)
+      echo "pre-commit: arquivo de segredo não pode ser versionado: $arquivo" >&2
+      falhou=1
+      ;;
+  esac
+done < <(git diff --cached --name-only --diff-filter=ACMR)
+
+# 2. Conteúdo adicionado com padrão de credencial.
+padroes='-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{36,}|(^|[^A-Za-z0-9_-])sk-[A-Za-z0-9_-]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}'
+achados="$(git diff --cached -U0 --diff-filter=ACMR -- . ':(exclude).githooks/pre-commit' \
+  | grep -E '^\+' | grep -vE '^\+\+\+ ' | grep -E -- "$padroes")"
+if [ -n "$achados" ]; then
+  echo "pre-commit: conteúdo com padrão de credencial nas linhas adicionadas:" >&2
+  echo "$achados" | cut -c1-80 >&2
+  falhou=1
+fi
+
+if [ "$falhou" -ne 0 ]; then
+  echo "pre-commit: commit bloqueado. Use variáveis de ambiente (CLAUDE.md C-10)." >&2
+  exit 1
+fi
+exit 0

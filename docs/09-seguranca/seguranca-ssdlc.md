@@ -6,6 +6,8 @@
 
 Descreve como a segurança é tratada em cada etapa do ciclo de vida (Secure Software Development Life Cycle). As ferramentas citadas são propostas e serão confirmadas na Fase 4.
 
+Os controles sobre o agente de codificação (permissões, hooks, Git hook local e CI) estão em `docs/09-seguranca/governanca-agentes.md`.
+
 ---
 
 ## 1. Ativos a proteger
