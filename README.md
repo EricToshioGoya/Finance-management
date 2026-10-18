@@ -27,14 +27,14 @@ Ainda não há código executável. A partir da Fase 4, esta seção trará os c
 
 | Documento | Conteúdo |
 |---|---|
-| [Visão](docs/01-visao/visao.md) | Problema, contexto, escopo, stack e roadmap |
+| [Visão](docs/01-visao/visao.md) | Problema, contexto, escopo e roadmap |
 | [Benchmark](docs/01-visao/benchmark.md) | Comparação com Mobills, Organizze, Kinvo e Gorila |
 | [Personas](docs/02-personas/personas.md) | Público-alvo: iniciante, avançado e administrador |
 | [Requisitos](docs/03-requisitos/requisitos.md) | RF, RNF e RB em EARS, modelo de dados e glossário |
 | [Casos de uso](docs/04-casos-de-uso/) | Diagramas, tabelas e fluxo principal detalhado |
 | [Modelo de domínio](docs/modelo-dominio.md) | Classes, responsabilidades, multiplicidades e rastreabilidade; diagramas em [docs/uml](docs/uml/) |
 | [Backlog](docs/06-backlog/issues.md) | Issues do MVP (Must have) |
-| [Arquitetura](docs/07-arquitetura/arquitetura.md) | Drivers, containers, camadas e ADRs |
+| [Arquitetura](docs/07-arquitetura/arquitetura.md) | Drivers, decisões técnicas, stack, camadas, atributos de qualidade e ADRs |
 | [Specs](docs/08-specs/) | Especificações SDD com cláusulas EARS |
 | [Segurança e SSDLC](docs/09-seguranca/seguranca-ssdlc.md) | Ameaças, controles e práticas por etapa |
 | [Estratégia de testes](docs/10-qualidade/estrategia-de-testes.md) | Níveis de teste, rastreabilidade e gates de qualidade |

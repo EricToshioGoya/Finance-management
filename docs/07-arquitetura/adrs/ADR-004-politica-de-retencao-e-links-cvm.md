@@ -3,11 +3,12 @@
 * **Status:** Aceito
 * **Data:** 2026-10-08
 * **Decisores:** Equipe de Arquitetura FinNova
+* **Drivers atendidos:** DA-04
 
 ## Contexto e Problema
 O módulo de Relatórios de Empresas (RF-30, RF-31, RF-33) precisa disponibilizar demonstrativos financeiros (DFP, ITR, FRE). Armazenar arquivos PDF completos gera alto custo de storage, risco de quebra de direitos autorais/redação e problemas de desatualização. Além disso, a RB-12 e o RNF-10 impõem expurgo automático de dados sincronizados em 12 meses.
 
-## Decisão Considerada
+## Decisão
 Adotar a **Arquitetura de Indexação por Metadados e Redirecionamento por Link Externo**.
 
 1. O FinNova consome o Portal de Dados Abertos da CVM, grava no PostgreSQL **apenas metadados e tabelas numéricas estruturadas**.

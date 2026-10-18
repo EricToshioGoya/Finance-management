@@ -3,11 +3,12 @@
 * **Status:** Aceito
 * **Data:** 2026-10-08
 * **Decisores:** Equipe de Arquitetura FinNova
+* **Drivers atendidos:** DA-01, DA-07
 
 ## Contexto e Problema
 O sistema FinNova precisa atender simultaneamente clientes Web (React) e Mobile (React Native - Expo), garantindo reuso do código das regras de negócio, facilidade de manutenção e rápido desenvolvimento no MVP, atendendo aos requisitos RNF-05 (Backend Único), RNF-06 (Modularidade) e RNF-07 (Manutenibilidade).
 
-## Decisão Considerada
+## Decisão
 Adotar uma **Arquitetura Monolítica Modular em Camadas (Layered Monolith)** centralizada em FastAPI (Python 3.12+), expondo uma API REST versão 1 (`/api/v1`).
 
 ### Estrutura de Camadas:

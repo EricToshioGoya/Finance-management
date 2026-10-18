@@ -18,7 +18,7 @@ Fontes de verdade, em ordem de precedência:
 4. Modelo de domínio: `docs/modelo-dominio.md` (diagramas em `docs/uml/`).
 5. Combinados de trabalho: `docs/combinados.md`.
 
-Stack definida: Python 3.12+ com FastAPI, Pydantic e SQLAlchemy/Alembic; PostgreSQL; React + TypeScript + Vite (web); React Native com Expo (mobile). Detalhes em `docs/01-visao/visao.md`, seção 3.
+Stack definida: Python 3.12+ com FastAPI, Pydantic e SQLAlchemy/Alembic; PostgreSQL; React + TypeScript + Vite (web); React Native com Expo (mobile). Detalhes em `docs/07-arquitetura/arquitetura.md`, seção 5.
 
 ---
 
