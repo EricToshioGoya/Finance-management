@@ -156,7 +156,7 @@ mmdc -i dominio-completo.mmd -o dominio-completo.png -b white -w 2200 -H 2400 --
 | Requisito | Issue | Classes do domínio | Cláusulas que viram teste |
 |---|---|---|---|
 | RF-01 | [#9](https://github.com/EricToshioGoya/Finance-management/issues/9) | `Usuario` | SPEC-001-R01, R02, R03, R06, R08 |
-| RF-02 | [#10](https://github.com/EricToshioGoya/Finance-management/issues/10) | `Usuario` | SPEC-001-R04, R05, R07, R08 |
+| RF-02 | [#10](https://github.com/EricToshioGoya/Finance-management/issues/10) | `Usuario` | SPEC-001-R04, R05, R07, R08, R09, R10 |
 | RF-06 | [#11](https://github.com/EricToshioGoya/Finance-management/issues/11) | `Renda`, `RendaFixa`, `Conta`, `Cartao` | DOM-03, DOM-06, DOM-07; RB-01, RB-05 (spec a criar) |
 | RF-07 | [#12](https://github.com/EricToshioGoya/Finance-management/issues/12) | `Renda`, `RendaVariavel`, `Conta`, `Cartao` | DOM-03, DOM-06, DOM-07; RB-01, RB-05 (spec a criar) |
 | RF-08 | [#13](https://github.com/EricToshioGoya/Finance-management/issues/13) | `Renda`, `BonusPLR` | DOM-03, DOM-07; RB-05, RB-06 (spec a criar) |
@@ -167,7 +167,7 @@ mmdc -i dominio-completo.mmd -o dominio-completo.png -b white -w 2200 -H 2400 --
 | RF-20 | [#18](https://github.com/EricToshioGoya/Finance-management/issues/18) | `Simulacao`, `SimulacaoRendaFixa`, `IndicadorOficial` | SPEC-002-R01 a R07; DOM-08, DOM-09; RB-07 |
 | RF-21 | [#19](https://github.com/EricToshioGoya/Finance-management/issues/19) | `Simulacao`, `SimulacaoRendaVariavel` | DOM-08; RB-08 (spec a criar) |
 | RF-22 | [#20](https://github.com/EricToshioGoya/Finance-management/issues/20) | `Simulacao` (`calcularEvolucao()`) | SPEC-002-R01 a R07; RB-10 |
-| RF-23 | [#21](https://github.com/EricToshioGoya/Finance-management/issues/21) | `IndicadorOficial` | DOM-09 (spec a criar) |
+| RF-23 | [#21](https://github.com/EricToshioGoya/Finance-management/issues/21) | `IndicadorOficial` (estados em `uml/estados-indicador.png`) | DOM-09; UC-13-E01, UC-13-E02 (spec a criar) |
 | RF-25 | [#22](https://github.com/EricToshioGoya/Finance-management/issues/22) | `Simulacao` | DOM-10 (spec a criar) |
 
 ### 6.2 Modelo completo

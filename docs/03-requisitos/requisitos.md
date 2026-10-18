@@ -394,6 +394,10 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 - Event-driven. WHEN uma simulação de renda fixa é solicitada THE SYSTEM SHALL obter a taxa do indicador oficial correspondente (Selic, CDI, IPCA ou Tesouro Direto) a partir do cache local mais recente.
 - Unwanted behavior. IF a API oficial estiver indisponível ou retornar erro na atualização THEN THE SYSTEM SHALL usar o último valor em cache e exibir aviso visual de que o dado pode estar desatualizado — nunca um valor zerado ou inventado (incorpora a antiga RB-11).
+- State-driven. WHILE o indicador oficial do produto estiver defasado (mais de 24h sem sincronização bem-sucedida) THE SYSTEM SHALL exibir, junto à taxa sugerida e ao resultado da simulação, aviso de defasagem com a data de referência (UC-13-E01).
+- Unwanted behavior. IF não houver valor do indicador oficial do produto no cache THEN THE SYSTEM SHALL exigir que o usuário informe a taxa manualmente antes de executar a simulação (UC-13-E02).
+
+> Estados do `IndicadorOficial` (SemValor, Atualizado e Defasado) e transições: `docs/uml/estados-indicador.png`; uso no fluxo: UC-13 em `docs/04-casos-de-uso/casos-de-uso-detalhados.md`.
 
 **Critérios de aceite:**
 
@@ -403,6 +407,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 - [ ] O sistema deve atualizar o cache automaticamente 1 vez por dia, após o horário de divulgação de cada indicador (padrão de mercado; atende à defasagem máxima de 24h do RNF-09).
 - [ ] Em caso de falha ou indisponibilidade da API oficial, o sistema deve usar o último valor em cache e exibir um aviso visual informando que o dado pode estar desatualizado.
 - [ ] A data de referência do indicador deve ser exibida sempre que ele for usado em uma simulação (RF-20, RF-22).
+- [ ] Na primeira execução, antes de qualquer sincronização, o sistema não deve sugerir taxa e deve exigir taxa manual para a simulação.
 
 #### RF-24 — Cotação de ações e FIIs via fonte de mercado
 

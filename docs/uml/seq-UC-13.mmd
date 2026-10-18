@@ -1,0 +1,58 @@
+%% Diagrama de sequência — UC-13 Simular investimento em renda fixa
+%% Fonte do caso de uso: docs/04-casos-de-uso/casos-de-uso-detalhados.md (UC-13)
+%% Participantes seguem as camadas de docs/07-arquitetura/arquitetura.md (seção 5.2)
+%% Regenerar a partir de /docs/uml/: mmdc -i seq-UC-13.mmd -o seq-UC-13.png -b white --scale 2
+sequenceDiagram
+    autonumber
+    actor U as Usuário
+    participant UI as Interface (web/mobile)
+    participant R as SimuladorRouter (apresentação)
+    participant C as SimularRendaFixa (caso de uso)
+    participant I as RepositorioIndicadores (cache local)
+    participant S as SimulacaoRendaFixa (domínio)
+    participant DB as RepositorioSimulacoes
+
+    U->>UI: escolhe o produto e informa valor inicial, aporte mensal e prazo
+    UI->>R: obterTaxaSugerida(produto)
+    R->>C: obterTaxaSugerida(produto)
+    C->>I: buscarPorTipo(tipo do indicador do produto) [RB-07]
+    I-->>C: IndicadorOficial ou nenhum valor
+
+    alt IndicadorOficial Atualizado
+        C-->>R: taxa + dataReferencia
+        R-->>UI: taxa sugerida + data de referência
+        UI-->>U: pré-preenche a taxa e mostra a data de referência
+    else IndicadorOficial Defasado (extensão 2a, UC-18)
+        C-->>R: último valor + dataReferencia + aviso de defasagem
+        R-->>UI: taxa sugerida + data de referência + aviso
+        UI-->>U: pré-preenche a taxa e exibe o aviso [UC-13-E01]
+    else SemValor no cache (extensão 2b)
+        C-->>R: nenhuma taxa sugerida
+        R-->>UI: taxa manual obrigatória
+        UI-->>U: exige que o usuário informe a taxa [UC-13-E02]
+    end
+
+    opt Usuário informa taxa manual (alternativo 3a)
+        U->>UI: informa a taxa manual
+    end
+
+    U->>UI: confirma a simulação
+    UI->>R: simular(produto, valorInicial, aporteMensal, taxa, prazo)
+    R->>C: simular(parâmetros)
+    C->>S: calcularEvolucao() com conversão por equivalência composta [RB-10]
+
+    alt Entrada inválida (exceção 4a)
+        S-->>C: erro de validação (SPEC-002-R06)
+        C-->>R: campo inválido
+        R-->>UI: 422 Unprocessable Entity
+        UI-->>U: indica o campo inválido
+    else Entrada válida
+        S-->>C: série mensal + totais (bruto e, quando aplicável, líquido de IR)
+        C->>DB: salvar(simulação) vinculada ao IndicadorOficial ou à taxa manual [DOM-09]
+        DB-->>C: simulação guardada
+        C-->>R: resultado + data de referência (+ aviso se Defasado)
+        R-->>UI: 200 OK com o resultado
+        UI-->>U: exibe evolução mês a mês, valor bruto, líquido de IR e data de referência
+    end
+
+    Note over C,I: A simulação lê o indicador apenas do cache local (CLAUDE.md C-08).<br/>A atualização do cache é feita pela rotina agendada (UC-37), fora deste fluxo.

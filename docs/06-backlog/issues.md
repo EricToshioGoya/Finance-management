@@ -175,6 +175,8 @@ Issues de documentação e setup da Semana 1: [#2](https://github.com/EricToshio
 
 - Event-driven. WHEN uma simulação de renda fixa é solicitada THE SYSTEM SHALL obter a taxa do indicador oficial correspondente (Selic, CDI, IPCA ou Tesouro Direto) a partir do cache local mais recente.
 - Unwanted behavior. IF a API oficial estiver indisponível ou retornar erro na atualização THEN THE SYSTEM SHALL usar o último valor em cache e exibir aviso visual de que o dado pode estar desatualizado — nunca um valor zerado ou inventado (incorpora a antiga RB-11).
+- State-driven. WHILE o indicador oficial do produto estiver defasado (mais de 24h sem sincronização bem-sucedida) THE SYSTEM SHALL exibir, junto à taxa sugerida e ao resultado da simulação, aviso de defasagem com a data de referência (UC-13-E01).
+- Unwanted behavior. IF não houver valor do indicador oficial do produto no cache THEN THE SYSTEM SHALL exigir que o usuário informe a taxa manualmente antes de executar a simulação (UC-13-E02).
 
 **Critérios de aceite:** ver RF-23 em `/docs/03-requisitos/requisitos.md`.
 
@@ -266,6 +268,8 @@ Critérios de aceite: ver RF-22 em /docs/03-requisitos/requisitos.md."
 gh issue create --title "[RF-23] Integração com indicadores oficiais (Selic, CDI, IPCA, Tesouro Direto)" --label "RF,modulo:simulador,prioridade:must-have" \
   --body "Event-driven. WHEN uma simulação de renda fixa é solicitada THE SYSTEM SHALL obter a taxa do indicador oficial correspondente (Selic, CDI, IPCA ou Tesouro Direto) a partir do cache local mais recente.
 Unwanted behavior. IF a API oficial estiver indisponível ou retornar erro na atualização THEN THE SYSTEM SHALL usar o último valor em cache e exibir aviso visual de que o dado pode estar desatualizado — nunca um valor zerado ou inventado (incorpora a antiga RB-11).
+State-driven. WHILE o indicador oficial do produto estiver defasado (mais de 24h sem sincronização bem-sucedida) THE SYSTEM SHALL exibir, junto à taxa sugerida e ao resultado da simulação, aviso de defasagem com a data de referência (UC-13-E01).
+Unwanted behavior. IF não houver valor do indicador oficial do produto no cache THEN THE SYSTEM SHALL exigir que o usuário informe a taxa manualmente antes de executar a simulação (UC-13-E02).
 
 Critérios de aceite: ver RF-23 em /docs/03-requisitos/requisitos.md."
 

@@ -9,6 +9,12 @@ Este documento descreve os casos de uso relacionados à administração da plata
 
 ![Diagrama de casos de uso do administrador](casos-de-uso-administrador.png)
 
+Fonte editável (PlantUML): `casos-de-uso-administrador.puml`. Para regenerar a imagem após editar a fonte, a partir de `/docs/04-casos-de-uso/`:
+
+```bash
+java -jar plantuml.jar -tpng casos-de-uso-administrador.puml
+```
+
 ## Atores
 
 - **Administrador**: acessa o painel administrativo para consultar usuários, permissões, uso do sistema e trilhas de auditoria.
@@ -49,7 +55,7 @@ Este documento descreve os casos de uso relacionados à administração da plata
 - As consultas do painel administrativo incluem **Acessar painel administrativo**.
 - **Acessar painel administrativo**, **Listar e buscar usuários**, **Consultar uso por módulo/aba**, **Consultar distribuição de perfil de investidor**, **Consultar engajamento e usuários recorrentes** e **Consultar trilha de auditoria** incluem **Registrar log de auditoria imutável**, quando aplicável.
 - **Registrar evento de uso** é utilizado pelas rotinas do sistema e pelas ações que precisam gerar métricas de uso.
-- **Excluir dados de uso junto com a conta** inclui **Registrar evento de uso**.
+- **Excluir dados de uso junto com a conta** inclui **Registrar log de auditoria imutável**, pois a exclusão é uma ação sensível (RNF-18).
 - **Sincronizar documentos e indicadores da CVM** e **Sincronizar indicadores oficiais em cache** podem ser executados pelo **Sistema / Agendador** e dependem das respectivas fontes externas.
 
 ## Regras de negócio e requisitos não funcionais

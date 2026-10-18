@@ -10,6 +10,12 @@ Os identificadores `UC-NN` são sequenciais entre este documento (UC-01 a UC-27)
 
 ![Diagrama de casos de uso do usuário](casos-de-uso-usuario.png)
 
+Fonte editável (PlantUML): `casos-de-uso-usuario.puml`. Para regenerar a imagem após editar a fonte, a partir de `/docs/04-casos-de-uso/`:
+
+```bash
+java -jar plantuml.jar -tpng casos-de-uso-usuario.puml
+```
+
 ## Atores
 
 - **Usuário**: utiliza a plataforma para administrar suas finanças, consultar informações e realizar simulações.

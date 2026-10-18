@@ -1,0 +1,30 @@
+%% Diagrama de estados — IndicadorOficial (cache local de Selic, CDI, IPCA e Tesouro Direto)
+%% Regras: RF-23, RNF-09, ADR-003; operação de domínio: IndicadorOficial.estaDefasado()
+%% Regenerar a partir de /docs/uml/: mmdc -i estados-indicador.mmd -o estados-indicador.png -b white --scale 2
+stateDiagram-v2
+    direction LR
+
+    [*] --> SemValor : implantação do sistema
+
+    SemValor --> Atualizado : sincronização bem-sucedida
+    SemValor --> SemValor : sincronização falha
+    Atualizado --> Atualizado : sincronização diária bem-sucedida
+    Atualizado --> Defasado : 24h sem sincronização bem-sucedida
+    Defasado --> Atualizado : sincronização bem-sucedida
+    Defasado --> Defasado : nova falha da fonte oficial
+
+    note right of SemValor
+        Nenhum valor em cache (antes da 1ª sincronização).
+        Simulação exige taxa manual (UC-13-E02).
+    end note
+
+    note right of Atualizado
+        atualizadoEm há no máximo 24h (RNF-09).
+        Taxa pré-preenchida com a data de referência.
+    end note
+
+    note right of Defasado
+        estaDefasado() = verdadeiro.
+        Mantém o último valor, nunca zero (RF-23, IF/THEN).
+        Simulação exibe aviso de defasagem (UC-13-E01).
+    end note
