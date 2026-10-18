@@ -20,7 +20,7 @@
 * **Regras de Negócio:** RB-07 (Indexação composta), RB-10 (Fórmula de juros compostos e equivalência de taxa: $i_{mensal} = (1 + i_{anual})^{1/12} - 1$). A RB-01 não se aplica: trata de lançamentos de renda e despesa; as validações de entrada desta spec derivam dos critérios de aceite do RF-22.
 * **Requisitos Não Funcionais:** RNF-04 (Desempenho P95 < 3s), RNF-07 (Testes automatizados com cobertura de 80%+ nas regras financeiras)
 * **Casos de Uso:** UC-17 (Calcular juros compostos), UC-13 (Simular investimento em renda fixa) — ver `docs/04-casos-de-uso/casos-de-uso-detalhados.md`
-* **Entidades do Domínio:** `Simulacao` (Objeto de Valor/Engine)
+* **Entidades do Domínio:** `Simulacao` (entidade; o motor desta spec implementa a operação `calcularEvolucao()`, conforme `docs/modelo-dominio.md`)
 * **Drivers e ADRs:** DA-02 (`docs/07-arquitetura/arquitetura.md`); ADR-002 (Motor de Cálculo no Domínio Puro isolado de ORM e Web)
 
 ---

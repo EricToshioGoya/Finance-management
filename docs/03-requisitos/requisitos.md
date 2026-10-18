@@ -1041,13 +1041,13 @@ Usuario (id, nome, email, senha_hash, perfil_investidor, idioma, tema, papel[usu
   1─N Conta            (id, usuario_id, nome, tipo, saldo_inicial)
   1─N Cartao           (id, usuario_id, nome, limite, dia_fechamento, dia_vencimento)
   1─N Categoria        (id, usuario_id | null p/ padrão, nome, cor, ativa)
-  1─N RendaFixa        (id, usuario_id, descricao, valor, ativa_desde)
-  1─N RendaVariavel    (id, usuario_id, descricao, valor, data)
-  1─N BonusPLR         (id, usuario_id, valor, periodicidade[mensal|anual], mes_referencia)
+  1─N RendaFixa        (id, usuario_id, conta_id | cartao_id, descricao, valor, ativa_desde)
+  1─N RendaVariavel    (id, usuario_id, conta_id | cartao_id, descricao, valor, data)
+  1─N BonusPLR         (id, usuario_id, conta_id | cartao_id, valor, periodicidade[mensal|anual], mes_referencia)
   1─N Despesa          (id, usuario_id, conta_id | cartao_id, categoria_id, valor, data, recorrente)
   1─N MetaGeral        (id, usuario_id, tipo[renda|gasto], valor, vigente_desde)
   1─N MetaCategoria    (id, usuario_id, categoria_id, valor_maximo, vigente_desde)
-  1─N Simulacao        (id, usuario_id, tipo, parametros, resultado, criada_em)
+  1─N Simulacao        (id, usuario_id, indicador_oficial_id | null, tipo, parametros, resultado, criada_em)
   1─N MetaFinanceira   (id, usuario_id, valor_alvo, prazo, rendimento_estimado)
   1─N Ativo            (id, usuario_id, tipo[conta|investimento|manual], descricao, valor, rentabilidade, origem[automatico|manual])
   1─N Passivo          (id, usuario_id, tipo[fatura|financiamento|divida_manual], descricao, valor, taxa_juros, origem[automatico|manual])
@@ -1058,6 +1058,8 @@ Usuario (id, nome, email, senha_hash, perfil_investidor, idioma, tema, papel[usu
   1─N AuditLog         (id, usuario_id, acao, entidade, entidade_id, criado_em)  -- imutável
   1─N WebhookSubscription (id, usuario_id, url, eventos[json], segredo_hmac, ativo)
   1─N EventoUso        (id, usuario_id, modulo, acao, criado_em)
+
+IndicadorOficial (id, tipo[selic|cdi|ipca|tesouro_direto], titulo, taxa, data_referencia, atualizado_em)  -- cache local (RF-23, ADR-003)
 
 EmpresaAberta (id, ticker, cnpj, razao_social, setor)
   1─N DocumentoCVM     (id, empresa_id, tipo[DFP|ITR|FRE|IPE], periodo_referencia, data_entrega, status, url_documento_oficial, sincronizado_em)
@@ -1188,3 +1190,25 @@ Badge (id, usuario_id, tipo, conquistada_em)
 | VGBL | Vida Gerador de Benefício Livre; plano de previdência privada sem dedução no IR, tributação apenas sobre o rendimento |
 | DARF | Documento de Arrecadação de Receitas Federais; guia usada para recolher impostos como o IR sobre operações de renda variável |
 | DAU / WAU / MAU | Daily/Weekly/Monthly Active Users; métricas de usuários ativos por dia, semana ou mês, usadas para medir engajamento |
+
+### 8.1 Termos do domínio (vocabulário obrigatório)
+
+Nomes usados em código, specs e documentação, alinhados às classes de `/docs/modelo-dominio.md` (regra C-14 de `CLAUDE.md`).
+
+| Termo | Classe | Definição |
+|---|---|---|
+| Usuário | `Usuario` | Pessoa cadastrada que usa a plataforma; dona dos lançamentos e simulações |
+| Conta | `Conta` | Conta bancária ou carteira do usuário, com saldo inicial e saldo atual |
+| Cartão | `Cartao` | Cartão de crédito do usuário, com limite, fechamento e vencimento |
+| Categoria | `Categoria` | Classificação de despesas; **padrão** (comum a todos, sem dono) ou **personalizada** (de um usuário) |
+| Lançamento | `Renda` ou `Despesa` | Registro de entrada ou saída de dinheiro informado pelo usuário |
+| Renda | `Renda` | Entrada de dinheiro do usuário: renda fixa, renda variável ou bônus/PLR |
+| Despesa | `Despesa` | Saída de dinheiro, ligada a exatamente uma categoria; **recorrente** ou **pontual** |
+| Renda total do mês | `Renda` (`calcularContribuicaoMensal()`) | Soma das contribuições mensais da renda fixa, da renda variável do mês e do bônus/PLR recebido no mês (RB-05) |
+| Simulação | `Simulacao` | Projeção educativa de um investimento, guardada com seus parâmetros; de renda fixa ou de renda variável no V1 |
+| Indicador oficial | `IndicadorOficial` | Taxa oficial (Selic, CDI, IPCA ou título do Tesouro Direto) guardada em cache com data de referência |
+| Indicador financeiro | `IndicadorFinanceiro` | Número extraído das demonstrações de uma empresa aberta (CVM); não confundir com indicador oficial |
+| Data de referência | atributo de `IndicadorOficial` | Data a que a taxa oficial se refere; exibida em toda simulação que a usa |
+| Taxa equivalente composta | operação de `Simulacao` | Conversão de taxa entre períodos por `(1 + i)^n − 1`, nunca por divisão simples (RB-10) |
+| Aporte mensal | atributo de `Simulacao` | Valor investido ao fim de cada mês da simulação |
+| Comparação de cenários | operação sobre `Simulacao` | Exibição lado a lado de duas ou mais simulações do mesmo usuário (RF-25) |

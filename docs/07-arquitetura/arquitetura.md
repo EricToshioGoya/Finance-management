@@ -109,6 +109,7 @@ Rotina agendada → API SGS / Tesouro Transparente → atualização do cache de
 | Auditoria | Registro imutável de ações sensíveis | RNF-18 |
 | Segurança | Ver `docs/09-seguranca/seguranca-ssdlc.md` | DA-05 |
 | Testes | Ver `docs/10-qualidade/estrategia-de-testes.md` | RNF-07, RNF-16 |
+| Elementos técnicos fora do domínio | `WebhookSubscription`, `AuditLog`, `EventoUso`, credenciais e preferências de interface ficam na infraestrutura, não no modelo de domínio (`docs/modelo-dominio.md`, seção 7) | RNF-18, RNF-23, RB-23 |
 
 ---
 

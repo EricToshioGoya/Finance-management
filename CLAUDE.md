@@ -15,7 +15,7 @@ Fontes de verdade, em ordem de precedência:
 1. Requisitos: `docs/03-requisitos/requisitos.md` (RF, RNF, RB e glossário).
 2. Specs: `docs/08-specs/SPEC-*.md` (cláusulas EARS com ID).
 3. Decisões de arquitetura: `docs/07-arquitetura/arquitetura.md` e `docs/07-arquitetura/adrs/`.
-4. Modelo de domínio: `docs/05-modelo-de-dominio/modelo-de-dominio.md`.
+4. Modelo de domínio: `docs/modelo-dominio.md` (diagramas em `docs/uml/`).
 5. Combinados de trabalho: `docs/combinados.md`.
 
 Stack definida: Python 3.12+ com FastAPI, Pydantic e SQLAlchemy/Alembic; PostgreSQL; React + TypeScript + Vite (web); React Native com Expo (mobile). Detalhes em `docs/01-visao/visao.md`, seção 3.
@@ -56,6 +56,7 @@ Convenções:
 | C-11 | Todos os endpoints ficam sob o prefixo `/api/v1`. | RNF-17 |
 | C-12 | A branch `main` só recebe alterações via PR; o merge exige testes e lint verdes quando o CI existir. | RNF-16, `docs/combinados.md` |
 | C-13 | O uso de agente de IA é declarado na descrição do PR (o que foi gerado e o que foi revisado). | Contrato do curso (integridade) |
+| C-14 | Código, specs e documentação usam apenas os termos do glossário (`requisitos.md`, seção 8) e os nomes de classe do modelo de domínio; um termo novo entra primeiro no glossário. | `docs/modelo-dominio.md` |
 
 ---
 
@@ -64,7 +65,7 @@ Convenções:
 - Antes de codar, ler a issue, a spec e as cláusulas EARS envolvidas.
 - Se a spec for ambígua ou incompleta, **não inventar regra**: registrar em "Questões em aberto" da spec e perguntar ao autor.
 - Não alterar requisitos, specs ou ADRs sem pedido explícito do autor.
-- Nomes de domínio seguem o modelo de domínio, em português e sem acento (`Usuario`, `Simulacao`, `PatrimonioItem`).
+- Nomes de domínio seguem o modelo de domínio, em português e sem acento (`Usuario`, `Simulacao`, `PatrimonioItem`), e o vocabulário segue o glossário (regra C-14).
 - Documentação em português do Brasil.
 - Dependências estruturais novas (framework, banco, fila, provedor externo) exigem ADR.
 

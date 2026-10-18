@@ -10,7 +10,7 @@ O módulo de simulação depende de taxas oficiais como Selic, CDI e IPCA (RF-23
 ## Decisão Considerada
 Implementar um **Cache Local em Banco de Dados com Atualização Assíncrona e Fallback Decoupled**.
 
-1. **Rotina de Sincronização:** Um agendador em segundo plano consulta as APIs externas e atualiza a tabela `IndicadorFinanceiroCache`.
+1. **Rotina de Sincronização:** Um agendador em segundo plano consulta as APIs externas e atualiza os registros de `IndicadorOficial` (cache local; nome alinhado ao modelo de domínio para não confundir com `IndicadorFinanceiro`, que guarda indicadores de empresas da CVM).
 2. **Consulta em Simulações:** As simulações consultam **exclusivamente o banco local**, eliminando a dependência síncrona de chamadas HTTP externas no momento da simulação.
 3. **Resiliência:** Se a atualização em segundo plano falhar, o sistema mantém o último valor e injeta um indicador visual de alerta com a data/hora do último dado coletado.
 
