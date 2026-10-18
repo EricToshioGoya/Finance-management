@@ -56,21 +56,7 @@ Detalhamento completo dos requisitos em `/docs/03-requisitos/requisitos.md`, das
 
 ## 3. Stack e Restrições Técnicas
 
-| Item | Definição |
-|---|---|
-| Linguagem (backend) | Python 3.12+ |
-| Framework (backend) | FastAPI + Pydantic (validação) + SQLAlchemy/Alembic (ORM/migrations) |
-| Cliente web | React + TypeScript + Vite |
-| Cliente mobile | React Native (Expo) |
-| Banco de dados | PostgreSQL |
-| Infra / deploy | Docker + GitHub Actions (CI/CD) + Railway/Render (ou AWS) |
-| Autenticação | JWT (access + refresh token) |
-| Testes | pytest + coverage (backend), Vitest/Jest (frontend); obrigatórios nas regras de cálculo financeiro |
-| Documentação de API | OpenAPI/Swagger (gerado automaticamente pelo FastAPI) |
-| Versionamento de API | Prefixo de versão desde o início (ex.: `/api/v1`) |
-| Observabilidade | Logging estruturado + monitoramento de erros (ex.: Sentry) |
-| Notificações | Firebase Cloud Messaging (push) + serviço de e-mail transacional (ex.: SES/SendGrid) |
-| Restrição | Backend único (FastAPI) atendendo web e mobile via API REST compartilhada |
+A stack e as restrições técnicas ficam no documento de arquitetura (`/docs/07-arquitetura/arquitetura.md`, seção 5), fonte única das escolhas de tecnologia. Restrição principal: backend único atendendo web e mobile pela mesma API REST.
 
 ## 4. Roadmap / Entregas
 
