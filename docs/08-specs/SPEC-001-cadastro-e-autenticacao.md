@@ -21,7 +21,7 @@
 * **Requisitos Não Funcionais:** RNF-01 (Criptografia hash + salt em senhas, tráfego HTTPS), RNF-13 (Rate limiting), RNF-17 (Prefixagem `/api/v1`)
 * **Casos de Uso:** UC-01 (Cadastrar-se), UC-02 (Autenticar-se) — ver `docs/04-casos-de-uso/casos-de-uso-detalhados.md`
 * **Entidades do Domínio:** `Usuario`
-* **Drivers e ADRs:** DA-01 e DA-05 (`docs/07-arquitetura/arquitetura.md`); ADR-001 (Arquitetura monolítica modular em camadas). Uso de JWT definido na stack (`docs/01-visao/visao.md`, seção 3).
+* **Drivers e ADRs:** DA-01, DA-05 e DA-06 (`docs/07-arquitetura/arquitetura.md`); ADR-001 (Arquitetura monolítica modular em camadas) e ADR-005 (Autenticação, autorização e posse dos dados). Uso de JWT definido na stack (`docs/07-arquitetura/arquitetura.md`, seção 5).
 
 ---
 

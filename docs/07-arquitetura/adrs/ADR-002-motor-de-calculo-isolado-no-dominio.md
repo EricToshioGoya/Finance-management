@@ -3,11 +3,12 @@
 * **Status:** Aceito
 * **Data:** 2026-10-08
 * **Decisores:** Equipe de Arquitetura FinNova
+* **Drivers atendidos:** DA-02, DA-07
 
 ## Contexto e Problema
 As simulações de investimento (RF-20, RF-21, RF-22) exigem cálculos de juros compostos com conversão de equivalência de taxas (mês/ano) e alíquotas tributárias de IR. Erros nesses cálculos destroem a confiabilidade da plataforma. O requisito RNF-07 exige cobertura mínima de 80% de testes automatizados nas regras financeiras.
 
-## Decisão Considerada
+## Decisão
 Isolar toda a lógica de cálculo financeiro em classes de **Domínio Puro** (sem dependências de SQLAlchemy, FastAPI ou qualquer lib externa).
 
 * O motor recebe entradas primitivas (`Decimal`, `int`) e retorna objetos de valor/DTOs puros de domínio.
