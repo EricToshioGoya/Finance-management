@@ -24,7 +24,7 @@ Este documento descreve os casos de uso relacionados à administração da plata
 | ID | Caso de uso | Requisito relacionado | Descrição |
 | --- | --- | --- | --- |
 | UC-28 | Acessar painel administrativo | RF-54 | Permite ao administrador entrar no painel, após validação do papel administrativo. |
-| UC-29 | Validar papel de administrador (RBAC) | RB-21, RNF-21 | Valida no backend se o usuário possui o papel necessário para acessar cada rota administrativa. |
+| UC-29 | Validar papel de administrador (RBAC) | RNF-21 | Valida no backend se o usuário possui o papel necessário para acessar cada rota administrativa. |
 | UC-30 | Listar e buscar usuários | RF-55 | Permite consultar e localizar usuários cadastrados. |
 | UC-31 | Consultar distribuição de perfil de investidor | RF-56 | Exibe a distribuição dos perfis de investidor dos usuários. |
 | UC-32 | Consultar uso por módulo/aba | RF-57 | Exibe métricas agregadas de utilização por módulo ou aba. |
@@ -40,7 +40,7 @@ Este documento descreve os casos de uso relacionados à administração da plata
 | UC-37 | Sincronizar indicadores oficiais em cache | RF-23 | Sistema / Agendador; API Banco Central e Tesouro Transparente | Consulta indicadores oficiais e mantém os dados disponíveis em cache. |
 | UC-38 | Expurgar dados sincronizados (12 meses) | RF-33, RNF-10 | Sistema / Agendador | Remove dados sincronizados com mais de 12 meses, sem ação manual. |
 | UC-39 | Registrar evento de uso | RF-59 | Sistema / Agendador | Registra o usuário, o módulo, a ação e o timestamp, sem armazenar conteúdo financeiro. |
-| UC-40 | Registrar log de auditoria imutável | RNF-18, RB-19 | Sistema | Registra acessos e ações administrativas sem permitir alteração ou exclusão. |
+| UC-40 | Registrar log de auditoria imutável | RNF-18 | Sistema | Registra acessos e ações administrativas sem permitir alteração ou exclusão. |
 | UC-41 | Excluir dados de uso junto com a conta | RF-05, RF-59 | Usuário | Exclui os dados de uso agregados quando o usuário solicita a exclusão da conta. |
 
 ## Relações entre os casos de uso
@@ -54,10 +54,10 @@ Este documento descreve os casos de uso relacionados à administração da plata
 
 ## Regras de negócio e requisitos não funcionais
 
-- **RB-21 / RNF-21 — Validar papel:** o acesso a qualquer rota administrativa é validado no backend por papel. A interface não é considerada mecanismo de segurança; toda rota `/api/v1/admin/*` exige verificação de papel.
+- **RNF-21 — Validar papel:** o acesso a qualquer rota administrativa é validado no backend por papel. A interface não é considerada mecanismo de segurança; toda rota `/api/v1/admin/*` exige verificação de papel.
 - **RB-22 — Listar usuários e consultar uso:** o painel não exibe dados financeiros individuais. São permitidos apenas metadados de conta e métricas agregadas de uso.
 - **RB-23 — Registrar evento de uso:** o evento armazena somente usuário, módulo, ação e timestamp; não armazena conteúdo financeiro.
-- **RB-19 / RNF-18 — Log de auditoria:** o registro é imutável, permitindo somente inserção, sem alteração ou exclusão. Todo acesso ao painel administrativo deve ser registrado.
+- **RNF-18 — Log de auditoria:** o registro é imutável, permitindo somente inserção, sem alteração ou exclusão. Todo acesso ao painel administrativo deve ser registrado.
 - **RF-54 — Promover administrador:** a promoção só pode ser realizada por outro administrador ou pela configuração inicial do sistema, nunca pelo cadastro público.
 - **RNF-04 — Registrar evento de uso:** a coleta é assíncrona e não deve impactar a performance percebida pelo usuário.
 - **RNF-10 / RB-12 — Expurgar dados:** metadados e indicadores sincronizados são removidos 12 meses após a sincronização, sem ação manual.

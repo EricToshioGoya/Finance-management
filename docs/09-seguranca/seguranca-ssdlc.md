@@ -25,9 +25,9 @@ Descreve como a segurança é tratada em cada etapa do ciclo de vida (Secure Sof
 | RNF-01 | HTTPS em todo o tráfego; dados sensíveis criptografados; senhas com hash e salt |
 | RNF-02 | Usuário pode exportar e excluir seus dados (RF-05, RF-50) |
 | RNF-13 | Rate limiting de 100 requisições por minuto em endpoints sensíveis |
-| RNF-18, RB-19 | Auditoria imutável de ações sensíveis |
-| RNF-21, RB-21 | Papel de administrador verificado no backend em toda rota administrativa |
-| RB-20 | Payload de webhook assinado com HMAC |
+| RNF-18 | Auditoria imutável de ações sensíveis |
+| RNF-21 | Papel de administrador verificado no backend em toda rota administrativa |
+| RNF-23 | Payload de webhook assinado com HMAC |
 | RB-22, RB-23, RB-26 | Minimização: painel administrativo e benchmark sem dados financeiros individuais |
 | SPEC-001 INV-01 a INV-03 | Sem senha em texto plano; e-mail único; erros de autenticação genéricos |
 
@@ -35,10 +35,10 @@ Descreve como a segurança é tratada em cada etapa do ciclo de vida (Secure Sof
 
 | Ameaça | Exemplo no FinNova | Mitigação | Requisito |
 |---|---|---|---|
-| **S**poofing (falsificação de identidade) | Força bruta no login | Rate limiting, bloqueio após N tentativas, mensagens genéricas | RNF-13, RF-02, SPEC-001 |
-| **T**ampering (adulteração) | Alteração de registros de auditoria | Tabela somente inserção | RB-19 |
+| **S**poofing (falsificação de identidade) | Força bruta no login | Rate limiting, bloqueio de 15 minutos após 5 tentativas inválidas, mensagens genéricas | RNF-13, RF-02, SPEC-001 |
+| **T**ampering (adulteração) | Alteração de registros de auditoria | Tabela somente inserção | RNF-18 |
 | **R**epudiation (repúdio) | Usuário nega exclusão ou exportação de dados | Auditoria com usuário, ação e data/hora | RNF-18 |
-| **I**nformation disclosure (vazamento) | Usuário comum acessa rota administrativa; webhook expõe dados | RBAC no backend; HMAC e escopo mínimo no payload | RB-21, RB-20 |
+| **I**nformation disclosure (vazamento) | Usuário comum acessa rota administrativa; webhook expõe dados | RBAC no backend; HMAC e escopo mínimo no payload | RNF-21, RNF-23 |
 | **D**enial of service (negação de serviço) | Excesso de requisições à API; indisponibilidade da API do BCB | Rate limiting; cache local de indicadores | RNF-13, ADR-003 |
 | **E**levation of privilege (elevação de privilégio) | Cadastro público cria administrador | Promoção somente por outro administrador ou configuração inicial | RF-54 |
 

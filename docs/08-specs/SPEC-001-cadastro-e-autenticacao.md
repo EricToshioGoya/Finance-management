@@ -124,5 +124,5 @@ Cada cláusula `SHALL` tem ao menos um teste automatizado que cita o seu ID (ver
 
 ## 8. Questões em Aberto
 * **OPEN-01:** Qual será o tempo padrão de expiração do Token JWT (ex: 60 minutos ou 24 horas)? *(Decisão pendente de configuração de ambiente)*.
-* **OPEN-02:** O RF-02 exige bloquear o acesso após N tentativas inválidas. Qual é o valor de N, por quanto tempo dura o bloqueio e ele se aplica à conta ou ao cliente? *(Complementar ao rate limiting da R07)*.
+* **OPEN-02:** O RF-02 exige bloquear o acesso após N tentativas inválidas. Qual é o valor de N, por quanto tempo dura o bloqueio e ele se aplica à conta ou ao cliente? *(Complementar ao rate limiting da R07)*. **Resolvida (rev-1):** N = 5 tentativas inválidas consecutivas; bloqueio de 15 minutos; aplica-se à conta (o rate limiting da R07 continua valendo por cliente). Ver RF-02.
 * **OPEN-03:** A stack prevê JWT com access e refresh token, e o RF-02 exige manter a sessão até o logout ou a expiração. Refresh token e logout entram nesta spec ou em uma spec própria?

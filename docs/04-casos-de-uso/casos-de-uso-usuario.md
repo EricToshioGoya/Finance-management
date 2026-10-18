@@ -51,7 +51,7 @@ Os identificadores `UC-NN` são sequenciais entre este documento (UC-01 a UC-27)
 | UC-15 | Projetar objetivo financeiro | RF-26 | Usuário | Permite projetar a evolução necessária para atingir um objetivo financeiro. |
 | UC-16 | Obter indicador oficial (Selic, CDI, IPCA) | RF-23 | API Banco Central e Tesouro Transparente | Obtém os indicadores oficiais usados nas simulações. |
 | UC-17 | Calcular juros compostos | RF-22 | Usuário | Calcula a evolução dos valores aplicados com base em juros compostos. |
-| UC-18 | Usar último valor em cache | RB-11 | Sistema | Usa o último valor conhecido quando a API oficial estiver indisponível. |
+| UC-18 | Usar último valor em cache | RF-23 | Sistema | Usa o último valor conhecido quando a API oficial estiver indisponível. |
 
 ### Relatórios de Empresas
 
@@ -92,7 +92,7 @@ Os identificadores `UC-NN` são sequenciais entre este documento (UC-01 a UC-27)
 
 - **RF-02 — Pré-condição:** todos os casos de uso, exceto **Cadastrar-se**, exigem usuário autenticado.
 - **RB-07 / RB-10 — Simular renda fixa:** a indexação à CDI/Selic/IPCA segue o produto; a taxa convertida por equivalência composta, nunca proporcional simples.
-- **RB-11 / RNF-09 — Usar último valor em cache:** na falha da API oficial, o sistema usa o último valor conhecido com aviso de defasagem, nunca um valor zerado. A defasagem máxima é de 24 horas e deve estar sempre visível.
+- **RF-23 / RNF-09 — Usar último valor em cache:** na falha da API oficial, o sistema usa o último valor conhecido com aviso de defasagem, nunca um valor zerado. A defasagem máxima é de 24 horas e deve estar sempre visível.
 - **RB-12 / RNF-10 — Consultar documentos:** o sistema nunca hospeda o PDF; guarda apenas metadados e o link oficial, e expurga os dados sincronizados em 12 meses, conforme o **RF-33**.
 - **RB-24 — Dividir despesa compartilhada:** o saldo de "quem deve a quem" é recalculado a cada inclusão, edição, exclusão ou acerto de contas.
 - **RNF-01 / RNF-13 — Autenticação:** as senhas são armazenadas com hash e salt, o tráfego utiliza HTTPS e há rate limiting contra força bruta.

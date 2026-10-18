@@ -55,7 +55,7 @@ Descrição textual, com fluxos e exceções, dos casos de uso que compõem o fl
 **Fluxos alternativos e exceções**
 
 - **2a. E-mail inexistente ou senha incorreta:** o sistema responde com a mesma mensagem genérica nos dois casos, sem revelar qual campo falhou (HTTP 401).
-- **2b. Tentativas inválidas repetidas:** o acesso é bloqueado após N tentativas (RF-02). O valor de N está em aberto (SPEC-001, OPEN-02).
+- **2b. Tentativas inválidas repetidas:** o acesso da conta é bloqueado por 15 minutos após 5 tentativas inválidas consecutivas (RF-02; SPEC-001, OPEN-02).
 - **Excesso de requisições:** HTTP 429 (RNF-13).
 
 **Pós-condição:** o cliente possui um token válido até a expiração ou o logout.
@@ -67,7 +67,7 @@ Descrição textual, com fluxos e exceções, dos casos de uso que compõem o fl
 | Item | Descrição |
 |---|---|
 | Ator principal | Usuário autenticado |
-| Requisitos | RF-09, RF-10, RF-11, RF-12, RB-01, RB-02, RB-03, RNF-03 |
+| Requisitos | RF-09, RF-10, RF-11, RF-12, RB-01, RB-02, RNF-03 |
 | Spec | a definir |
 | Pré-condições | Usuário autenticado (UC-02). |
 | Gatilho | O usuário escolhe registrar uma nova despesa. |
@@ -78,7 +78,7 @@ Descrição textual, com fluxos e exceções, dos casos de uso que compõem o fl
 2. Opcionalmente, o usuário vincula a despesa a uma conta ou a um cartão (RF-12) e a marca como recorrente ou pontual (RF-09).
 3. O sistema valida que o valor é maior que zero (RB-01) e que há exatamente uma categoria (RB-02).
 4. O sistema persiste a despesa.
-5. O sistema recalcula saldo, dashboards e progresso de metas (RB-03) e exibe a despesa na listagem imediatamente.
+5. O sistema recalcula saldo, dashboards e progresso de metas (RF-11) e exibe a despesa na listagem imediatamente.
 
 **Fluxos alternativos e exceções**
 
@@ -98,7 +98,7 @@ Descrição textual, com fluxos e exceções, dos casos de uso que compõem o fl
 |---|---|
 | Ator principal | Usuário autenticado |
 | Atores secundários | API Banco Central (SGS) e Tesouro Transparente, de forma indireta, via cache |
-| Requisitos | RF-20, RF-22, RF-23, RB-07, RB-10, RB-11, RNF-04, RNF-09 |
+| Requisitos | RF-20, RF-22, RF-23, RB-07, RB-10, RNF-04, RNF-09 |
 | Specs | SPEC-002 (motor de cálculo); tributação na SPEC-004 (futura) |
 | Inclui | UC-16 (Obter indicador oficial) e UC-17 (Calcular juros compostos) |
 | Estendido por | UC-18 (Usar último valor em cache) |
@@ -115,7 +115,7 @@ Descrição textual, com fluxos e exceções, dos casos de uso que compõem o fl
 
 **Fluxos alternativos e exceções**
 
-- **2a. Cache desatualizado por falha da fonte oficial:** o sistema usa o último valor conhecido e exibe aviso de defasagem, nunca um valor zerado (UC-18, RB-11).
+- **2a. Cache desatualizado por falha da fonte oficial:** o sistema usa o último valor conhecido e exibe aviso de defasagem, nunca um valor zerado (UC-18, RF-23).
 - **2b. Nenhum valor do indicador no cache:** cenário não coberto pelos requisitos atuais; registrado como questão em aberto abaixo.
 - **4a. Entrada inválida** (valor negativo ou prazo igual a zero): o sistema rejeita a simulação e indica o campo (SPEC-002, R06).
 

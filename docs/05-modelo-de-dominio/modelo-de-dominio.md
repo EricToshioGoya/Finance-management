@@ -51,8 +51,8 @@ Revisão de `requisitos.md` (RF-01 a RF-67) destacando os substantivos que repre
 | `ScoreSaude` | Calcular e manter a nota de saúde financeira do usuário | RF-41, RF-42 |
 | `CompraFinanciada` | Simular um financiamento e, ao ser confirmada, gerar um `Passivo` (RB-16) | RF-45 a RF-47 |
 | `Notificacao` | Representar e enviar um alerta ao usuário pelo canal habilitado | RF-48, RF-49 |
-| `WebhookSubscription` | Configurar e assinar (HMAC) o payload enviado a sistemas externos | RF-53, RB-20 |
-| `AuditLog` | Registrar de forma imutável ações sensíveis do usuário/administrador | RF-54, RNF-18, RB-19 |
+| `WebhookSubscription` | Configurar e assinar (HMAC) o payload enviado a sistemas externos | RF-53, RNF-23 |
+| `AuditLog` | Registrar de forma imutável ações sensíveis do usuário/administrador | RF-54, RNF-18 |
 | `EventoUso` | Registrar eventos de uso agregáveis para os dashboards administrativos | RF-59, RB-22, RB-23 |
 | `ConteudoEducacional` | Fornecer verbetes explicativos e ajuda contextual | RF-43, RF-44 |
 | `ContaCompartilhada` | Vincular dois usuários e controlar o ciclo de vida do vínculo | RF-60 |
@@ -93,16 +93,16 @@ mmdc -i diagrama_dominio.mmd -o diagrama-de-dominio.png -b white -w 2200 -H 2400
 | Conta / Cartao | RF-12, RF-13 | RB-04 |
 | Categoria | RF-10 | RB-02 |
 | Renda / RendaFixa / RendaVariavel / BonusPLR | RF-06, RF-07, RF-08 | RB-01, RB-05, RB-06 |
-| Despesa | RF-09, RF-11 | RB-01, RB-02, RB-03 |
+| Despesa | RF-09, RF-11 | RB-01, RB-02 |
 | Meta / MetaGeral / MetaCategoria / MetaFinanceira / MetaNomeada | RF-14, RF-15, RF-19, RF-26, RF-40 | RB-18 |
-| Simulacao | RF-20 a RF-28, RF-39, RF-62, RF-63, RF-64 | RB-07, RB-08, RB-10, RB-11, RB-17, RB-25 |
+| Simulacao | RF-20 a RF-28, RF-39, RF-62, RF-63, RF-64 | RB-07, RB-08, RB-10, RB-17, RB-25 |
 | EmpresaAberta / DocumentoCVM / IndicadorFinanceiro / Watchlist | RF-29 a RF-34 | RB-12 |
 | PatrimonioItem / Ativo / Passivo | RF-35, RF-36, RF-37, RF-38 | RB-13, RB-14 |
 | ScoreSaude | RF-41, RF-42, RF-66 | RB-15, RB-26 |
 | CompraFinanciada | RF-45, RF-46, RF-47 | RB-16 |
 | Notificacao | RF-48, RF-49 | — |
-| WebhookSubscription | RF-52, RF-53 | RB-20 |
-| AuditLog | RF-54 | RB-19, RB-21 |
+| WebhookSubscription | RF-52, RF-53 | — (RNF-23) |
+| AuditLog | RF-54 | — (RNF-18, RNF-21) |
 | EventoUso | RF-55 a RF-59 | RB-22, RB-23 |
 | ConteudoEducacional | RF-43, RF-44 | — |
 | ContaCompartilhada / DespesaCompartilhada / AcertoConta | RF-60, RF-61 | RB-24 |

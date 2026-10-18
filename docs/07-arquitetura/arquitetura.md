@@ -14,9 +14,9 @@ Requisitos que mais influenciam a estrutura do sistema. As specs citam estes ide
 |---|---|---|---|
 | DA-01 | Backend único para web e mobile, modular e de fácil manutenção | RNF-05, RNF-06, RNF-07 | ADR-001 |
 | DA-02 | Acurácia e testabilidade dos cálculos financeiros | RF-22, RB-10, RNF-07 | ADR-002 |
-| DA-03 | Resiliência à indisponibilidade das fontes oficiais de indicadores | RB-11, RNF-04, RNF-08, RNF-09 | ADR-003 |
+| DA-03 | Resiliência à indisponibilidade das fontes oficiais de indicadores | RF-23, RNF-04, RNF-08, RNF-09 | ADR-003 |
 | DA-04 | Conformidade e baixo custo no armazenamento de dados da CVM | RB-12, RNF-10 | ADR-004 |
-| DA-05 | Segurança e privacidade dos dados financeiros pessoais | RNF-01, RNF-02, RNF-13, RNF-18, RNF-21, RB-19, RB-21 | `docs/09-seguranca/seguranca-ssdlc.md` |
+| DA-05 | Segurança e privacidade dos dados financeiros pessoais | RNF-01, RNF-02, RNF-13, RNF-18, RNF-21 | `docs/09-seguranca/seguranca-ssdlc.md` |
 
 ---
 
@@ -90,7 +90,7 @@ Cada camada é subdividida pelos módulos da visão (conta e acesso, administra�
 Cliente → `POST /api/v1/auth/login` → caso de uso de autenticação → repositório de `Usuario` → verificação do hash → emissão do JWT → cliente envia o token no cabeçalho `Authorization` das requisições seguintes.
 
 ### 5.2 Simulação de renda fixa (UC-13, SPEC-002)
-Cliente → router do simulador → caso de uso → leitura do indicador no cache local (com data de referência) → motor de juros compostos no domínio → resposta com série mensal, totais e data de referência. Se o cache estiver defasado, a resposta inclui o aviso exigido pela RB-11.
+Cliente → router do simulador → caso de uso → leitura do indicador no cache local (com data de referência) → motor de juros compostos no domínio → resposta com série mensal, totais e data de referência. Se o cache estiver defasado, a resposta inclui o aviso exigido pelo RF-23.
 
 ### 5.3 Sincronização e expurgo
 Rotina agendada → API SGS / Tesouro Transparente → atualização do cache de indicadores. Rotina agendada → Dados Abertos CVM → gravação de metadados e indicadores → expurgo dos registros com `sincronizado_em` acima de 12 meses (RB-12).
@@ -102,11 +102,11 @@ Rotina agendada → API SGS / Tesouro Transparente → atualização do cache de
 | Aspecto | Abordagem | Requisitos |
 |---|---|---|
 | Autenticação | JWT com access e refresh token | RF-02, SPEC-001 |
-| Autorização | Papel (`usuario` ou `administrador`) verificado no backend em toda rota `/api/v1/admin/*` | RB-21, RNF-21 |
+| Autorização | Papel (`usuario` ou `administrador`) verificado no backend em toda rota `/api/v1/admin/*` | RNF-21 |
 | Versionamento | Prefixo `/api/v1` em todos os endpoints | RNF-17 |
 | Documentação da API | OpenAPI/Swagger gerado pelo FastAPI | RNF-15 |
 | Observabilidade | Logs estruturados e monitoramento de erros | RNF-12 |
-| Auditoria | Registro imutável de ações sensíveis | RNF-18, RB-19 |
+| Auditoria | Registro imutável de ações sensíveis | RNF-18 |
 | Segurança | Ver `docs/09-seguranca/seguranca-ssdlc.md` | DA-05 |
 | Testes | Ver `docs/10-qualidade/estrategia-de-testes.md` | RNF-07, RNF-16 |
 
