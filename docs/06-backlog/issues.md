@@ -31,7 +31,10 @@ Issues de documentação e setup da Semana 1: [#2](https://github.com/EricToshio
 
 **Labels:** `RF`, `modulo:conta-acesso`, `prioridade:must-have`
 
-**Enunciado EARS:** Event-driven. WHEN o usuário envia o formulário de cadastro com nome, e-mail e senha válidos THE SYSTEM SHALL criar a conta e armazenar a senha com hash.
+**Enunciado EARS:**
+
+- Event-driven. WHEN o usuário envia o formulário de cadastro com nome, e-mail e senha válidos THE SYSTEM SHALL criar a conta e armazenar a senha com hash.
+- Unwanted behavior. IF o e-mail informado tiver formato inválido ou já estiver cadastrado THEN THE SYSTEM SHALL recusar o cadastro e exibir mensagem de erro indicando o campo inválido.
 
 **Critérios de aceite:** ver RF-01 em `/docs/03-requisitos/requisitos.md`.
 
@@ -41,7 +44,12 @@ Issues de documentação e setup da Semana 1: [#2](https://github.com/EricToshio
 
 **Labels:** `RF`, `modulo:conta-acesso`, `prioridade:must-have`
 
-**Enunciado EARS:** Event-driven. WHEN o usuário envia POST /login com credenciais válidas THE SYSTEM SHALL retornar um token de sessão.
+**Enunciado EARS:**
+
+- Event-driven. WHEN o usuário submete e-mail e senha corretos THE SYSTEM SHALL iniciar a sessão e retornar um token de sessão.
+- State-driven. WHILE a sessão do usuário estiver ativa (token válido e não expirado) THE SYSTEM SHALL permitir o acesso às funcionalidades autenticadas sem nova solicitação de credenciais.
+- Unwanted behavior. IF as credenciais forem inválidas THEN THE SYSTEM SHALL recusar o acesso e exibir mensagem de erro genérica, sem indicar qual campo falhou.
+- Unwanted behavior. IF ocorrerem 5 tentativas de login inválidas consecutivas para a mesma conta THEN THE SYSTEM SHALL bloquear novas tentativas dessa conta por 15 minutos.
 
 **Critérios de aceite:** ver RF-02 em `/docs/03-requisitos/requisitos.md`.
 
@@ -51,7 +59,10 @@ Issues de documentação e setup da Semana 1: [#2](https://github.com/EricToshio
 
 **Labels:** `RF`, `modulo:adm-financeira`, `prioridade:must-have`
 
-**Enunciado EARS:** Event-driven. WHEN o usuário cadastra uma renda fixa mensal THE SYSTEM SHALL considerá-la automaticamente no cálculo de saldo do mês corrente e dos meses seguintes.
+**Enunciado EARS:**
+
+- Event-driven. WHEN o usuário cadastra uma renda fixa mensal THE SYSTEM SHALL considerá-la automaticamente no cálculo de saldo do mês corrente e dos meses seguintes.
+- Unwanted behavior. IF o valor informado for menor ou igual a zero THEN THE SYSTEM SHALL rejeitar o cadastro e exibir mensagem de erro.
 
 **Critérios de aceite:** ver RF-06 em `/docs/03-requisitos/requisitos.md`.
 
@@ -61,7 +72,10 @@ Issues de documentação e setup da Semana 1: [#2](https://github.com/EricToshio
 
 **Labels:** `RF`, `modulo:adm-financeira`, `prioridade:must-have`
 
-**Enunciado EARS:** Event-driven. WHEN o usuário registra um lançamento de renda variável THE SYSTEM SHALL somá-lo à renda total do mês correspondente.
+**Enunciado EARS:**
+
+- Event-driven. WHEN o usuário registra um lançamento de renda variável THE SYSTEM SHALL somá-lo à renda total do mês correspondente.
+- Unwanted behavior. IF o valor informado for menor ou igual a zero THEN THE SYSTEM SHALL rejeitar o lançamento e exibir mensagem de erro.
 
 **Critérios de aceite:** ver RF-07 em `/docs/03-requisitos/requisitos.md`.
 
@@ -81,7 +95,10 @@ Issues de documentação e setup da Semana 1: [#2](https://github.com/EricToshio
 
 **Labels:** `RF`, `modulo:adm-financeira`, `prioridade:must-have`
 
-**Enunciado EARS:** Event-driven. WHEN o usuário registra uma despesa com valor, categoria e data válidos THE SYSTEM SHALL persistir o lançamento e atualizar a listagem e os dashboards imediatamente.
+**Enunciado EARS:**
+
+- Event-driven. WHEN o usuário registra uma despesa com valor, categoria e data válidos THE SYSTEM SHALL persistir o lançamento e atualizar a listagem e os dashboards imediatamente.
+- Unwanted behavior. IF o valor for menor ou igual a zero, ou se a categoria ou a data não forem informadas, THEN THE SYSTEM SHALL rejeitar o lançamento e indicar o campo inválido.
 
 **Critérios de aceite:** ver RF-09 em `/docs/03-requisitos/requisitos.md`.
 
@@ -141,7 +158,10 @@ Issues de documentação e setup da Semana 1: [#2](https://github.com/EricToshio
 
 **Labels:** `RF`, `modulo:simulador`, `prioridade:must-have`
 
-**Enunciado EARS:** Event-driven. WHEN o usuário informa valor inicial, valor mensal, taxa de juros e período THE SYSTEM SHALL calcular o montante final usando juros compostos, com taxa equivalente entre as periodicidades informadas.
+**Enunciado EARS:**
+
+- Event-driven. WHEN o usuário informa valor inicial, valor mensal, taxa de juros e período THE SYSTEM SHALL calcular o montante final usando juros compostos, com taxa equivalente entre as periodicidades informadas.
+- Unwanted behavior. IF o valor inicial, o valor mensal ou a taxa de juros forem negativos, ou se o período for menor ou igual a zero, THEN THE SYSTEM SHALL rejeitar a simulação e indicar o campo inválido.
 
 **Critérios de aceite:** ver RF-22 em `/docs/03-requisitos/requisitos.md`.
 
@@ -151,7 +171,10 @@ Issues de documentação e setup da Semana 1: [#2](https://github.com/EricToshio
 
 **Labels:** `RF`, `modulo:simulador`, `prioridade:must-have`
 
-**Enunciado EARS:** Event-driven. WHEN uma simulação de renda fixa é solicitada THE SYSTEM SHALL obter a taxa do indicador oficial correspondente (Selic, CDI, IPCA ou Tesouro Direto) a partir do cache local mais recente.
+**Enunciado EARS:**
+
+- Event-driven. WHEN uma simulação de renda fixa é solicitada THE SYSTEM SHALL obter a taxa do indicador oficial correspondente (Selic, CDI, IPCA ou Tesouro Direto) a partir do cache local mais recente.
+- Unwanted behavior. IF a API oficial estiver indisponível ou retornar erro na atualização THEN THE SYSTEM SHALL usar o último valor em cache e exibir aviso visual de que o dado pode estar desatualizado — nunca um valor zerado ou inventado (incorpora a antiga RB-11).
 
 **Critérios de aceite:** ver RF-23 em `/docs/03-requisitos/requisitos.md`.
 
@@ -174,21 +197,27 @@ Rode a partir da raiz do repositório, com o GitHub CLI autenticado (`gh auth lo
 ```bash
 gh issue create --title "[RF-01] Cadastro de usuário" --label "RF,modulo:conta-acesso,prioridade:must-have" \
   --body "Event-driven. WHEN o usuário envia o formulário de cadastro com nome, e-mail e senha válidos THE SYSTEM SHALL criar a conta e armazenar a senha com hash.
+Unwanted behavior. IF o e-mail informado tiver formato inválido ou já estiver cadastrado THEN THE SYSTEM SHALL recusar o cadastro e exibir mensagem de erro indicando o campo inválido.
 
 Critérios de aceite: ver RF-01 em /docs/03-requisitos/requisitos.md."
 
 gh issue create --title "[RF-02] Login e autenticação" --label "RF,modulo:conta-acesso,prioridade:must-have" \
-  --body "Event-driven. WHEN o usuário envia POST /login com credenciais válidas THE SYSTEM SHALL retornar um token de sessão.
+  --body "Event-driven. WHEN o usuário submete e-mail e senha corretos THE SYSTEM SHALL iniciar a sessão e retornar um token de sessão.
+State-driven. WHILE a sessão do usuário estiver ativa (token válido e não expirado) THE SYSTEM SHALL permitir o acesso às funcionalidades autenticadas sem nova solicitação de credenciais.
+Unwanted behavior. IF as credenciais forem inválidas THEN THE SYSTEM SHALL recusar o acesso e exibir mensagem de erro genérica, sem indicar qual campo falhou.
+Unwanted behavior. IF ocorrerem 5 tentativas de login inválidas consecutivas para a mesma conta THEN THE SYSTEM SHALL bloquear novas tentativas dessa conta por 15 minutos.
 
 Critérios de aceite: ver RF-02 em /docs/03-requisitos/requisitos.md."
 
 gh issue create --title "[RF-06] Cadastro de renda fixa mensal" --label "RF,modulo:adm-financeira,prioridade:must-have" \
   --body "Event-driven. WHEN o usuário cadastra uma renda fixa mensal THE SYSTEM SHALL considerá-la automaticamente no cálculo de saldo do mês corrente e dos meses seguintes.
+Unwanted behavior. IF o valor informado for menor ou igual a zero THEN THE SYSTEM SHALL rejeitar o cadastro e exibir mensagem de erro.
 
 Critérios de aceite: ver RF-06 em /docs/03-requisitos/requisitos.md."
 
 gh issue create --title "[RF-07] Cadastro de renda variável" --label "RF,modulo:adm-financeira,prioridade:must-have" \
   --body "Event-driven. WHEN o usuário registra um lançamento de renda variável THE SYSTEM SHALL somá-lo à renda total do mês correspondente.
+Unwanted behavior. IF o valor informado for menor ou igual a zero THEN THE SYSTEM SHALL rejeitar o lançamento e exibir mensagem de erro.
 
 Critérios de aceite: ver RF-07 em /docs/03-requisitos/requisitos.md."
 
@@ -199,6 +228,7 @@ Critérios de aceite: ver RF-08 em /docs/03-requisitos/requisitos.md."
 
 gh issue create --title "[RF-09] Cadastro de despesas por categoria" --label "RF,modulo:adm-financeira,prioridade:must-have" \
   --body "Event-driven. WHEN o usuário registra uma despesa com valor, categoria e data válidos THE SYSTEM SHALL persistir o lançamento e atualizar a listagem e os dashboards imediatamente.
+Unwanted behavior. IF o valor for menor ou igual a zero, ou se a categoria ou a data não forem informadas, THEN THE SYSTEM SHALL rejeitar o lançamento e indicar o campo inválido.
 
 Critérios de aceite: ver RF-09 em /docs/03-requisitos/requisitos.md."
 
@@ -229,11 +259,13 @@ Critérios de aceite: ver RF-21 em /docs/03-requisitos/requisitos.md."
 
 gh issue create --title "[RF-22] Calculadora de juros compostos (motor genérico)" --label "RF,modulo:simulador,prioridade:must-have" \
   --body "Event-driven. WHEN o usuário informa valor inicial, valor mensal, taxa de juros e período THE SYSTEM SHALL calcular o montante final usando juros compostos, com taxa equivalente entre as periodicidades informadas.
+Unwanted behavior. IF o valor inicial, o valor mensal ou a taxa de juros forem negativos, ou se o período for menor ou igual a zero, THEN THE SYSTEM SHALL rejeitar a simulação e indicar o campo inválido.
 
 Critérios de aceite: ver RF-22 em /docs/03-requisitos/requisitos.md."
 
 gh issue create --title "[RF-23] Integração com indicadores oficiais (Selic, CDI, IPCA, Tesouro Direto)" --label "RF,modulo:simulador,prioridade:must-have" \
   --body "Event-driven. WHEN uma simulação de renda fixa é solicitada THE SYSTEM SHALL obter a taxa do indicador oficial correspondente (Selic, CDI, IPCA ou Tesouro Direto) a partir do cache local mais recente.
+Unwanted behavior. IF a API oficial estiver indisponível ou retornar erro na atualização THEN THE SYSTEM SHALL usar o último valor em cache e exibir aviso visual de que o dado pode estar desatualizado — nunca um valor zerado ou inventado (incorpora a antiga RB-11).
 
 Critérios de aceite: ver RF-23 em /docs/03-requisitos/requisitos.md."
 

@@ -49,8 +49,8 @@ Convenções:
 | C-04 | Conversão de taxa entre períodos é sempre por equivalência composta; nunca `i_anual / 12`. | RB-10, SPEC-002 INV-01 |
 | C-05 | A camada de domínio não importa FastAPI, SQLAlchemy nem faz I/O. | ADR-002 |
 | C-06 | Senhas são armazenadas com hash e salt; nunca em texto plano, nem em logs. | RNF-01, SPEC-001 INV-01 |
-| C-07 | Toda rota `/api/v1/admin/*` valida o papel de administrador no backend. | RB-21, RNF-21 |
-| C-08 | Simulações leem indicadores apenas do cache local; na falha da fonte, usam o último valor com aviso, nunca zero. | RB-11, ADR-003 |
+| C-07 | Toda rota `/api/v1/admin/*` valida o papel de administrador no backend. | RNF-21 |
+| C-08 | Simulações leem indicadores apenas do cache local; na falha da fonte, usam o último valor com aviso, nunca zero. | RF-23, ADR-003 |
 | C-09 | Documentos completos (PDF) da CVM nunca são armazenados; apenas metadados e link oficial. | RB-12, ADR-004 |
 | C-10 | Nenhum segredo (senha, token, chave de API) é versionado; usar variáveis de ambiente. | `docs/09-seguranca/seguranca-ssdlc.md` |
 | C-11 | Todos os endpoints ficam sob o prefixo `/api/v1`. | RNF-17 |

@@ -5,7 +5,7 @@
 * **Decisores:** Equipe de Arquitetura FinNova
 
 ## Contexto e Problema
-O módulo de simulação depende de taxas oficiais como Selic, CDI e IPCA (RF-23). As APIs do Banco Central (SGS) e do Tesouro Transparente podem sofrer instabilidade ou rate limit. De acordo com a RB-11 e RNF-09, a aplicação nunca pode falhar ou retornar taxa zerada se a API do governo estiver fora do ar, aceitando uma defasagem máxima de 24 horas.
+O módulo de simulação depende de taxas oficiais como Selic, CDI e IPCA (RF-23). As APIs do Banco Central (SGS) e do Tesouro Transparente podem sofrer instabilidade ou rate limit. De acordo com o RF-23 (cláusula IF/THEN, que incorpora a antiga RB-11) e o RNF-09, a aplicação nunca pode falhar ou retornar taxa zerada se a API do governo estiver fora do ar, aceitando uma defasagem máxima de 24 horas.
 
 ## Decisão Considerada
 Implementar um **Cache Local em Banco de Dados com Atualização Assíncrona e Fallback Decoupled**.

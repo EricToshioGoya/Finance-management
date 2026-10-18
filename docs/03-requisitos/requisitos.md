@@ -2,6 +2,10 @@
 
 **Convenção de identificadores:** `RF-01`, `RF-02`... (Requisitos Funcionais — o que o sistema faz), `RNF-01`, `RNF-02`... (Requisitos Não Funcionais — como o sistema se comporta) e `RB-01`, `RB-02`... (Regras de Negócio — políticas e restrições do domínio), numerados sequencialmente na ordem em que aparecem no documento. Cada RF e RNF traz, além dos critérios de aceite detalhados, um **enunciado em sintaxe EARS** (*Easy Approach to Requirements Syntax*) como definição objetiva e testável do comportamento esperado. A tabela da seção 1.1 indica a qual módulo/aba cada RF pertence.
 
+**Padrões EARS adotados:** Ubiquitous (sem gatilho — vale sempre), Event-driven (`WHEN` — evento pontual), State-driven (`WHILE` — estado que persiste durante um intervalo), Unwanted behavior (`IF ... THEN` — condição indesejada, erro ou falha) e Optional feature (`WHERE` — recurso ou configuração presente). Um mesmo requisito pode ter mais de uma cláusula EARS. As Regras de Negócio permanecem em forma declarativa (invariantes do domínio), com indicação do RF que as aplica.
+
+**Convenção de obrigação:** `SHALL` = obrigatório (o não atendimento reprova a aceitação); `SHOULD` = recomendado (desejável, não bloqueia a entrega); `MAY` = opcional (fica a critério da equipe). Nos RF, a obrigação acompanha a prioridade MoSCoW da tabela 1.1: Must have → `SHALL`, Should have → `SHOULD`, Could have → `MAY`. **Exceção:** RF que materializa obrigação legal ou restrição já exigida por um RNF mantém `SHALL` independentemente da prioridade (RF-05 e RF-50 — LGPD/RNF-02; RF-33 — RNF-10; RF-54 — RNF-21). Os RNF usam `SHALL`, por definirem limites de qualidade verificáveis; a coluna Prioridade da seção 2 indica em que entrega cada RNF passa a valer.
+
 ---
 
 ## 1. Requisitos Funcionais (RF)
@@ -86,9 +90,10 @@
 
 #### RF-01 — Cadastro de usuário
 
+**Enunciado EARS:**
 
-
-**Enunciado EARS:** Event-driven. WHEN o usuário envia o formulário de cadastro com nome, e-mail e senha válidos THE SYSTEM SHALL criar a conta e armazenar a senha com hash.
+- Event-driven. WHEN o usuário envia o formulário de cadastro com nome, e-mail e senha válidos THE SYSTEM SHALL criar a conta e armazenar a senha com hash.
+- Unwanted behavior. IF o e-mail informado tiver formato inválido ou já estiver cadastrado THEN THE SYSTEM SHALL recusar o cadastro e exibir mensagem de erro indicando o campo inválido.
 
 **Critérios de aceite:**
 
@@ -98,21 +103,22 @@
 
 #### RF-02 — Login e autenticação
 
+**Enunciado EARS:**
 
-
-**Enunciado EARS:** Event-driven. WHEN o usuário envia POST /login com credenciais válidas THE SYSTEM SHALL retornar um token de sessão.
+- Event-driven. WHEN o usuário submete e-mail e senha corretos THE SYSTEM SHALL iniciar a sessão e retornar um token de sessão.
+- State-driven. WHILE a sessão do usuário estiver ativa (token válido e não expirado) THE SYSTEM SHALL permitir o acesso às funcionalidades autenticadas sem nova solicitação de credenciais.
+- Unwanted behavior. IF as credenciais forem inválidas THEN THE SYSTEM SHALL recusar o acesso e exibir mensagem de erro genérica, sem indicar qual campo falhou.
+- Unwanted behavior. IF ocorrerem 5 tentativas de login inválidas consecutivas para a mesma conta THEN THE SYSTEM SHALL bloquear novas tentativas dessa conta por 15 minutos.
 
 **Critérios de aceite:**
 
 - [ ] Deve autenticar por e-mail e senha.
-- [ ] Deve bloquear acesso após N tentativas inválidas (N a definir).
+- [ ] Deve bloquear novas tentativas por 15 minutos após 5 tentativas inválidas consecutivas para a mesma conta (padrão de mercado); o contador é zerado após um login bem-sucedido.
 - [ ] Deve manter sessão ativa até logout ou expiração do token.
 
 #### RF-03 — Quiz de perfil de investidor
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o usuário conclui o quiz de perfil de investidor THE SYSTEM SHALL classificar e salvar seu perfil de investidor.
+**Enunciado EARS:** Event-driven. WHEN o usuário conclui o quiz de perfil de investidor THE SYSTEM SHOULD classificar e salvar seu perfil de investidor.
 
 **Critérios de aceite:**
 
@@ -123,9 +129,7 @@
 
 #### RF-04 — Onboarding guiado
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o usuário realiza o primeiro login THE SYSTEM SHALL exibir o tour guiado de introdução ao sistema.
+**Enunciado EARS:** Event-driven. WHEN o usuário realiza o primeiro login THE SYSTEM SHOULD exibir o tour guiado de introdução ao sistema.
 
 **Critérios de aceite:**
 
@@ -136,15 +140,13 @@
 
 #### RF-05 — Exclusão de conta e dados (direito ao esquecimento)
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o usuário confirma a exclusão da conta, reautenticado, THE SYSTEM SHALL excluir ou anonimizar seus dados pessoais dentro do prazo definido.
+**Enunciado EARS:** Event-driven. WHEN o usuário confirma a exclusão da conta, reautenticado, THE SYSTEM SHALL excluir ou anonimizar seus dados pessoais em até 15 dias corridos.
 
 **Critérios de aceite:**
 
 - [ ] Deve permitir ao usuário solicitar a exclusão da conta e de todos os dados pessoais associados.
 - [ ] Deve exigir confirmação explícita (reautenticação + confirmação por texto) antes de excluir.
-- [ ] Deve excluir ou anonimizar os dados pessoais em até um prazo definido (a definir, respeitando a LGPD).
+- [ ] Deve excluir ou anonimizar os dados pessoais em até 15 dias corridos após a confirmação (padrão de mercado, alinhado ao prazo de 15 dias para atendimento ao titular do art. 19, II, da LGPD).
 - [ ] Antes de confirmar, deve informar ao usuário quais dados serão apagados e se algum dado é retido por obrigação legal.
 
 ---
@@ -159,9 +161,10 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 **Descrição:** salário ou renda fixa recorrente do usuário.
 
+**Enunciado EARS:**
 
-
-**Enunciado EARS:** Event-driven. WHEN o usuário cadastra uma renda fixa mensal THE SYSTEM SHALL considerá-la automaticamente no cálculo de saldo do mês corrente e dos meses seguintes.
+- Event-driven. WHEN o usuário cadastra uma renda fixa mensal THE SYSTEM SHALL considerá-la automaticamente no cálculo de saldo do mês corrente e dos meses seguintes.
+- Unwanted behavior. IF o valor informado for menor ou igual a zero THEN THE SYSTEM SHALL rejeitar o cadastro e exibir mensagem de erro.
 
 **Critérios de aceite:**
 
@@ -174,9 +177,10 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 **Descrição:** rendas sem valor fixo mensal (freelas, comissões, renda extra).
 
+**Enunciado EARS:**
 
-
-**Enunciado EARS:** Event-driven. WHEN o usuário registra um lançamento de renda variável THE SYSTEM SHALL somá-lo à renda total do mês correspondente.
+- Event-driven. WHEN o usuário registra um lançamento de renda variável THE SYSTEM SHALL somá-lo à renda total do mês correspondente.
+- Unwanted behavior. IF o valor informado for menor ou igual a zero THEN THE SYSTEM SHALL rejeitar o lançamento e exibir mensagem de erro.
 
 **Critérios de aceite:**
 
@@ -188,8 +192,6 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 #### RF-08 — Cadastro de bônus e PLR
 
 **Descrição:** bonificações e Participação nos Lucros e Resultados.
-
-
 
 **Enunciado EARS:** Event-driven. WHEN o usuário cadastra um bônus/PLR com periodicidade anual e mês de referência THE SYSTEM SHALL somar integralmente o valor à renda total do mês informado, sem diluí-lo pelos demais meses.
 
@@ -203,9 +205,10 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-09 — Cadastro de despesas por categoria
 
+**Enunciado EARS:**
 
-
-**Enunciado EARS:** Event-driven. WHEN o usuário registra uma despesa com valor, categoria e data válidos THE SYSTEM SHALL persistir o lançamento e atualizar a listagem e os dashboards imediatamente.
+- Event-driven. WHEN o usuário registra uma despesa com valor, categoria e data válidos THE SYSTEM SHALL persistir o lançamento e atualizar a listagem e os dashboards imediatamente.
+- Unwanted behavior. IF o valor for menor ou igual a zero, ou se a categoria ou a data não forem informadas, THEN THE SYSTEM SHALL rejeitar o lançamento e indicar o campo inválido.
 
 **Critérios de aceite:**
 
@@ -215,8 +218,6 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 - [ ] Deve permitir marcar a despesa como recorrente (repete todo mês com o mesmo valor) ou pontual.
 
 #### RF-10 — Categorias padrão e personalizadas de gastos
-
-
 
 **Enunciado EARS:** Event-driven. WHEN o usuário cria uma categoria personalizada THE SYSTEM SHALL disponibilizá-la, junto às categorias padrão, para uso em novos lançamentos.
 
@@ -230,8 +231,6 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-11 — Edição e exclusão de lançamentos
 
-
-
 **Enunciado EARS:** Event-driven. WHEN o usuário edita ou exclui um lançamento THE SYSTEM SHALL recalcular automaticamente o saldo, os dashboards e o progresso das metas.
 
 **Critérios de aceite:**
@@ -241,8 +240,6 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 - [ ] Saldo, dashboards e progresso de metas devem ser recalculados automaticamente após qualquer alteração.
 
 #### RF-12 — Cadastro de contas bancárias e cartões de crédito
-
-
 
 **Enunciado EARS:** Event-driven. WHEN o usuário cadastra uma conta bancária ou cartão de crédito THE SYSTEM SHALL disponibilizá-lo para vínculo com lançamentos.
 
@@ -254,9 +251,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-13 — Controle de fatura de cartão de crédito
 
-
-
-**Enunciado EARS:** Event-driven. WHEN um lançamento é vinculado a um cartão de crédito THE SYSTEM SHALL somá-lo à fatura do ciclo atual e recalcular o limite disponível.
+**Enunciado EARS:** Event-driven. WHEN um lançamento é vinculado a um cartão de crédito THE SYSTEM SHOULD somá-lo à fatura do ciclo atual e recalcular o limite disponível.
 
 **Critérios de aceite:**
 
@@ -266,9 +261,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-14 — Meta geral de renda e de gasto
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o gasto total do mês ultrapassa a meta geral definida THE SYSTEM SHALL sinalizar visualmente o estouro da meta.
+**Enunciado EARS:** Event-driven. WHEN o gasto total do mês ultrapassa a meta geral definida THE SYSTEM SHOULD sinalizar visualmente o estouro da meta.
 
 **Critérios de aceite:**
 
@@ -279,9 +272,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-15 — Meta de gasto por categoria
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o gasto acumulado de uma categoria atinge o percentual configurado da meta daquela categoria THE SYSTEM SHALL alertar o usuário.
+**Enunciado EARS:** Event-driven. WHEN o gasto acumulado de uma categoria atinge o percentual configurado da meta daquela categoria THE SYSTEM SHOULD alertar o usuário.
 
 **Critérios de aceite:**
 
@@ -291,9 +282,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-16 — Dashboard: gastos por categoria (pizza)
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o usuário seleciona um período no dashboard de categorias THE SYSTEM SHALL exibir o gráfico com o total gasto por categoria naquele período.
+**Enunciado EARS:** Event-driven. WHEN o usuário seleciona um período no dashboard de categorias THE SYSTEM SHOULD exibir o gráfico com o total gasto por categoria naquele período.
 
 **Critérios de aceite:**
 
@@ -304,9 +293,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-17 — Dashboard: evolução de saldo (linha)
 
-
-
-**Enunciado EARS:** Event-driven. WHEN um novo lançamento é registrado THE SYSTEM SHALL atualizar automaticamente o gráfico de evolução de saldo.
+**Enunciado EARS:** Event-driven. WHEN um novo lançamento é registrado THE SYSTEM SHOULD atualizar automaticamente o gráfico de evolução de saldo.
 
 **Critérios de aceite:**
 
@@ -316,9 +303,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-18 — Dashboard: comparativo renda vs. gasto mensal (barras)
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o usuário seleciona um intervalo de meses no dashboard comparativo THE SYSTEM SHALL exibir renda total e gasto total lado a lado para cada mês do intervalo.
+**Enunciado EARS:** Event-driven. WHEN o usuário seleciona um intervalo de meses no dashboard comparativo THE SYSTEM SHOULD exibir renda total e gasto total lado a lado para cada mês do intervalo.
 
 **Critérios de aceite:**
 
@@ -329,9 +314,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-19 — Dashboard: progresso de metas
 
-
-
-**Enunciado EARS:** Event-driven. WHEN um lançamento altera o gasto ou a renda do mês corrente THE SYSTEM SHALL recalcular e exibir o progresso das metas gerais e por categoria.
+**Enunciado EARS:** Event-driven. WHEN um lançamento altera o gasto ou a renda do mês corrente THE SYSTEM SHOULD recalcular e exibir o progresso das metas gerais e por categoria.
 
 **Critérios de aceite:**
 
@@ -348,8 +331,6 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-20 — Simulação de investimento em renda fixa
 
-
-
 **Enunciado EARS:** Event-driven. WHEN o usuário solicita uma simulação de renda fixa com valor inicial, aporte mensal e prazo THE SYSTEM SHALL calcular e retornar o valor bruto e o valor líquido de IR ao final do prazo.
 
 **Critérios de aceite:**
@@ -361,8 +342,6 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 - [ ] Deve exibir a data de referência do indicador usado na simulação.
 
 #### RF-21 — Simulação de investimento em renda variável
-
-
 
 **Enunciado EARS:** Event-driven. WHEN o usuário informa um ticker ou valor investido para simulação de renda variável THE SYSTEM SHALL retornar a evolução estimada do investimento, identificada como projeção.
 
@@ -386,9 +365,10 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 | Taxa de juros | Percentual (%) + seletor **Mensal / Anual** | Ícone de ajuda (`?`) explicando o que é a taxa e como ela é aplicada |
 | Período | Número inteiro + seletor **Meses / Anos** | Prazo total da simulação |
 
+**Enunciado EARS:**
 
-
-**Enunciado EARS:** Event-driven. WHEN o usuário informa valor inicial, valor mensal, taxa de juros e período THE SYSTEM SHALL calcular o montante final usando juros compostos, com taxa equivalente entre as periodicidades informadas.
+- Event-driven. WHEN o usuário informa valor inicial, valor mensal, taxa de juros e período THE SYSTEM SHALL calcular o montante final usando juros compostos, com taxa equivalente entre as periodicidades informadas.
+- Unwanted behavior. IF o valor inicial, o valor mensal ou a taxa de juros forem negativos, ou se o período for menor ou igual a zero, THEN THE SYSTEM SHALL rejeitar a simulação e indicar o campo inválido.
 
 **Critérios de aceite:**
 
@@ -410,16 +390,17 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 **Descrição:** busca de taxas reais em fontes oficiais do governo/mercado brasileiro, evitando que o usuário precise digitar valores desatualizados.
 
+**Enunciado EARS:**
 
-
-**Enunciado EARS:** Event-driven. WHEN uma simulação de renda fixa é solicitada THE SYSTEM SHALL obter a taxa do indicador oficial correspondente (Selic, CDI, IPCA ou Tesouro Direto) a partir do cache local mais recente.
+- Event-driven. WHEN uma simulação de renda fixa é solicitada THE SYSTEM SHALL obter a taxa do indicador oficial correspondente (Selic, CDI, IPCA ou Tesouro Direto) a partir do cache local mais recente.
+- Unwanted behavior. IF a API oficial estiver indisponível ou retornar erro na atualização THEN THE SYSTEM SHALL usar o último valor em cache e exibir aviso visual de que o dado pode estar desatualizado — nunca um valor zerado ou inventado (incorpora a antiga RB-11).
 
 **Critérios de aceite:**
 
 - [ ] Selic, CDI e IPCA devem ser obtidos via API do **Banco Central do Brasil — Sistema Gerenciador de Séries Temporais (SGS)** (`api.bcb.gov.br/dados/serie`).
 - [ ] Taxas de títulos do Tesouro Direto devem ser obtidas via API do **Tesouro Transparente** (`www.tesourotransparente.gov.br`).
 - [ ] Os valores obtidos devem ser armazenados em cache local, com data/hora da última atualização.
-- [ ] O sistema deve atualizar o cache automaticamente em intervalo regular (frequência a definir, ex.: diária, respeitando o horário de divulgação de cada indicador).
+- [ ] O sistema deve atualizar o cache automaticamente 1 vez por dia, após o horário de divulgação de cada indicador (padrão de mercado; atende à defasagem máxima de 24h do RNF-09).
 - [ ] Em caso de falha ou indisponibilidade da API oficial, o sistema deve usar o último valor em cache e exibir um aviso visual informando que o dado pode estar desatualizado.
 - [ ] A data de referência do indicador deve ser exibida sempre que ele for usado em uma simulação (RF-20, RF-22).
 
@@ -427,9 +408,10 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 **Descrição:** consulta de preço atual e histórico de ativos de renda variável para uso em RF-21.
 
+**Enunciado EARS:**
 
-
-**Enunciado EARS:** Event-driven. WHEN o usuário busca um ticker de ação ou FII THE SYSTEM SHALL retornar o preço mais recente disponível e a data/hora de referência da cotação.
+- Event-driven. WHEN o usuário busca um ticker de ação ou FII THE SYSTEM SHOULD retornar o preço mais recente disponível e a data/hora de referência da cotação.
+- Unwanted behavior. IF a fonte de dados de mercado estiver indisponível THEN THE SYSTEM SHOULD permitir que o usuário prossiga informando valor e rentabilidade manualmente.
 
 **Critérios de aceite:**
 
@@ -441,8 +423,6 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-25 — Comparador de cenários de investimento
 
-
-
 **Enunciado EARS:** Event-driven. WHEN o usuário seleciona duas ou mais simulações para comparação THE SYSTEM SHALL exibir os resultados finais lado a lado com a diferença percentual entre eles.
 
 **Critérios de aceite:**
@@ -453,9 +433,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-26 — Projeção de objetivo financeiro
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o usuário informa um valor-alvo e um prazo THE SYSTEM SHALL calcular o aporte mensal necessário para atingir a meta, dado o rendimento estimado.
+**Enunciado EARS:** Event-driven. WHEN o usuário informa um valor-alvo e um prazo THE SYSTEM SHOULD calcular o aporte mensal necessário para atingir a meta, dado o rendimento estimado.
 
 **Critérios de aceite:**
 
@@ -467,9 +445,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 **Descrição:** métricas adicionais para o usuário avançado comparar cenários de renda variável com mais profundidade técnica.
 
-
-
-**Enunciado EARS:** Event-driven. WHEN uma simulação de renda variável é concluída THE SYSTEM SHALL calcular e exibir a volatilidade e o Índice de Sharpe simplificado do ativo.
+**Enunciado EARS:** Event-driven. WHEN uma simulação de renda variável é concluída THE SYSTEM MAY calcular e exibir a volatilidade e o Índice de Sharpe simplificado do ativo.
 
 **Critérios de aceite:**
 
@@ -483,9 +459,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 **Descrição:** permite simular investimentos em moeda estrangeira, útil para quem pensa em diversificação internacional.
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o usuário informa um valor em moeda estrangeira para simulação THE SYSTEM SHALL converter o valor para BRL usando a taxa PTAX oficial e exibir o resultado nas duas moedas.
+**Enunciado EARS:** Event-driven. WHEN o usuário informa um valor em moeda estrangeira para simulação THE SYSTEM MAY converter o valor para BRL usando a taxa PTAX oficial e exibir o resultado nas duas moedas.
 
 **Critérios de aceite:**
 
@@ -505,9 +479,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-29 — Busca de empresa
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o usuário digita um ticker, CNPJ ou razão social na busca THE SYSTEM SHALL retornar sugestões de empresas correspondentes.
+**Enunciado EARS:** Event-driven. WHEN o usuário digita um ticker, CNPJ ou razão social na busca THE SYSTEM SHOULD retornar sugestões de empresas correspondentes.
 
 **Critérios de aceite:**
 
@@ -517,9 +489,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-30 — Listagem de documentos oficiais (metadados)
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o usuário seleciona uma empresa THE SYSTEM SHALL listar os metadados dos documentos oficiais disponíveis (DFP, ITR, FRE, IPE).
+**Enunciado EARS:** Event-driven. WHEN o usuário seleciona uma empresa THE SYSTEM SHOULD listar os metadados dos documentos oficiais disponíveis (DFP, ITR, FRE, IPE).
 
 **Critérios de aceite:**
 
@@ -530,9 +500,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-31 — Acesso ao documento completo via link externo
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o usuário clica em um documento da listagem THE SYSTEM SHALL redirecioná-lo, em nova aba, ao documento oficial no RAD/ENET da CVM.
+**Enunciado EARS:** Event-driven. WHEN o usuário clica em um documento da listagem THE SYSTEM SHOULD redirecioná-lo, em nova aba, ao documento oficial no RAD/ENET da CVM.
 
 **Critérios de aceite:**
 
@@ -543,9 +511,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-32 — Indicadores financeiros extraídos de dados abertos da CVM
 
-
-
-**Enunciado EARS:** Event-driven. WHEN novos dados de DFP/ITR são sincronizados do Portal de Dados Abertos da CVM THE SYSTEM SHALL extrair e disponibilizar os indicadores financeiros estruturados da empresa.
+**Enunciado EARS:** Event-driven. WHEN novos dados de DFP/ITR são sincronizados do Portal de Dados Abertos da CVM THE SYSTEM MAY extrair e disponibilizar os indicadores financeiros estruturados da empresa.
 
 **Critérios de aceite:**
 
@@ -556,9 +522,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-33 — Retenção e expurgo automático dos dados sincronizados
 
-
-
-**Enunciado EARS:** State-driven. WHILE um registro de metadado ou indicador estiver há mais de 12 meses desde a sincronização THE SYSTEM SHALL expurgá-lo automaticamente do cache local.
+**Enunciado EARS:** Event-driven. WHEN um registro de metadado ou indicador completar 12 meses desde a sincronização THE SYSTEM SHALL expurgá-lo automaticamente do cache local.
 
 **Critérios de aceite:**
 
@@ -566,22 +530,20 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 - [ ] Ao atingir 12 meses, o registro deve ser expurgado (removido) automaticamente por uma rotina agendada.
 - [ ] Se o usuário consultar uma empresa cujos dados foram expurgados, o sistema deve buscar novamente na fonte oficial (CVM) e recriar o cache.
 - [ ] O link para o documento completo (RF-31) nunca é uma cópia armazenada — por não guardar o binário, ele não está sujeito a essa política de expurgo.
-- [ ] A rotina de expurgo deve ser registrada em log para fins de auditoria (RNF-07).
+- [ ] A rotina de expurgo deve ser registrada em log para fins de auditoria (RNF-18).
 
 #### RF-34 — Watchlist de empresas
 
 **Descrição:** permite ao usuário acompanhar empresas de interesse sem precisar buscar novamente.
 
-
-
-**Enunciado EARS:** Event-driven. WHEN um novo documento é identificado para uma empresa da watchlist do usuário THE SYSTEM SHALL notificá-lo.
+**Enunciado EARS:** Event-driven. WHEN um novo documento é identificado para uma empresa da watchlist do usuário THE SYSTEM MAY notificá-lo.
 
 **Critérios de aceite:**
 
 - [ ] Deve permitir favoritar/desfavoritar uma empresa a partir da busca (RF-29) ou da ficha da empresa.
 - [ ] Deve exibir uma lista consolidada das empresas favoritadas pelo usuário.
 - [ ] Deve notificar o usuário (RF-48) quando um novo documento (DFP, ITR, FRE, IPE) for identificado para uma empresa da watchlist.
-- [ ] A watchlist é pessoal (por usuário), sem limite mínimo, com limite máximo configurável (a definir, ex.: 50 empresas).
+- [ ] A watchlist é pessoal (por usuário), sem limite mínimo, com limite máximo configurável de 50 empresas (padrão de mercado).
 
 ---
 
@@ -591,9 +553,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-35 — Consolidação de patrimônio (ativos e passivos)
 
-
-
-**Enunciado EARS:** Event-driven. WHEN dados de conta, investimento, fatura ou financiamento do usuário mudam THE SYSTEM SHALL recalcular o patrimônio líquido consolidado (ativos menos passivos).
+**Enunciado EARS:** Event-driven. WHEN dados de conta, investimento, fatura ou financiamento do usuário mudam THE SYSTEM SHOULD recalcular o patrimônio líquido consolidado (ativos menos passivos).
 
 **Critérios de aceite:**
 
@@ -605,9 +565,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-36 — Evolução do patrimônio líquido
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o usuário seleciona um intervalo de meses no dashboard de patrimônio THE SYSTEM SHALL exibir a evolução do patrimônio líquido, dos ativos e dos passivos nesse período.
+**Enunciado EARS:** Event-driven. WHEN o usuário seleciona um intervalo de meses no dashboard de patrimônio THE SYSTEM MAY exibir a evolução do patrimônio líquido, dos ativos e dos passivos nesse período.
 
 **Critérios de aceite:**
 
@@ -619,9 +577,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 **Descrição:** visualização única do patrimônio, em que o tamanho de cada item representa o valor e a cor comunica a natureza (ativo/passivo) e o desempenho.
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o usuário abre o mapa de calor patrimonial THE SYSTEM SHALL exibir cada ativo em tom de verde proporcional à sua rentabilidade e cada passivo em tom quente proporcional à sua taxa de juros.
+**Enunciado EARS:** Event-driven. WHEN o usuário abre o mapa de calor patrimonial THE SYSTEM SHOULD exibir cada ativo em tom de verde proporcional à sua rentabilidade e cada passivo em tom quente proporcional à sua taxa de juros.
 
 **Critérios de aceite:**
 
@@ -635,9 +591,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-38 — Alocação da carteira por classe de ativo
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o usuário abre o dashboard de alocação THE SYSTEM SHALL exibir o percentual investido em cada classe de ativo e o desvio em relação à alocação-alvo definida.
+**Enunciado EARS:** Event-driven. WHEN o usuário abre o dashboard de alocação THE SYSTEM MAY exibir o percentual investido em cada classe de ativo e o desvio em relação à alocação-alvo definida.
 
 **Critérios de aceite:**
 
@@ -649,9 +603,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 **Descrição:** stress test do orçamento sob diferentes cenários hipotéticos de choque financeiro, mostrando por quanto tempo o patrimônio sustenta o usuário e o impacto no orçamento.
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o usuário seleciona um tipo de cenário (perda de renda, redução de renda ou gasto emergencial) e informa os parâmetros THE SYSTEM SHALL calcular e exibir o impacto no orçamento e por quantos meses o patrimônio atual sustenta os gastos médios do usuário.
+**Enunciado EARS:** Event-driven. WHEN o usuário seleciona um tipo de cenário (perda de renda, redução de renda ou gasto emergencial) e informa os parâmetros THE SYSTEM MAY calcular e exibir o impacto no orçamento e por quantos meses o patrimônio atual sustenta os gastos médios do usuário.
 
 **Critérios de aceite:**
 
@@ -663,9 +615,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-40 — Metas nomeadas (objetivos financeiros)
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o usuário cria uma meta nomeada vinculada a um ativo THE SYSTEM SHALL calcular e exibir o progresso da meta com base no valor atual do ativo vinculado.
+**Enunciado EARS:** Event-driven. WHEN o usuário cria uma meta nomeada vinculada a um ativo THE SYSTEM MAY calcular e exibir o progresso da meta com base no valor atual do ativo vinculado.
 
 **Critérios de aceite:**
 
@@ -682,9 +632,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-41 — Cálculo do score de saúde financeira
 
-
-
-**Enunciado EARS:** Event-driven. WHEN dados de renda, gasto, reserva ou dívida do usuário mudam THE SYSTEM SHALL recalcular o score de saúde financeira.
+**Enunciado EARS:** Event-driven. WHEN dados de renda, gasto, reserva ou dívida do usuário mudam THE SYSTEM SHOULD recalcular o score de saúde financeira.
 
 **Critérios de aceite:**
 
@@ -695,9 +643,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-42 — Exibição e histórico do score
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o usuário abre a tela de score THE SYSTEM SHALL exibir a nota atual, a classificação, o histórico mensal e os fatores que mais impactaram o resultado.
+**Enunciado EARS:** Event-driven. WHEN o usuário abre a tela de score THE SYSTEM MAY exibir a nota atual, a classificação, o histórico mensal e os fatores que mais impactaram o resultado.
 
 **Critérios de aceite:**
 
@@ -713,9 +659,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-43 — Central de conteúdo educacional
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o usuário busca um termo na central educacional THE SYSTEM SHALL retornar o verbete correspondente.
+**Enunciado EARS:** Event-driven. WHEN o usuário busca um termo na central educacional THE SYSTEM MAY retornar o verbete correspondente.
 
 **Critérios de aceite:**
 
@@ -725,9 +669,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-44 — Ajuda contextual (tooltips educativos)
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o usuário clica no ícone de ajuda de um campo técnico THE SYSTEM SHALL exibir a explicação correspondente da central educacional sem sair da tela atual.
+**Enunciado EARS:** Event-driven. WHEN o usuário clica no ícone de ajuda de um campo técnico THE SYSTEM MAY exibir a explicação correspondente da central educacional sem sair da tela atual.
 
 **Critérios de aceite:**
 
@@ -742,9 +684,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-45 — Simulação de compra financiada
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o usuário informa valor do bem, entrada, parcelas e taxa de juros THE SYSTEM SHALL calcular e exibir a tabela de amortização e o valor total pago.
+**Enunciado EARS:** Event-driven. WHEN o usuário informa valor do bem, entrada, parcelas e taxa de juros THE SYSTEM MAY calcular e exibir a tabela de amortização e o valor total pago.
 
 **Critérios de aceite:**
 
@@ -754,9 +694,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-46 — Comparador: financiar vs. investir e comprar depois
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o usuário solicita a comparação entre financiar e investir para comprar depois THE SYSTEM SHALL exibir o custo total e o tempo até a posse do bem para os dois cenários.
+**Enunciado EARS:** Event-driven. WHEN o usuário solicita a comparação entre financiar e investir para comprar depois THE SYSTEM MAY exibir o custo total e o tempo até a posse do bem para os dois cenários.
 
 **Critérios de aceite:**
 
@@ -766,9 +704,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-47 — Registro do financiamento como passivo
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o usuário confirma uma simulação de compra financiada como financiamento real THE SYSTEM SHALL registrar o saldo devedor como passivo no módulo Patrimônio.
+**Enunciado EARS:** Event-driven. WHEN o usuário confirma uma simulação de compra financiada como financiamento real THE SYSTEM MAY registrar o saldo devedor como passivo no módulo Patrimônio.
 
 **Critérios de aceite:**
 
@@ -783,9 +719,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-48 — Notificações e alertas
 
-
-
-**Enunciado EARS:** Event-driven. WHEN ocorre um evento monitorado (fatura próxima do vencimento, meta ultrapassada ou novo documento na watchlist) THE SYSTEM SHALL gerar uma notificação para o usuário, respeitando suas preferências de canal.
+**Enunciado EARS:** Event-driven. WHEN ocorre um evento monitorado (fatura próxima do vencimento, meta ultrapassada ou novo documento na watchlist) THE SYSTEM SHOULD gerar uma notificação para o usuário, respeitando suas preferências de canal.
 
 **Critérios de aceite:**
 
@@ -795,18 +729,14 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-49 — Canal de envio
 
-
-
-**Enunciado EARS:** Optional feature. WHERE o usuário habilita o canal push ou e-mail THE SYSTEM SHALL enviar as notificações também por esse canal, além do in-app.
+**Enunciado EARS:** Optional feature. WHERE o usuário habilita o canal push ou e-mail THE SYSTEM MAY enviar as notificações também por esse canal, além do in-app.
 
 **Critérios de aceite:**
 
 - [ ] Notificações in-app são obrigatórias (MVP); push (mobile) e e-mail são canais opcionais, configuráveis pelo usuário.
-- [ ] O envio por push deve usar um serviço de terceiros (ex.: Firebase Cloud Messaging — ver seção 8).
+- [ ] O envio por push deve usar um serviço de terceiros (ex.: Firebase Cloud Messaging — ver seção 5).
 
 #### RF-50 — Exportação de dados pessoais
-
-
 
 **Enunciado EARS:** Event-driven. WHEN o usuário solicita a exportação dos seus lançamentos financeiros THE SYSTEM SHALL gerar o arquivo em CSV ou PDF no período filtrado.
 
@@ -819,9 +749,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-51 — Relatório mensal automático
 
-
-
-**Enunciado EARS:** Event-driven. WHEN o mês vira THE SYSTEM SHALL gerar e enviar automaticamente o relatório mensal em PDF ao usuário, se essa opção estiver habilitada.
+**Enunciado EARS:** Event-driven. WHEN o mês vira THE SYSTEM MAY gerar e enviar automaticamente o relatório mensal em PDF ao usuário, se essa opção estiver habilitada.
 
 **Critérios de aceite:**
 
@@ -831,9 +759,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-52 — API pública documentada
 
-
-
-**Enunciado EARS:** Event-driven. WHEN uma aplicação de terceiros autenticada faz uma requisição a um endpoint público autorizado THE SYSTEM SHALL retornar os dados solicitados dentro do escopo concedido pelo usuário.
+**Enunciado EARS:** Event-driven. WHEN uma aplicação de terceiros autenticada faz uma requisição a um endpoint público autorizado THE SYSTEM MAY retornar os dados solicitados dentro do escopo concedido pelo usuário.
 
 **Critérios de aceite:**
 
@@ -844,9 +770,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-53 — Webhooks para eventos do usuário
 
-
-
-**Enunciado EARS:** Event-driven. WHEN um evento cadastrado em uma assinatura de webhook ocorre THE SYSTEM SHALL enviar o payload assinado (HMAC) para a URL cadastrada.
+**Enunciado EARS:** Event-driven. WHEN um evento cadastrado em uma assinatura de webhook ocorre THE SYSTEM MAY enviar o payload assinado (HMAC) para a URL cadastrada.
 
 **Critérios de aceite:**
 
@@ -863,8 +787,6 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-54 — Controle de acesso administrativo
 
-
-
 **Enunciado EARS:** Unwanted behavior. IF um usuário sem papel de administrador tentar acessar um endpoint administrativo THEN THE SYSTEM SHALL retornar erro de acesso negado (HTTP 403).
 
 **Critérios de aceite:**
@@ -877,9 +799,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-55 — Listagem e busca de usuários
 
-
-
-**Enunciado EARS:** Event-driven. WHEN um administrador aplica um filtro de busca na listagem de usuários THE SYSTEM SHALL retornar os usuários correspondentes, sem exibir dados financeiros individuais.
+**Enunciado EARS:** Event-driven. WHEN um administrador aplica um filtro de busca na listagem de usuários THE SYSTEM SHOULD retornar os usuários correspondentes, sem exibir dados financeiros individuais.
 
 **Critérios de aceite:**
 
@@ -890,9 +810,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-56 — Dashboard: distribuição de perfil de investidor
 
-
-
-**Enunciado EARS:** Event-driven. WHEN um administrador abre o dashboard de perfil de investidor THE SYSTEM SHALL exibir a distribuição dos usuários por perfil, filtrável por período de cadastro.
+**Enunciado EARS:** Event-driven. WHEN um administrador abre o dashboard de perfil de investidor THE SYSTEM MAY exibir a distribuição dos usuários por perfil, filtrável por período de cadastro.
 
 **Critérios de aceite:**
 
@@ -902,9 +820,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-57 — Dashboard: uso por módulo/aba
 
-
-
-**Enunciado EARS:** Event-driven. WHEN um administrador seleciona um período no dashboard de uso THE SYSTEM SHALL exibir o número de acessos e de usuários únicos por módulo nesse período.
+**Enunciado EARS:** Event-driven. WHEN um administrador seleciona um período no dashboard de uso THE SYSTEM MAY exibir o número de acessos e de usuários únicos por módulo nesse período.
 
 **Critérios de aceite:**
 
@@ -914,9 +830,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-58 — Dashboard: usuários mais recorrentes (engajamento)
 
-
-
-**Enunciado EARS:** Event-driven. WHEN um administrador abre o dashboard de engajamento THE SYSTEM SHALL exibir as métricas DAU/WAU/MAU e os usuários inativos há mais tempo do que o limite configurado.
+**Enunciado EARS:** Event-driven. WHEN um administrador abre o dashboard de engajamento THE SYSTEM MAY exibir as métricas DAU/WAU/MAU e os usuários inativos há mais tempo do que o limite configurado.
 
 **Critérios de aceite:**
 
@@ -928,9 +842,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 **Descrição:** motor de coleta que alimenta os dashboards RF-57 e RF-58.
 
-
-
-**Enunciado EARS:** Event-driven. WHEN um usuário acessa qualquer módulo do sistema THE SYSTEM SHALL registrar, de forma assíncrona, um evento de uso (usuário, módulo, ação, timestamp), sem conteúdo financeiro.
+**Enunciado EARS:** Event-driven. WHEN um usuário acessa qualquer módulo do sistema THE SYSTEM SHOULD registrar, de forma assíncrona, um evento de uso (usuário, módulo, ação, timestamp), sem conteúdo financeiro.
 
 **Critérios de aceite:**
 
@@ -947,7 +859,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-60 — Vínculo de conta compartilhada entre dois usuários
 
-**Enunciado EARS:** Event-driven. WHEN um usuário convida outro usuário para uma conta compartilhada e o convite é aceito THE SYSTEM SHALL criar o vínculo entre as duas contas.
+**Enunciado EARS:** Event-driven. WHEN um usuário convida outro usuário para uma conta compartilhada e o convite é aceito THE SYSTEM MAY criar o vínculo entre as duas contas.
 
 **Critérios de aceite:**
 
@@ -958,7 +870,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-61 — Divisão de despesas compartilhadas
 
-**Enunciado EARS:** Event-driven. WHEN um usuário marca uma despesa como compartilhada numa conta vinculada THE SYSTEM SHALL dividir o valor entre os dois usuários e atualizar o saldo "quem deve quem".
+**Enunciado EARS:** Event-driven. WHEN um usuário marca uma despesa como compartilhada numa conta vinculada THE SYSTEM MAY dividir o valor entre os dois usuários e atualizar o saldo "quem deve quem".
 
 **Critérios de aceite:**
 
@@ -975,7 +887,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-62 — Simulação de aposentadoria
 
-**Enunciado EARS:** Event-driven. WHEN o usuário informa idade atual, idade-alvo de aposentadoria, aporte mensal e taxa de rentabilidade esperada THE SYSTEM SHALL projetar o patrimônio acumulado na data-alvo e a renda mensal estimada que ele sustenta.
+**Enunciado EARS:** Event-driven. WHEN o usuário informa idade atual, idade-alvo de aposentadoria, aporte mensal e taxa de rentabilidade esperada THE SYSTEM MAY projetar o patrimônio acumulado na data-alvo e a renda mensal estimada que ele sustenta.
 
 **Critérios de aceite:**
 
@@ -986,7 +898,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-63 — Comparador de modalidades de previdência (PGBL x VGBL x carteira própria)
 
-**Enunciado EARS:** Event-driven. WHEN o usuário solicita a comparação entre PGBL, VGBL e carteira própria para os mesmos parâmetros de aporte THE SYSTEM SHALL exibir o valor líquido estimado de cada modalidade ao final do prazo, considerando a tributação simplificada de cada uma.
+**Enunciado EARS:** Event-driven. WHEN o usuário solicita a comparação entre PGBL, VGBL e carteira própria para os mesmos parâmetros de aporte THE SYSTEM MAY exibir o valor líquido estimado de cada modalidade ao final do prazo, considerando a tributação simplificada de cada uma.
 
 **Critérios de aceite:**
 
@@ -1002,7 +914,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-64 — Estimativa de IR devido sobre operações simuladas
 
-**Enunciado EARS:** Event-driven. WHEN o usuário solicita a estimativa de IR para uma simulação ou operação registrada THE SYSTEM SHALL calcular o imposto estimado conforme o tipo de aplicação (renda fixa, ações, FIIs, day trade) e o prazo, e indicar a próxima data de vencimento do DARF quando aplicável.
+**Enunciado EARS:** Event-driven. WHEN o usuário solicita a estimativa de IR para uma simulação ou operação registrada THE SYSTEM MAY calcular o imposto estimado conforme o tipo de aplicação (renda fixa, ações, FIIs, day trade) e o prazo, e indicar a próxima data de vencimento do DARF quando aplicável.
 
 **Critérios de aceite:**
 
@@ -1013,7 +925,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-65 — Exportação de informe de rendimentos consolidado
 
-**Enunciado EARS:** Event-driven. WHEN o usuário solicita o informe de rendimentos de um ano-calendário THE SYSTEM SHALL gerar um documento consolidado com os rendimentos e o IR estimado apurado no sistema para apoiar a declaração anual.
+**Enunciado EARS:** Event-driven. WHEN o usuário solicita o informe de rendimentos de um ano-calendário THE SYSTEM MAY gerar um documento consolidado com os rendimentos e o IR estimado apurado no sistema para apoiar a declaração anual.
 
 **Critérios de aceite:**
 
@@ -1026,7 +938,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-66 — Benchmark anônimo com usuários do mesmo perfil
 
-**Enunciado EARS:** Event-driven. WHEN o usuário abre a comparação de benchmark na tela de score THE SYSTEM SHALL exibir a posição do usuário frente à média agregada de usuários do mesmo perfil de investidor, sem identificar nenhum usuário individualmente.
+**Enunciado EARS:** Event-driven. WHEN o usuário abre a comparação de benchmark na tela de score THE SYSTEM MAY exibir a posição do usuário frente à média agregada de usuários do mesmo perfil de investidor, sem identificar nenhum usuário individualmente.
 
 **Critérios de aceite:**
 
@@ -1042,7 +954,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 #### RF-67 — Badges/conquistas por metas atingidas
 
-**Enunciado EARS:** Event-driven. WHEN o usuário atinge uma meta (geral, por categoria ou nomeada) ou mantém um comportamento positivo por um período THE SYSTEM SHALL conceder a conquista/badge correspondente e notificar o usuário.
+**Enunciado EARS:** Event-driven. WHEN o usuário atinge uma meta (geral, por categoria ou nomeada) ou mantém um comportamento positivo por um período THE SYSTEM MAY conceder a conquista/badge correspondente e notificar o usuário.
 
 **Critérios de aceite:**
 
@@ -1058,7 +970,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 | ID | Categoria | Prioridade | Requisito | Enunciado EARS |
 |---|---|---|---|---|
 | RNF-01 | Segurança | Must have | Dados sensíveis (senha, dados financeiros) devem trafegar via HTTPS e ser armazenados de forma criptografada | Ubiquitous. THE SYSTEM SHALL transmitir dados sensíveis via HTTPS e armazená-los criptografados, com senhas protegidas por hash e salt. |
-| RNF-02 | Privacidade / LGPD | Should have | Tratamento de dados financeiros pessoais em conformidade com a LGPD, permitindo ao usuário exportar ou excluir seus dados | Ubiquitous. THE SYSTEM SHALL permitir que o usuário exporte ou exclua seus dados pessoais a qualquer momento. |
+| RNF-02 | Privacidade / LGPD | Should have | Tratamento de dados financeiros pessoais em conformidade com a LGPD, permitindo ao usuário exportar ou excluir seus dados | Ubiquitous. THE SYSTEM SHALL permitir que o usuário, a qualquer momento, exporte seus dados pessoais de forma imediata (RF-50) e solicite a exclusão deles, concluída em até 15 dias corridos (RF-05). |
 | RNF-03 | Usabilidade | Should have | Interface responsiva, funcional em navegador desktop e em tela mobile | Ubiquitous. THE SYSTEM SHALL permitir o registro de um lançamento financeiro em, no máximo, 3 passos, em telas desktop e mobile. |
 | RNF-04 | Performance | Must have | Simulações de investimento e dashboards devem retornar resultado rapidamente, mesmo com múltiplos cenários/meses comparados | Ubiquitous. THE SYSTEM SHALL responder a simulações e dashboards em menos de 3s em 95% das requisições (P95). |
 | RNF-05 | Compatibilidade | Must have | O mesmo backend deve atender simultaneamente o cliente web e o cliente mobile | Ubiquitous. THE SYSTEM SHALL atender simultaneamente o cliente web e o cliente mobile a partir do mesmo backend. |
@@ -1074,11 +986,12 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 | RNF-15 | Documentação de API | Should have | A API deve ter documentação viva gerada automaticamente, mantida sincronizada com o código | Ubiquitous. THE SYSTEM SHALL disponibilizar documentação OpenAPI/Swagger sincronizada com a versão publicada da API. |
 | RNF-16 | Qualidade contínua | Must have | Pipeline de CI deve rodar testes automatizados e lint em cada pull request, bloqueando merge em caso de falha | Ubiquitous. THE SYSTEM SHALL bloquear o merge de um pull request quando os testes automatizados ou o lint falharem no pipeline de CI. |
 | RNF-17 | Versionamento de API | Must have | A API deve ser versionada desde o início para permitir evolução sem quebrar clientes existentes | Ubiquitous. THE SYSTEM SHALL expor todos os endpoints sob um prefixo de versão (ex.: `/api/v1`). |
-| RNF-18 | Auditoria | Should have | Ações sensíveis devem gerar registro de auditoria imutável, com usuário, ação e data/hora | Event-driven. WHEN uma ação sensível é executada (exclusão de conta, alteração de dado financeiro, exportação de dados) THE SYSTEM SHALL gerar um registro de auditoria imutável com usuário, ação e data/hora. |
+| RNF-18 | Auditoria | Should have | Ações sensíveis devem gerar registro de auditoria imutável — somente inserção, nunca alteração ou exclusão —, com usuário, ação e data/hora (incorpora a antiga RB-19) | Event-driven. WHEN uma ação sensível é executada (exclusão de conta, alteração de dado financeiro, exportação de dados) THE SYSTEM SHALL gerar um registro de auditoria imutável com usuário, ação e data/hora, permitindo somente inserção (nunca alteração ou exclusão). |
 | RNF-19 | Personalização visual | Could have | O sistema deve oferecer tema claro e escuro, com a preferência salva por usuário | Optional feature. WHERE o usuário seleciona o tema escuro THE SYSTEM SHALL aplicar e persistir esse tema em todas as telas. |
 | RNF-20 | Internacionalização (i18n) | Should have | A interface deve suportar português (padrão) e inglês, com todos os textos externalizados desde o início | Ubiquitous. THE SYSTEM SHALL disponibilizar toda a interface em português e em inglês, sem texto fixo no código. |
-| RNF-21 | Isolamento administrativo | Should have | Rotas administrativas devem ficar isoladas, com verificação de papel em toda requisição | Ubiquitous. THE SYSTEM SHALL exigir verificação de papel de administrador em toda requisição às rotas sob o prefixo `/api/v1/admin`. |
-| RNF-22 | Modo offline (mobile) | Could have | Lançamentos feitos no cliente mobile sem conexão devem ser sincronizados automaticamente ao voltar a conexão, sem perda de dados | Event-driven. WHEN o cliente mobile recupera a conexão após operar offline THE SYSTEM SHALL sincronizar os lançamentos pendentes com o backend em até 60 segundos, sem duplicar ou perder registros. |
+| RNF-21 | Isolamento administrativo | Should have | Rotas administrativas devem ficar isoladas, com verificação de papel no backend em toda requisição — nunca apenas ocultadas na interface (incorpora a antiga RB-21) | Ubiquitous. THE SYSTEM SHALL exigir, no backend, verificação de papel de administrador em toda requisição às rotas sob o prefixo `/api/v1/admin`. |
+| RNF-22 | Modo offline (mobile) | Could have | Lançamentos feitos no cliente mobile sem conexão devem ser sincronizados automaticamente ao voltar a conexão, sem perda de dados | State-driven. WHILE o cliente mobile estiver sem conexão THE SYSTEM SHALL armazenar localmente os lançamentos realizados.<br>Event-driven. WHEN o cliente mobile recupera a conexão após operar offline THE SYSTEM SHALL sincronizar os lançamentos pendentes com o backend em até 60 segundos, sem duplicar ou perder registros. |
+| RNF-23 | Segurança de integrações | Could have | O payload de todo webhook deve ser assinado com HMAC usando um segredo exclusivo por integração (incorpora a antiga RB-20) | Ubiquitous. THE SYSTEM SHALL assinar o payload de todo webhook com HMAC, usando um segredo exclusivo por integração. |
 
 > **Critério de prioridade dos RNF (MoSCoW):** *Must have* — necessário para entregar os RF *Must have*: citado por spec aprovada (SPEC-001, SPEC-002), declarado como restrição ou item obrigatório na stack (`/docs/01-visao/visao.md`, seção 3) ou exigido pela disciplina (CI bloqueando merge); *Should have* — qualidade relevante, cuja funcionalidade associada não é *Must have* (ex.: RNF-02 depende de RF-05 e RF-50); *Could have* — pós-MVP.
 
@@ -1092,7 +1005,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 |---|---|---|
 | RB-01 | Todo valor de renda ou despesa lançado deve ser maior que zero (bônus/PLR pode ser zero) | RF-06, RF-07, RF-08, RF-09 |
 | RB-02 | Cada despesa pertence a exatamente uma categoria | RF-10 |
-| RB-03 | Saldo, dashboards e progresso de metas são recalculados automaticamente a cada inclusão, edição ou exclusão de lançamento | RF-11 |
+| RB-03 | ~~Saldo, dashboards e progresso de metas são recalculados automaticamente a cada inclusão, edição ou exclusão de lançamento~~ **Reclassificada → RF-09/RF-11** (comportamento do sistema, não regra do domínio) | RF-11 |
 | RB-04 | Limite disponível do cartão = limite total − fatura do ciclo atual | RF-13 |
 | RB-05 | Renda total do mês = renda fixa + renda variável do mês + bônus/PLR recebido no mês | RF-06, RF-07, RF-08, RF-18 |
 | RB-06 | Bônus/PLR anual é integralmente atribuído ao mês de referência informado, sem diluição automática | RF-08 |
@@ -1100,7 +1013,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 | RB-08 | Toda projeção de renda variável deve ser exibida como estimativa, sem garantia de retorno | RF-21 |
 | RB-09 | O resultado do quiz de perfil define a experiência exibida no simulador | RF-03 |
 | RB-10 | M = P × (1 + i)ⁿ + Σ aportes capitalizados; taxa convertida entre mês/ano por equivalência composta, nunca proporcional simples | RF-22 |
-| RB-11 | Quando a API oficial de indicadores falhar, usa-se o último valor em cache com aviso visual de defasagem — nunca um valor zerado ou inventado | RF-23 |
+| RB-11 | ~~Quando a API oficial de indicadores falhar, usa-se o último valor em cache com aviso visual de defasagem — nunca um valor zerado ou inventado~~ **Reclassificada → RF-23** (tratamento de falha do sistema, cláusula IF/THEN) | RF-23 |
 | RB-12 | Documentos completos (PDF) nunca são armazenados — apenas linkados; metadados e indicadores extraídos são mantidos em cache por no máximo 12 meses e depois expurgados | RF-30, RF-32, RF-33 |
 | RB-13 | Patrimônio líquido = soma dos ativos − soma dos passivos, recalculado a cada mudança em Administração Financeira, Simulador de Investimentos, Compras Financiadas ou lançamento manual | RF-35 |
 | RB-14 | No mapa de calor patrimonial, a cor do passivo é proporcional à sua taxa de juros e a cor do ativo é proporcional à sua rentabilidade (mais rentável = verde mais escuro) | RF-37 |
@@ -1108,21 +1021,23 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 | RB-16 | Ao confirmar uma compra financiada como real, o saldo devedor vira passivo automático no Patrimônio | RF-47 |
 | RB-17 | O stress test de renda é uma simulação isolada — nunca altera dados reais do usuário | RF-39 |
 | RB-18 | O progresso de uma meta nomeada é sempre igual ao valor atual do ativo vinculado a ela | RF-40 |
-| RB-19 | Todo registro de auditoria é imutável — somente inserção, nunca alteração ou exclusão | RNF-18 |
-| RB-20 | O payload de todo webhook deve ser assinado com HMAC usando um segredo exclusivo por integração | RF-53 |
-| RB-21 | Acesso a qualquer rota/endpoint administrativo é validado no backend por papel (role=administrador); nunca apenas escondido na interface | RF-54 |
+| RB-19 | ~~Todo registro de auditoria é imutável — somente inserção, nunca alteração ou exclusão~~ **Reclassificada → RNF-18** (restrição técnica) | RNF-18 |
+| RB-20 | ~~O payload de todo webhook deve ser assinado com HMAC usando um segredo exclusivo por integração~~ **Reclassificada → RNF-23** (restrição técnica de segurança) | RF-53 |
+| RB-21 | ~~Acesso a qualquer rota/endpoint administrativo é validado no backend por papel (role=administrador); nunca apenas escondido na interface~~ **Reclassificada → RNF-21** (restrição técnica de segurança) | RF-54 |
 | RB-22 | O painel administrativo nunca exibe dados financeiros individuais de um usuário específico — apenas metadados de conta e métricas agregadas de uso | RF-55, RF-57 |
 | RB-23 | Eventos de uso não armazenam conteúdo financeiro — apenas usuário, módulo, ação e timestamp | RF-59 |
 | RB-24 | O saldo "quem deve quem" de uma conta compartilhada é recalculado a cada despesa compartilhada incluída, editada, excluída ou acerto de contas registrado | RF-61 |
 | RB-25 | A estimativa de IR usa tabela de alíquotas interna e configurável, variando por tipo de aplicação e prazo — nunca chamada em tempo real à Receita Federal | RF-64 |
 | RB-26 | O benchmark anônimo nunca expõe dados ou indicadores de um usuário individual identificável — apenas médias/percentis de grupos com tamanho mínimo definido | RF-66 |
 
+> **Reclassificação:** uma regra de negócio descreve uma política do domínio que existiria mesmo sem o sistema. RB-03 e RB-11 descreviam comportamento do sistema (passaram para os RF indicados) e RB-19, RB-20 e RB-21 descreviam restrições técnicas (passaram para RNF). Os IDs foram mantidos, sem renumeração, para preservar a rastreabilidade.
+
 ---
 
 ## 4. Modelo de Dados (visão geral)
 
 ```
-Usuario (id, nome, email, senha_hash, perfil_investidor)
+Usuario (id, nome, email, senha_hash, perfil_investidor, idioma, tema, papel[usuario|administrador])
   1─N Conta            (id, usuario_id, nome, tipo, saldo_inicial)
   1─N Cartao           (id, usuario_id, nome, limite, dia_fechamento, dia_vencimento)
   1─N Categoria        (id, usuario_id | null p/ padrão, nome, cor, ativa)
@@ -1134,13 +1049,6 @@ Usuario (id, nome, email, senha_hash, perfil_investidor)
   1─N MetaCategoria    (id, usuario_id, categoria_id, valor_maximo, vigente_desde)
   1─N Simulacao        (id, usuario_id, tipo, parametros, resultado, criada_em)
   1─N MetaFinanceira   (id, usuario_id, valor_alvo, prazo, rendimento_estimado)
-
-EmpresaAberta (id, ticker, cnpj, razao_social, setor)
-  1─N DocumentoCVM     (id, empresa_id, tipo[DFP|ITR|FRE|IPE], periodo_referencia, data_entrega, status, url_documento_oficial, sincronizado_em)
-  1─N IndicadorFinanceiro (id, empresa_id, tipo[receita_liquida|lucro_liquido|patrimonio_liquido|...], periodo, valor, sincronizado_em)
-  1─N Watchlist        (id, usuario_id, empresa_id, criada_em)
-
-Usuario (id, nome, email, senha_hash, perfil_investidor, idioma, tema, papel[usuario|administrador])
   1─N Ativo            (id, usuario_id, tipo[conta|investimento|manual], descricao, valor, rentabilidade, origem[automatico|manual])
   1─N Passivo          (id, usuario_id, tipo[fatura|financiamento|divida_manual], descricao, valor, taxa_juros, origem[automatico|manual])
   1─N ScoreSaude       (id, usuario_id, valor, fatores[json], calculado_em)
@@ -1150,6 +1058,11 @@ Usuario (id, nome, email, senha_hash, perfil_investidor, idioma, tema, papel[usu
   1─N AuditLog         (id, usuario_id, acao, entidade, entidade_id, criado_em)  -- imutável
   1─N WebhookSubscription (id, usuario_id, url, eventos[json], segredo_hmac, ativo)
   1─N EventoUso        (id, usuario_id, modulo, acao, criado_em)
+
+EmpresaAberta (id, ticker, cnpj, razao_social, setor)
+  1─N DocumentoCVM     (id, empresa_id, tipo[DFP|ITR|FRE|IPE], periodo_referencia, data_entrega, status, url_documento_oficial, sincronizado_em)
+  1─N IndicadorFinanceiro (id, empresa_id, tipo[receita_liquida|lucro_liquido|patrimonio_liquido|...], periodo, valor, sincronizado_em)
+  1─N Watchlist        (id, usuario_id, empresa_id, criada_em)
 
 ConteudoEducacional (id, termo, categoria, texto, nivel[iniciante|avancado])
 
@@ -1216,10 +1129,10 @@ Badge (id, usuario_id, tipo, conquistada_em)
 | Notificações em excesso gerarem fadiga/desengajamento do usuário | Médio — usuário desativa tudo ou abandona o app | Configuração granular por tipo de notificação (RF-48) e limites de frequência |
 | Score de saúde financeira ser interpretado como aconselhamento financeiro | Médio — risco reputacional/regulatório | Aviso explícito de caráter educativo em toda exibição do score (RB-15) |
 | Regra de cor do mapa de calor patrimonial não refletir a expectativa do usuário final | Baixo | Validar com testes de usabilidade antes de fechar a regra definitiva (ver premissa correspondente) |
-| Webhook mal configurado/exposto vazar dados sensíveis do usuário | Médio — risco de segurança/privacidade | Assinatura HMAC obrigatória (RB-20), escopo mínimo de dados no payload e possibilidade de revogar a URL cadastrada |
+| Webhook mal configurado/exposto vazar dados sensíveis do usuário | Médio — risco de segurança/privacidade | Assinatura HMAC obrigatória (RNF-23), escopo mínimo de dados no payload e possibilidade de revogar a URL cadastrada |
 | Manter conteúdo em PT e EN sincronizado aumentar o esforço de manutenção | Baixo/Médio | Biblioteca de i18n com fallback para PT-BR; revisão de tradução apenas no conteúdo essencial no MVP |
 | Painel administrativo expor dados financeiros sensíveis de usuários | Alto — risco de privacidade/LGPD | Restringir a metadados e métricas agregadas (RB-22), aplicar as mesmas proteções de RNF-01 e registrar todo acesso em auditoria (RNF-18) |
-| Falha de autorização permitir usuário comum acessar rotas administrativas | Alto — vazamento de dados de todos os usuários | Validação de papel obrigatória no backend em toda rota admin (RB-21), coberta por testes automatizados dedicados |
+| Falha de autorização permitir usuário comum acessar rotas administrativas | Alto — vazamento de dados de todos os usuários | Validação de papel obrigatória no backend em toda rota admin (RNF-21), coberta por testes automatizados dedicados |
 | Estimativa de IR (RF-64) divergir do valor real apurado pelo usuário/contador | Médio — decisão financeira baseada em número impreciso | Tabela de alíquotas versionada e revisável, aviso explícito de caráter educativo em toda tela de IR (mesmo padrão de RB-15) |
 | Divisão de despesas compartilhadas gerar disputa entre os dois usuários vinculados (valor ou percentual contestado) | Baixo/Médio — insatisfação, abandono do recurso | Histórico completo e auditável de cada despesa compartilhada e acerto de contas, com valores sempre visíveis aos dois usuários |
 | Grupo de benchmark pequeno demais permitir reidentificação indireta de um usuário | Médio — risco de privacidade | Tamanho mínimo de grupo obrigatório para exibir a comparação (RB-26), sem exceção configurável abaixo do limite |
