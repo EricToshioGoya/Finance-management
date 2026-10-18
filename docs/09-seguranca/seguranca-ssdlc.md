@@ -2,7 +2,7 @@
 
 - **Status:** rascunho
 - **Última atualização:** 2026-10-18
-- **Driver arquitetural:** DA-05 (`docs/07-arquitetura/arquitetura.md`)
+- **Drivers arquiteturais:** DA-05 e DA-06 (`docs/07-arquitetura/arquitetura.md`); decisão registrada no ADR-005
 
 Descreve como a segurança é tratada em cada etapa do ciclo de vida (Secure Software Development Life Cycle). As ferramentas citadas são propostas e serão confirmadas na Fase 4.
 
@@ -38,7 +38,7 @@ Descreve como a segurança é tratada em cada etapa do ciclo de vida (Secure Sof
 | **S**poofing (falsificação de identidade) | Força bruta no login | Rate limiting, bloqueio de 15 minutos após 5 tentativas inválidas, mensagens genéricas | RNF-13, RF-02, SPEC-001 |
 | **T**ampering (adulteração) | Alteração de registros de auditoria | Tabela somente inserção | RNF-18 |
 | **R**epudiation (repúdio) | Usuário nega exclusão ou exportação de dados | Auditoria com usuário, ação e data/hora | RNF-18 |
-| **I**nformation disclosure (vazamento) | Usuário comum acessa rota administrativa; webhook expõe dados | RBAC no backend; HMAC e escopo mínimo no payload | RNF-21, RNF-23 |
+| **I**nformation disclosure (vazamento) | Usuário comum acessa rota administrativa; usuário lê lançamentos de outro usuário trocando o identificador na requisição; webhook expõe dados | RBAC no backend; filtro de posse por usuário dentro da consulta (ADR-005); HMAC e escopo mínimo no payload | RNF-21, RNF-02, RNF-23 |
 | **D**enial of service (negação de serviço) | Excesso de requisições à API; indisponibilidade da API do BCB | Rate limiting; cache local de indicadores | RNF-13, ADR-003 |
 | **E**levation of privilege (elevação de privilégio) | Cadastro público cria administrador | Promoção somente por outro administrador ou configuração inicial | RF-54 |
 

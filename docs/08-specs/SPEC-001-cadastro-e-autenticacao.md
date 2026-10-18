@@ -3,6 +3,7 @@
 * **Status:** Aprovada
 * **Data:** 2026-10-08
 * **Revisão:** 2026-10-18 — correção da rastreabilidade, inclusão das cláusulas EARS (seção 5) e dos cenários 4 e 5.
+* **Revisão:** 2026-10-18 (rev-5) — cláusula R09 e Cenário 6 para o bloqueio após tentativas inválidas (OPEN-02 resolvida); drivers DA-06 e ADR-005.
 * **Autor:** Equipe FinNova / SDD
 
 ---
@@ -21,7 +22,7 @@
 * **Requisitos Não Funcionais:** RNF-01 (Criptografia hash + salt em senhas, tráfego HTTPS), RNF-13 (Rate limiting), RNF-17 (Prefixagem `/api/v1`)
 * **Casos de Uso:** UC-01 (Cadastrar-se), UC-02 (Autenticar-se) — ver `docs/04-casos-de-uso/casos-de-uso-detalhados.md`
 * **Entidades do Domínio:** `Usuario`
-* **Drivers e ADRs:** DA-01 e DA-05 (`docs/07-arquitetura/arquitetura.md`); ADR-001 (Arquitetura monolítica modular em camadas). Uso de JWT definido na stack (`docs/01-visao/visao.md`, seção 3).
+* **Drivers e ADRs:** DA-01, DA-05 e DA-06 (`docs/07-arquitetura/arquitetura.md`); ADR-001 (Arquitetura monolítica modular em camadas) e ADR-005 (Autenticação, autorização e posse dos dados). Uso de JWT definido na stack (`docs/07-arquitetura/arquitetura.md`, seção 5).
 
 ---
 
@@ -34,6 +35,7 @@
 * Geração e retorno de token de sessão JWT assinado após login bem-sucedido.
 * Validação de formato de e-mail e unicidade de cadastro.
 * Limitação de taxa de requisições nos dois endpoints (RNF-13).
+* Bloqueio da conta por 15 minutos após 5 tentativas de login inválidas consecutivas (RF-02).
 
 ### Fora do Escopo
 * Recuperação de senha por e-mail ou reset de credenciais (tratado em Spec futura).
@@ -66,6 +68,7 @@
 * **Credenciais inválidas (401 Unauthorized):** Se a senha estiver incorreta ou e-mail não existir, o sistema retorna erro 401 sem revelar qual dos campos falhou.
 * **Dados malformatados (422 Unprocessable Entity):** Se e-mail ou senha forem inválidos sintaticamente.
 * **Excesso de requisições (429 Too Many Requests):** Se o cliente ultrapassar o limite do RNF-13.
+* **Conta bloqueada:** Após 5 tentativas inválidas consecutivas, novas tentativas da mesma conta são rejeitadas por 15 minutos, mesmo com a senha correta.
 
 ---
 
@@ -83,6 +86,7 @@ Cada cláusula `SHALL` tem ao menos um teste automatizado que cita o seu ID (ver
 | SPEC-001-R06 | Ubiquitous | THE SYSTEM SHALL nunca armazenar nem registrar em log a senha em texto plano. | RNF-01 | Unitário (hash) e integração (inspeção do registro e dos logs) |
 | SPEC-001-R07 | State-driven | WHILE um cliente tiver excedido 100 requisições no último minuto em um endpoint de autenticação THE SYSTEM SHALL rejeitar novas requisições desse cliente nesse endpoint com `429 Too Many Requests`. | RNF-13 | Integração |
 | SPEC-001-R08 | Ubiquitous | THE SYSTEM SHALL expor os endpoints de autenticação sob o prefixo `/api/v1`. | RNF-17 | Integração (rotas) |
+| SPEC-001-R09 | Unwanted behavior | IF ocorrerem 5 tentativas de login inválidas consecutivas para a mesma conta THEN THE SYSTEM SHALL rejeitar novas tentativas dessa conta por 15 minutos, mesmo com a senha correta, e zerar o contador após um login bem-sucedido. | RF-02 | Integração — Cenário 6 |
 
 ---
 
@@ -120,9 +124,14 @@ Cada cláusula `SHALL` tem ao menos um teste automatizado que cita o seu ID (ver
 * **Quando** uma requisição de cadastro for enviada com e-mail "usuario-sem-arroba" ou senha "curta"
 * **Então** o sistema deve retornar `422 Unprocessable Entity` e não deve criar nenhum registro.
 
+### Cenário 6: Bloqueio após tentativas inválidas (R09)
+* **Dado** um usuário cadastrado com e-mail "usuario@finnova.com" e senha "SenhaForte123"
+* **Quando** forem enviadas 5 requisições de login consecutivas com senha incorreta e, em seguida, uma requisição com a senha correta dentro de 15 minutos
+* **Então** a sexta requisição deve ser rejeitada; após 15 minutos, o login com a senha correta deve retornar `200 OK` e zerar o contador.
+
 ---
 
 ## 8. Questões em Aberto
 * **OPEN-01:** Qual será o tempo padrão de expiração do Token JWT (ex: 60 minutos ou 24 horas)? *(Decisão pendente de configuração de ambiente)*.
-* **OPEN-02:** O RF-02 exige bloquear o acesso após N tentativas inválidas. Qual é o valor de N, por quanto tempo dura o bloqueio e ele se aplica à conta ou ao cliente? *(Complementar ao rate limiting da R07)*. **Resolvida (rev-1):** N = 5 tentativas inválidas consecutivas; bloqueio de 15 minutos; aplica-se à conta (o rate limiting da R07 continua valendo por cliente). Ver RF-02.
+* **OPEN-02:** O RF-02 exige bloquear o acesso após N tentativas inválidas. Qual é o valor de N, por quanto tempo dura o bloqueio e ele se aplica à conta ou ao cliente? *(Complementar ao rate limiting da R07)*. **Resolvida (rev-1):** N = 5 tentativas inválidas consecutivas; bloqueio de 15 minutos; aplica-se à conta (o rate limiting da R07 continua valendo por cliente). Ver RF-02. Convertida na cláusula SPEC-001-R09.
 * **OPEN-03:** A stack prevê JWT com access e refresh token, e o RF-02 exige manter a sessão até o logout ou a expiração. Refresh token e logout entram nesta spec ou em uma spec própria?
