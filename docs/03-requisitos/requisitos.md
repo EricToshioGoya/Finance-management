@@ -1215,5 +1215,9 @@ Nomes usados em código, specs e documentação, alinhados às classes de `/docs
 | Indicador financeiro | `IndicadorFinanceiro` | Número extraído das demonstrações de uma empresa aberta (CVM); não confundir com indicador oficial |
 | Data de referência | atributo de `IndicadorOficial` | Data a que a taxa oficial se refere; exibida em toda simulação que a usa |
 | Taxa equivalente composta | operação de `Simulacao` | Conversão de taxa entre períodos por `(1 + i)^n − 1`, nunca por divisão simples (RB-10) |
+| Evolução mensal | resultado de `Simulacao` (`calcularEvolucao()`) | Série mês a mês da simulação com saldo inicial, aporte, juros e saldo final de cada mês (SPEC-002-R04) |
+| Valor total investido | resultado de `Simulacao` (`calcularEvolucao()`) | Valor inicial somado a todos os aportes mensais do prazo (SPEC-002-R05) |
+| Montante final bruto | resultado de `Simulacao` (`calcularEvolucao()`) | Saldo acumulado ao fim do prazo, antes de IR e taxas (SPEC-002-R05) |
+| Total de juros | resultado de `Simulacao` (`calcularEvolucao()`) | Montante final bruto menos o valor total investido (SPEC-002-R05) |
 | Aporte mensal | atributo de `Simulacao` | Valor investido ao fim de cada mês da simulação |
 | Comparação de cenários | operação sobre `Simulacao` | Exibição lado a lado de duas ou mais simulações do mesmo usuário (RF-25) |

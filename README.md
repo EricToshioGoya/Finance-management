@@ -3,7 +3,7 @@
 Plataforma web e mobile que une **controle financeiro pessoal** e **simulação de investimentos**: mostra quanto sobra no orçamento e simula quanto esse valor pode render, com taxas oficiais (Selic, CDI, IPCA) e experiência adaptada ao perfil do investidor, seja iniciante ou avançado.
 
 - **Categoria do tema:** sistema de apoio à decisão (principal) e de acompanhamento de progresso (secundária).
-- **Status:** documentação nas Fases 1 a 3; implementação ainda não iniciada.
+- **Status:** documentação nas Fases 1 a 3; implementação iniciada com o motor de juros compostos (SPEC-002).
 
 ## Contexto acadêmico
 
@@ -17,7 +17,17 @@ Projeto da disciplina **Modelagem e Desenvolvimento de Software** (Mackenzie, se
 
 ## Como executar
 
-Ainda não há código executável. A partir da Fase 4, esta seção trará os comandos de instalação, execução e testes. Pré-requisitos previstos pela stack:
+Por enquanto, o código executável é o motor de juros compostos da camada de domínio (SPEC-002), verificado por testes. Com Python 3.12+:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+ruff check .
+pytest
+```
+
+O `pytest` mede a cobertura do domínio de cálculo e falha abaixo de 80% (RNF-07). Pré-requisitos previstos pela stack completa:
 
 - Python 3.12+ (backend FastAPI)
 - Node.js (clientes React e React Native/Expo)
