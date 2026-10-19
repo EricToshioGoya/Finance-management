@@ -45,6 +45,8 @@ Decisões técnicas que não criam regra de negócio:
 3. **Tipos de entrada:** valores monetários e taxa aceitam `Decimal` ou `int`. `float` e `bool` são rejeitados com `TypeError`, para que nenhum valor binário entre no cálculo (R07, INV-02). `periodo` aceita apenas `int`.
 4. **Arredondamento (R08):** cada valor monetário da série e do resumo é arredondado para 2 casas com `ROUND_HALF_UP` na montagem do resultado. A `taxa_mensal` não é valor monetário e é devolvida sem arredondamento.
 5. **Total de juros:** calculado como montante final bruto menos valor total investido, ambos sem arredondamento, e arredondado depois (R05, R08).
+6. **Validações complementares (registradas na implementação):** valores não finitos (`NaN`, `Infinity`) geram `ValueError`; `tipo_taxa` e `tipo_periodo` fora dos `Enum` geram `TypeError`; `Decimal("-0")` é tratado como zero; `converter_taxa_anual_para_mensal` aplica as mesmas validações da taxa. As mensagens de erro citam o campo inválido, como exige o RF-22. Nenhuma delas altera o comportamento previsto pela spec para entradas válidas.
+7. **Proteção adicional da INV-02:** o contexto decimal local intercepta `FloatOperation`, de modo que qualquer mistura acidental com `float` gera erro.
 
 ## 5. Dependências
 
