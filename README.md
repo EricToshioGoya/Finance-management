@@ -37,7 +37,8 @@ Ainda não há código executável. A partir da Fase 4, esta seção trará os c
 | [Arquitetura](docs/07-arquitetura/arquitetura.md) | Drivers, decisões técnicas, stack, camadas, atributos de qualidade e ADRs |
 | [Specs](docs/08-specs/) | Especificações SDD com cláusulas EARS |
 | [Segurança e SSDLC](docs/09-seguranca/seguranca-ssdlc.md) | Ameaças, controles e práticas por etapa |
-| [Estratégia de testes](docs/10-qualidade/estrategia-de-testes.md) | Níveis de teste, rastreabilidade e gates de qualidade |
+| [Modelo de qualidade](docs/10-qualidade/modelo-de-qualidade.md) | Características ISO/IEC 9126/25010, lacunas, métricas e custo do defeito |
+| [Estratégia de testes](docs/10-qualidade/estrategia-de-testes.md) | Pirâmide de testes, suítes de risco, dublês e gates de qualidade |
 | [Combinados](docs/combinados.md) | Regras de trabalho e revisão |
 | [Constituição (CLAUDE.md)](CLAUDE.md) | Workflow obrigatório e regras não negociáveis |
 

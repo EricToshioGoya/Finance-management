@@ -2,7 +2,7 @@
 
 - **Status:** rascunho
 - **Última atualização:** 2026-10-18
-- **Decisões registradas:** `docs/07-arquitetura/adrs/` (ADR-001 a ADR-005)
+- **Decisões registradas:** `docs/07-arquitetura/adrs/` (ADR-001 a ADR-006)
 
 Este é o documento 2 do projeto: visão arquitetural, drivers, decisões técnicas, descrição da arquitetura e justificativas. O documento 1 (requisitos e modelagem) é formado por `docs/01-visao/`, `docs/02-personas/`, `docs/03-requisitos/`, `docs/04-casos-de-uso/` e `docs/modelo-dominio.md`.
 
@@ -25,6 +25,8 @@ Requisitos, restrições e cenários que mais pesam nas escolhas de estrutura, i
 | DA-07 | Regras de negócio válidas independentemente do canal (web, mobile, rotinas) | RB-01, RB-02, RB-05, RB-10; modelo: DOM-04 a DOM-06; RNF-05 |
 | DA-08 | Atualização imediata de saldo e dashboards após cada lançamento | RF-09, RF-11, RB-05, RNF-04; UC-11 |
 | DA-09 | Rastreabilidade entre spec e código | Método da disciplina; `CLAUDE.md` C-01 e C-02; RNF-16 |
+| DA-10 | Lançamento sem duplicidade em reenvios (clique duplo, nova tentativa de rede, sincronização offline) | RF-06 a RF-09, RF-11, RNF-22, RNF-24; UC-11 |
+| DA-11 | Consistência de datas e fusos entre servidores e clientes | RB-05, RB-06, RF-02, RF-33, RNF-09, RNF-25 |
 
 ---
 
@@ -43,6 +45,8 @@ Escolhas concretas em resposta aos drivers. **Critério para ADR: reversibilidad
 | DA-07 | Regras em qualquer canal | A camada de domínio é o ponto único de validação das regras de negócio, alcançável pela API, pelos clientes e pelas rotinas. Pydantic valida apenas formato; nenhuma regra fica em router, schema ou trigger de banco. | Não — já coberta por ADR-001 e ADR-002. |
 | DA-08 | Saldo e dashboards imediatos | Saldo, renda total do mês (RB-05) e dashboards são calculados sob demanda a partir dos lançamentos, sem valores materializados; consultas de agregação apoiadas por índice em (`usuario_id`, `data`). Revisar se ultrapassar o P95 de 3s. | Não — materializar depois é uma otimização local, sem migrar os dados de origem. |
 | DA-09 | Rastreabilidade | Um teste por cláusula `SHALL` (SPEC-NNN-Rxx e DOM-xx), nomeado pelo ID; regra apenas no domínio; CI bloqueia o merge com teste vermelho. | Não — convenção de processo, registrada no `CLAUDE.md` e em `docs/10-qualidade/estrategia-de-testes.md`. |
+| DA-10 | Lançamento sem duplicidade | Toda criação de lançamento (renda e despesa) aceita uma chave de idempotência gerada pelo cliente (cabeçalho `Idempotency-Key`); o backend guarda a chave por usuário com o resultado e, no reenvio, devolve o mesmo lançamento sem criar outro. A sincronização offline (RNF-22) reaproveita a mesma chave. | Não — a chave é aditiva no contrato da API e pode ser removida sem migrar lançamentos. |
+| DA-11 | Datas e fusos | Instantes gravados em UTC (`timestamptz`); datas de calendário guardadas sem hora; mês de competência e exibição calculados em America/Sao_Paulo; relógio injetado no domínio. | **ADR-006** — mudar depois exige migrar todas as datas gravadas. |
 
 ---
 
@@ -149,7 +153,7 @@ Cliente → `POST /api/v1/auth/login` → caso de uso de autenticação → repo
 Cliente → router do simulador → caso de uso → leitura do indicador no cache local (com data de referência) → motor de juros compostos no domínio → resposta com série mensal, totais e data de referência. Se o cache estiver defasado, a resposta inclui o aviso exigido pelo RF-23.
 
 ### 7.3 Registro de despesa e saldo (UC-11)
-Cliente → router de lançamentos → caso de uso → validação das regras no domínio (DA-07) → gravação filtrada pelo usuário autenticado (DA-06) → saldo e dashboards recalculados sob demanda na próxima consulta (DA-08).
+Cliente (com chave de idempotência) → router de lançamentos → caso de uso → verificação da chave, que devolve o lançamento já criado em caso de reenvio (DA-10) → validação das regras no domínio (DA-07) → gravação filtrada pelo usuário autenticado (DA-06) → saldo e dashboards recalculados sob demanda na próxima consulta (DA-08).
 
 ### 7.4 Sincronização e expurgo
 Rotina agendada → API SGS / Tesouro Transparente → atualização do cache de indicadores. Rotina agendada → Dados Abertos CVM → gravação de metadados e indicadores → expurgo dos registros com `sincronizado_em` acima de 12 meses (RB-12).
@@ -161,6 +165,7 @@ Rotina agendada → API SGS / Tesouro Transparente → atualização do cache de
 | Atributo | Pergunta | Resposta da arquitetura |
 |---|---|---|
 | Segurança | Onde fica a regra de autorização? Quem verifica a permissão? | O papel é verificado no backend, na camada de aplicação, antes de executar o caso de uso (DA-05). A posse do dado é garantida pelo filtro por `usuario_id` dentro da consulta do repositório (DA-06). A interface nunca é mecanismo de segurança. |
+| Confiabilidade | O que acontece com reenvio, fonte fora do ar ou fuso diferente? | O reenvio com a mesma chave não duplica o lançamento (DA-10); a fonte fora do ar usa o último valor com aviso (DA-03); instantes em UTC e mês de competência em America/Sao_Paulo (DA-11). O mapa completo das características de qualidade está em `docs/10-qualidade/modelo-de-qualidade.md`. |
 | Desempenho | Onde fica o cache? Qual operação domina o custo do fluxo central? | Os indicadores oficiais ficam em cache no banco local (DA-03). Na simulação, o custo dominante é a iteração mês a mês do motor (ex.: 360 meses em 30 anos), feita em memória. Nos dashboards, é a agregação dos lançamentos do mês, apoiada por índice (DA-08). |
 | Manutenibilidade | A regra de negócio entra no controller? A persistência vaza para o domínio? | Não. As regras ficam só no domínio (DA-07); repositórios e ORM ficam na infraestrutura (seção 6). |
 | Testabilidade | A regra do domínio roda sem banco e sem UI? | Sim: testes unitários puros com pytest (DA-02). Os testes de integração cobrem o filtro de posse e a autorização por papel (DA-05, DA-06). |
@@ -197,3 +202,5 @@ Containers Docker; pipeline de CI/CD no GitHub Actions; hospedagem em Railway ou
 | Tecnologia das rotinas agendadas | RF-23, RF-30, RF-33 | ADR futuro |
 | Expiração do JWT e refresh token | SPEC-001, ADR-005 | SPEC-001, OPEN-01 e OPEN-03 |
 | Política de arredondamento monetário | SPEC-002 | SPEC-002, OPEN-01 |
+| Prazo de retenção das chaves de idempotência | DA-10 | Plano da spec do RF-09 |
+| Carga do teste de desempenho | RNF-04 | `docs/10-qualidade/estrategia-de-testes.md`, seção 11 |

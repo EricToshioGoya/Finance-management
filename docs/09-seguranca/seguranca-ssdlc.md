@@ -49,7 +49,7 @@ Descreve como a segurança é tratada em cada etapa do ciclo de vida (Secure Sof
 | Requisitos | Requisitos de segurança e privacidade com ID e enunciado EARS testável (seção 2) |
 | Design | Modelagem de ameaças (seção 3) revista a cada novo módulo; decisões relevantes registradas em ADR |
 | Implementação | Validação de entrada com Pydantic; consultas parametrizadas via SQLAlchemy; segredos apenas em variáveis de ambiente (`CLAUDE.md` C-10); CORS restrito às origens dos clientes |
-| Verificação | Testes automatizados de RBAC e de autenticação; análise estática de segurança (proposta: Bandit); auditoria de dependências (proposta: `pip-audit`, `npm audit` e Dependabot); secret scanning do GitHub |
+| Verificação | Testes automatizados de RBAC e de autenticação; análise estática de segurança (proposta: Bandit); auditoria de dependências (proposta: `pip-audit`, `npm audit` e Dependabot); secret scanning do GitHub; suíte de regressão de isolamento entre usuários (`docs/10-qualidade/estrategia-de-testes.md`, seção 4) |
 | Implantação | HTTPS obrigatório; configuração por ambiente; nenhum segredo em imagem Docker |
 | Operação | Monitoramento de erros (RNF-12); backup diário com RPO de 24h e RTO de 4h (RNF-14); revisão periódica dos logs de auditoria |
 
