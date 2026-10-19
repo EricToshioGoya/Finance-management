@@ -1,0 +1,66 @@
+# Camada 4 — CI (docs/09-seguranca/governanca-agentes.md; RNF-16).
+# O bloqueio do merge depende da proteção da branch main exigir estes jobs.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  documentacao:
+    name: Links da documentação
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verificar links relativos dos arquivos Markdown
+        run: python scripts/verificar_links.py
+
+  segredos:
+    name: Varredura de segredos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bloquear arquivos de segredo versionados (CLAUDE.md C-10)
+        run: |
+          if git ls-files | grep -E '(^|/)(\.env(\..+)?|mcp\.env|id_rsa.*|id_ed25519.*|.+\.pem|.+\.key)$' | grep -vE '(^|/)\.env\.example$'; then
+            echo "Arquivo de segredo versionado." >&2
+            exit 1
+          fi
+      - name: Bloquear conteúdo com padrão de credencial
+        run: |
+          padroes='-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{36,}|(^|[^A-Za-z0-9_-])sk-[A-Za-z0-9_-]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}'
+          if git ls-files -z -- . ':(exclude).githooks/pre-commit' ':(exclude).github/workflows/ci.yml' \
+            | xargs -0 grep -InE -- "$padroes"; then
+            echo "Conteúdo com padrão de credencial." >&2
+            exit 1
+          fi
+
+  backend:
+    name: Lint e testes (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        if: hashFiles('pyproject.toml') != ''
+        with:
+          python-version: "3.12"
+      - name: Instalar dependências
+        if: hashFiles('pyproject.toml') != ''
+        run: pip install -e ".[dev]"
+      - name: Lint (ruff)
+        if: hashFiles('pyproject.toml') != ''
+        run: ruff check .
+      - name: Testes e cobertura (pytest)
+        if: hashFiles('pyproject.toml') != ''
+        run: pytest
+      - name: Sem código Python
+        if: hashFiles('pyproject.toml') == ''
+        run: echo "pyproject.toml ausente; lint e testes entram com o primeiro código (SPEC-002)."

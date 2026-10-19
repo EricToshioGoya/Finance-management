@@ -35,8 +35,10 @@ Ainda não há código executável. A partir da Fase 4, esta seção trará os c
 | [Modelo de domínio](docs/modelo-dominio.md) | Classes, responsabilidades, multiplicidades e rastreabilidade; diagramas em [docs/uml](docs/uml/) |
 | [Backlog](docs/06-backlog/issues.md) | Issues do MVP (Must have) |
 | [Arquitetura](docs/07-arquitetura/arquitetura.md) | Drivers, decisões técnicas, stack, camadas, atributos de qualidade e ADRs |
+| [Mapa de Specs](docs/08-specs/MAPA-DE-SPECS.md) | Ordem, dependências, status das specs e questões em aberto |
 | [Specs](docs/08-specs/) | Especificações SDD com cláusulas EARS |
 | [Segurança e SSDLC](docs/09-seguranca/seguranca-ssdlc.md) | Ameaças, controles e práticas por etapa |
+| [Governança de agentes](docs/09-seguranca/governanca-agentes.md) | Camadas de controle, permissões do agente e testes da política |
 | [Modelo de qualidade](docs/10-qualidade/modelo-de-qualidade.md) | Características ISO/IEC 9126/25010, lacunas, métricas e custo do defeito |
 | [Estratégia de testes](docs/10-qualidade/estrategia-de-testes.md) | Pirâmide de testes, suítes de risco, dublês e gates de qualidade |
 | [Combinados](docs/combinados.md) | Regras de trabalho e revisão |
@@ -47,8 +49,12 @@ Ainda não há código executável. A partir da Fase 4, esta seção trará os c
 ```
 .
 ├── CLAUDE.md     # constituição do projeto (SDD)
+├── .claude/      # permissões, hook do agente e skills
+├── .githooks/    # Git hook local contra segredos
+├── .github/      # CI
 ├── .specify/     # planos e tarefas derivados das specs
 ├── docs/         # documentação viva
+├── scripts/      # utilitários do CI
 ├── src/          # código-fonte (Fase 4)
 └── tests/        # testes automatizados (Fase 4)
 ```
@@ -56,6 +62,7 @@ Ainda não há código executável. A partir da Fase 4, esta seção trará os c
 ## Como contribuir
 
 1. Abrir ou escolher uma issue com critério de aceite.
+   - Após clonar, ativar o Git hook local: `git config core.hooksPath .githooks`.
 2. Criar a branch `feature/<id-da-issue>-descricao-curta`.
 3. Seguir o fluxo spec → plano → tarefas → implementação → testes descrito em `CLAUDE.md`.
 4. Abrir um PR com `Closes #N`, a spec atualizada e o uso de agente de IA declarado.

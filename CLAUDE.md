@@ -13,7 +13,7 @@ FinNova é uma plataforma web e mobile que conecta o controle financeiro pessoal
 Fontes de verdade, em ordem de precedência:
 
 1. Requisitos: `docs/03-requisitos/requisitos.md` (RF, RNF, RB e glossário).
-2. Specs: `docs/08-specs/SPEC-*.md` (cláusulas EARS com ID).
+2. Specs: `docs/08-specs/MAPA-DE-SPECS.md` (ordem, dependências e status) e `docs/08-specs/SPEC-*.md` (cláusulas EARS com ID).
 3. Decisões de arquitetura: `docs/07-arquitetura/arquitetura.md` e `docs/07-arquitetura/adrs/`.
 4. Modelo de domínio: `docs/modelo-dominio.md` (diagramas em `docs/uml/`).
 5. Combinados de trabalho: `docs/combinados.md`.
@@ -25,7 +25,7 @@ Stack definida: Python 3.12+ com FastAPI, Pydantic e SQLAlchemy/Alembic; Postgre
 ## 2. Workflow obrigatório (Spec-Driven Development)
 
 1. **Issue** com critério de aceite e responsável.
-2. **Spec** em `docs/08-specs/`, com cláusulas EARS identificadas (`SPEC-NNN-Rxx`).
+2. **Spec** em `docs/08-specs/`, registrada no Mapa de Specs, com cláusulas EARS identificadas (`SPEC-NNN-Rxx`).
 3. **Plano** em `.specify/plans/PLAN-NNN.md`: como a spec será implementada (camadas, arquivos, riscos).
 4. **Tasks** em `.specify/tasks/TASKS-NNN.md`: lista ordenada de passos pequenos e verificáveis.
 5. **Implementação** em `src/` e **testes** em `tests/`.
@@ -71,6 +71,7 @@ Convenções:
 - Nomes de domínio seguem o modelo de domínio, em português e sem acento (`Usuario`, `Simulacao`, `PatrimonioItem`), e o vocabulário segue o glossário (regra C-14).
 - Documentação em português do Brasil.
 - Dependências estruturais novas (framework, banco, fila, provedor externo) exigem ADR.
+- As permissões e os hooks do agente estão em `.claude/settings.json`; a política e os testes estão em `docs/09-seguranca/governanca-agentes.md`. Não alterar a política sem pedido explícito do autor.
 
 ---
 
@@ -86,8 +87,12 @@ Ainda não há código executável. Esta seção será preenchida no início da 
 .
 ├── CLAUDE.md            # esta constituição
 ├── README.md            # visão geral e orientação para quem chega
+├── .claude/             # permissões, hook do agente e skills do fluxo SDD
+├── .githooks/           # Git hook local (pre-commit contra segredos)
+├── .github/workflows/   # CI: links, segredos, lint e testes
 ├── .specify/            # plans/ e tasks/ derivados das specs
 ├── docs/                # documentação viva (visão → specs)
+├── scripts/             # utilitários do CI
 ├── src/                 # código-fonte (Fase 4)
 └── tests/               # testes automatizados (Fase 4)
 ```

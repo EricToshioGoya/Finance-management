@@ -1,0 +1,36 @@
+# Segredos e configuração local (CLAUDE.md C-10)
+.env
+.env.*
+!.env.example
+mcp.env
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+
+# Configuração local do Claude Code (não versionada)
+.claude/settings.local.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+dist/
+build/
+
+# Node
+node_modules/
+
+# Sistema operacional e editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
