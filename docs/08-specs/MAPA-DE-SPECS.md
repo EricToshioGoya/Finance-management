@@ -28,12 +28,12 @@ Nenhuma spec é implementada antes de constar deste mapa com status **Aprovada**
 |---|---|---|---|---|---|---|
 | 1 | SPEC-005 Fundação arquitetural (camadas, prefixo `/api/v1`, CI) | RNF-05, RNF-06, RNF-16, RNF-17 | DA-01, DA-07, DA-09; ADR-001, ADR-002 | — | A escrever | — |
 | 2 | [SPEC-002](SPEC-002-motor-de-juros-compostos.md) Motor de juros compostos | RF-22, RB-10, RNF-07; UC-17; `Simulacao.calcularEvolucao()` | DA-02; ADR-002 | — (domínio puro) | Aprovada | SPEC-002 OPEN-01 e OPEN-02 (decididas, seção 4) |
-| 3 | [SPEC-001](SPEC-001-cadastro-e-autenticacao.md) Cadastro e autenticação | RF-01, RF-02, RNF-01, RNF-13, RNF-17; UC-01, UC-02; `Usuario` | DA-05, DA-06; ADR-001, ADR-005 | 005 | Aprovada | SPEC-001 OPEN-01 e OPEN-03 |
+| 3 | [SPEC-001](SPEC-001-cadastro-e-autenticacao.md) Cadastro e autenticação | RF-01, RF-02, RNF-01, RNF-13, RNF-17; UC-01, UC-02; `Usuario` | DA-05, DA-06, DA-11; ADR-001, ADR-005, ADR-006 | 005 | Aprovada | SPEC-001 OPEN-01 e OPEN-03 |
 | 4 | SPEC-006 Contas, cartões e categorias | RF-10, RF-12, RB-02; DOM-01, DOM-02 | DA-06, DA-07; ADR-005 | 001 | A escrever | — |
-| 5 | SPEC-007 Lançamentos de renda | RF-06, RF-07, RF-08, RB-01, RB-05, RB-06 | DA-06, DA-07, DA-08 | 006 | A escrever | RB-29 ([#27](https://github.com/EricToshioGoya/Finance-management/issues/27)) |
-| 6 | SPEC-008 Despesas, edição e exclusão de lançamentos | RF-09, RF-11, RB-01, RB-02; UC-11 | DA-06, DA-07, DA-08 | 006 | A escrever | RB-28 ([#26](https://github.com/EricToshioGoya/Finance-management/issues/26)) |
-| 7 | SPEC-009 Indicadores oficiais em cache | RF-23, RNF-09; UC-16, UC-18, UC-37; `IndicadorOficial` | DA-03; ADR-003 | 005 | A escrever | Tecnologia das rotinas agendadas; OPEN-UC13-01 a 03 |
-| 8 | SPEC-010 Simulação de renda fixa | RF-20, RB-07, RNF-04; DOM-09; UC-13 | DA-02, DA-03, DA-06; ADR-002, ADR-003 | 002, 009, 001 | A escrever | OPEN-UC13-04; valor líquido de IR depende da SPEC-004 |
+| 5 | SPEC-007 Lançamentos de renda | RF-06, RF-07, RF-08, RB-01, RB-05, RB-06, RNF-24, RNF-25 | DA-06, DA-07, DA-08, DA-10, DA-11; ADR-006 | 006 | A escrever | RB-29 ([#27](https://github.com/EricToshioGoya/Finance-management/issues/27)); retenção das chaves de idempotência |
+| 6 | SPEC-008 Despesas, edição e exclusão de lançamentos | RF-09, RF-11, RB-01, RB-02, RNF-24, RNF-25; UC-11 | DA-06, DA-07, DA-08, DA-10, DA-11; ADR-006 | 006 | A escrever | RB-28 ([#26](https://github.com/EricToshioGoya/Finance-management/issues/26)); retenção das chaves de idempotência |
+| 7 | SPEC-009 Indicadores oficiais em cache | RF-23, RNF-09; UC-16, UC-18, UC-37; `IndicadorOficial` | DA-03, DA-11; ADR-003, ADR-006 | 005 | A escrever | Tecnologia das rotinas agendadas; OPEN-UC13-01 a 03 |
+| 8 | SPEC-010 Simulação de renda fixa | RF-20, RB-07, RNF-04; DOM-09; UC-13 | DA-02, DA-03, DA-06; ADR-002, ADR-003 | 002, 009, 001 | A escrever | OPEN-UC13-04; carga do teste de desempenho (RNF-04); valor líquido de IR depende da SPEC-004 |
 | 9 | SPEC-011 Simulação de renda variável | RF-21, RB-08; UC-14 | DA-02, DA-06; ADR-002 | 002, 001 | A escrever | Provedor de cotações (RF-24) |
 | 10 | SPEC-012 Comparador de cenários | RF-25; DOM-10; UC-12 | DA-02, DA-03 | 010, 011 | A escrever | — |
 
@@ -73,6 +73,8 @@ Lista única dos pontos não decididos que afetam o recorte V1. A decisão é re
 | OPEN-UC13-04 | UC-13 (PR [#34](https://github.com/EricToshioGoya/Finance-management/pull/34)) | Contrato HTTP da simulação (rota e códigos de erro) | SPEC-010 | Aberta |
 | ARQ-11 provedor | `arquitetura.md`, seção 11 | Provedor de cotações de ações e FIIs | SPEC-011 (RF-24) | Aberta — ADR futuro |
 | ARQ-11 agendador | `arquitetura.md`, seção 11 | Tecnologia das rotinas agendadas | SPEC-009 (RF-23) | Aberta — ADR futuro |
+| ARQ-11 idempotência | `arquitetura.md`, seção 11 | Prazo de retenção das chaves de idempotência (DA-10) | SPEC-007, SPEC-008 | Aberta — plano da spec do RF-09 |
+| ARQ-11 desempenho | `arquitetura.md`, seção 11 | Carga do teste de desempenho (RNF-04) | SPEC-010 | Aberta — `docs/10-qualidade/estrategia-de-testes.md` |
 
 ---
 
