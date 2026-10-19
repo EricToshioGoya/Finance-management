@@ -992,8 +992,10 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 | RNF-21 | Isolamento administrativo | Should have | Rotas administrativas devem ficar isoladas, com verificação de papel no backend em toda requisição — nunca apenas ocultadas na interface (incorpora a antiga RB-21) | Ubiquitous. THE SYSTEM SHALL exigir, no backend, verificação de papel de administrador em toda requisição às rotas sob o prefixo `/api/v1/admin`. |
 | RNF-22 | Modo offline (mobile) | Could have | Lançamentos feitos no cliente mobile sem conexão devem ser sincronizados automaticamente ao voltar a conexão, sem perda de dados | State-driven. WHILE o cliente mobile estiver sem conexão THE SYSTEM SHALL armazenar localmente os lançamentos realizados.<br>Event-driven. WHEN o cliente mobile recupera a conexão após operar offline THE SYSTEM SHALL sincronizar os lançamentos pendentes com o backend em até 60 segundos, sem duplicar ou perder registros. |
 | RNF-23 | Segurança de integrações | Could have | O payload de todo webhook deve ser assinado com HMAC usando um segredo exclusivo por integração (incorpora a antiga RB-20) | Ubiquitous. THE SYSTEM SHALL assinar o payload de todo webhook com HMAC, usando um segredo exclusivo por integração. |
+| RNF-24 | Confiabilidade (idempotência) | Must have | O reenvio de um mesmo lançamento (clique duplo, nova tentativa de rede ou sincronização offline) não pode gerar registro duplicado | Unwanted behavior. IF uma requisição de criação de lançamento for recebida com uma chave de idempotência já usada pelo mesmo usuário THEN THE SYSTEM SHALL devolver o lançamento já registrado, sem criar outro. |
+| RNF-25 | Consistência temporal | Must have | Datas e horas devem ter tratamento único entre servidores, banco e clientes, sem divergência de fuso | Ubiquitous. THE SYSTEM SHALL armazenar data e hora em UTC e calcular o mês de competência e as datas exibidas no fuso America/Sao_Paulo. |
 
-> **Critério de prioridade dos RNF (MoSCoW):** *Must have* — necessário para entregar os RF *Must have*: citado por spec aprovada (SPEC-001, SPEC-002), declarado como restrição ou item obrigatório na stack (`/docs/07-arquitetura/arquitetura.md`, seção 5) ou exigido pela disciplina (CI bloqueando merge); *Should have* — qualidade relevante, cuja funcionalidade associada não é *Must have* (ex.: RNF-02 depende de RF-05 e RF-50); *Could have* — pós-MVP.
+> **Critério de prioridade dos RNF (MoSCoW):** *Must have* — necessário para entregar os RF *Must have*: citado por spec aprovada (SPEC-001, SPEC-002), declarado como restrição ou item obrigatório na stack (`/docs/07-arquitetura/arquitetura.md`, seção 5) exigido pela disciplina (CI bloqueando merge) ou adotado como decisão técnica para proteger um RF *Must have* (RNF-24 e RNF-25, `docs/07-arquitetura/arquitetura.md`, seção 2); *Should have* — qualidade relevante, cuja funcionalidade associada não é *Must have* (ex.: RNF-02 depende de RF-05 e RF-50); *Could have* — pós-MVP.
 
 > **Mensurável:** todo RNF acima carrega um número ou condição verificável (percentual, tempo, contagem) — sem isso, vira bullet de proposta, não requisito testável.
 
@@ -1190,6 +1192,9 @@ Badge (id, usuario_id, tipo, conquistada_em)
 | VGBL | Vida Gerador de Benefício Livre; plano de previdência privada sem dedução no IR, tributação apenas sobre o rendimento |
 | DARF | Documento de Arrecadação de Receitas Federais; guia usada para recolher impostos como o IR sobre operações de renda variável |
 | DAU / WAU / MAU | Daily/Weekly/Monthly Active Users; métricas de usuários ativos por dia, semana ou mês, usadas para medir engajamento |
+| UTC | Tempo Universal Coordenado; referência única para gravar data e hora no FinNova (ADR-006) |
+| Mês de competência | Mês ao qual um lançamento pertence, calculado pela data no fuso America/Sao_Paulo (RB-05, ADR-006) |
+| Chave de idempotência | Identificador único que o cliente envia ao criar um lançamento; um reenvio com a mesma chave não gera registro duplicado (RNF-24) |
 
 ### 8.1 Termos do domínio (vocabulário obrigatório)
 

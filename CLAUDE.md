@@ -57,6 +57,9 @@ Convenções:
 | C-12 | A branch `main` só recebe alterações via PR; o merge exige testes e lint verdes quando o CI existir. | RNF-16, `docs/combinados.md` |
 | C-13 | O uso de agente de IA é declarado na descrição do PR (o que foi gerado e o que foi revisado). | Contrato do curso (integridade) |
 | C-14 | Código, specs e documentação usam apenas os termos do glossário (`requisitos.md`, seção 8) e os nomes de classe do modelo de domínio; um termo novo entra primeiro no glossário. | `docs/modelo-dominio.md` |
+| C-15 | Data e hora são gravadas em UTC; o mês de competência e as datas exibidas usam America/Sao_Paulo; o domínio recebe o relógio por injeção. | RNF-25, ADR-006 |
+| C-16 | Toda criação de lançamento aceita chave de idempotência; um reenvio com a mesma chave não cria registro duplicado. | RNF-24, `docs/07-arquitetura/arquitetura.md` DA-10 |
+| C-17 | Testes automatizados nunca chamam serviço externo real; usam dublês. | `docs/10-qualidade/estrategia-de-testes.md`, seção 5 |
 
 ---
 
