@@ -196,4 +196,4 @@ Containers Docker; pipeline de CI/CD no GitHub Actions; hospedagem em Railway ou
 | Provedor de cotações de ações e FIIs | Bloqueia RF-24 | ADR futuro |
 | Tecnologia das rotinas agendadas | RF-23, RF-30, RF-33 | ADR futuro |
 | Expiração do JWT e refresh token | SPEC-001, ADR-005 | SPEC-001, OPEN-01 e OPEN-03 |
-| Política de arredondamento monetário | SPEC-002 | SPEC-002, OPEN-01 |
+| Política de arredondamento monetário | SPEC-002 | Decidida em 2026-10-18: SPEC-002-R08 e OPEN-01 (2 casas, `ROUND_HALF_UP`, apenas na saída) |

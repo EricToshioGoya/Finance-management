@@ -73,7 +73,17 @@ Convenções:
 
 ## 5. Comandos
 
-Ainda não há código executável. Esta seção será preenchida no início da Fase 4 com os comandos de instalação, execução, testes e lint.
+Pré-requisito: Python 3.12+. Comandos executados na raiz do repositório.
+
+| Ação | Comando |
+|---|---|
+| Criar e ativar o ambiente virtual | `python3 -m venv .venv` e `source .venv/bin/activate` |
+| Instalar o projeto e as ferramentas de desenvolvimento | `pip install -e ".[dev]"` |
+| Lint | `ruff check .` |
+| Verificar formatação | `ruff format --check src tests` |
+| Testes com cobertura (falha abaixo de 80%, RNF-07) | `pytest` |
+
+Ainda não há API nem clientes executáveis; os comandos de execução entram com a SPEC-005.
 
 ---
 

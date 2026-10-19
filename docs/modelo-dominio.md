@@ -164,9 +164,9 @@ mmdc -i dominio-completo.mmd -o dominio-completo.png -b white -w 2200 -H 2400 --
 | RF-10 | [#15](https://github.com/EricToshioGoya/Finance-management/issues/15) | `Categoria`, `Usuario` | DOM-02, DOM-04 (spec a criar) |
 | RF-11 | [#16](https://github.com/EricToshioGoya/Finance-management/issues/16) | `Renda`, `Despesa` | Spec a criar |
 | RF-12 | [#17](https://github.com/EricToshioGoya/Finance-management/issues/17) | `Conta`, `Cartao`, `Renda`, `Despesa` | DOM-01, DOM-05, DOM-06 (spec a criar) |
-| RF-20 | [#18](https://github.com/EricToshioGoya/Finance-management/issues/18) | `Simulacao`, `SimulacaoRendaFixa`, `IndicadorOficial` | SPEC-002-R01 a R07; DOM-08, DOM-09; RB-07 |
+| RF-20 | [#18](https://github.com/EricToshioGoya/Finance-management/issues/18) | `Simulacao`, `SimulacaoRendaFixa`, `IndicadorOficial` | SPEC-002-R01 a R08; DOM-08, DOM-09; RB-07 |
 | RF-21 | [#19](https://github.com/EricToshioGoya/Finance-management/issues/19) | `Simulacao`, `SimulacaoRendaVariavel` | DOM-08; RB-08 (spec a criar) |
-| RF-22 | [#20](https://github.com/EricToshioGoya/Finance-management/issues/20) | `Simulacao` (`calcularEvolucao()`) | SPEC-002-R01 a R07; RB-10 |
+| RF-22 | [#20](https://github.com/EricToshioGoya/Finance-management/issues/20) | `Simulacao` (`calcularEvolucao()`) | SPEC-002-R01 a R08; RB-10 |
 | RF-23 | [#21](https://github.com/EricToshioGoya/Finance-management/issues/21) | `IndicadorOficial` | DOM-09 (spec a criar) |
 | RF-25 | [#22](https://github.com/EricToshioGoya/Finance-management/issues/22) | `Simulacao` | DOM-10 (spec a criar) |
 
