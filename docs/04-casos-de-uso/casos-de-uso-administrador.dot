@@ -1,0 +1,19 @@
+digraph usecases {
+graph [fontname="Arial", bgcolor="white", pad="0.3", nodesep="0.5", ranksep="0.6"]; node [fontname="Arial", fontsize=14, style="filled", fillcolor="#eef3ff", color="#526b9c", margin="0.16"]; edge [fontname="Arial", fontsize=11, color="#526b9c"];
+rankdir=LR;
+actor [label="Administrador", shape=plaintext, style=""];
+subgraph cluster_sistema { label="FinNova — painel administrativo"; color="#b6c7e7"; fontsize=20;
+acesso [shape=ellipse,label="UC-17: Acessar painel
+RF-54; RB-21; RNF-21"];
+listar [shape=ellipse,label="UC-18: Listar/buscar usuarios
+RF-55; RB-22"];
+metricas [shape=ellipse,label="UC-19: Consultar metricas
+RF-56, RF-57, RF-58"];
+validar [shape=ellipse,label="Validar papel\nRB-21; RNF-21"];
+}
+actor -> acesso [dir=none];
+actor -> listar [dir=none];
+actor -> metricas [dir=none];
+usuario [shape=plaintext, label="Usuario", style=""]; actor -> usuario [arrowhead=empty, label="especializa"]; validar [shape=ellipse,label="Validar papel
+RB-21; RNF-21"]; acesso -> validar [style=dashed,label="<<include>>"];
+}

@@ -1,0 +1,44 @@
+digraph usecases {
+graph [fontname="Arial", bgcolor="white", pad="0.3", nodesep="0.5", ranksep="0.6"]; node [fontname="Arial", fontsize=14, style="filled", fillcolor="#eef3ff", color="#526b9c", margin="0.16"]; edge [fontname="Arial", fontsize=11, color="#526b9c"];
+rankdir=LR;
+actor [label="Usuario", shape=plaintext, style=""];
+subgraph cluster_sistema { label="FinNova — casos de uso principais"; color="#b6c7e7"; fontsize=20;
+cadastro [shape=ellipse,label="UC-01: Cadastrar-se
+RF-01"];
+login [shape=ellipse,label="UC-02: Autenticar-se
+RF-02"];
+quiz [shape=ellipse,label="UC-03: Responder quiz
+RF-03"];
+receita [shape=ellipse,label="UC-05: Registrar receitas
+RF-06, RF-07, RF-08"];
+despesa [shape=ellipse,label="UC-06: Registrar despesa
+RF-09"];
+contas [shape=ellipse,label="UC-07: Contas e categorias
+RF-10, RF-12, RF-13"];
+motor [shape=ellipse,label="UC-08: Calcular juros compostos
+RF-22"];
+fixa [shape=ellipse,label="UC-09: Simular renda fixa
+RF-20, RF-23"];
+variavel [shape=ellipse,label="UC-10: Simular renda variavel
+RF-21"];
+comparar [shape=ellipse,label="UC-11: Comparar simulacoes
+RF-25"];
+docs [shape=ellipse,label="UC-13: Consultar empresas/documentos
+RF-29, RF-30, RF-31"];
+patrimonio [shape=ellipse,label="UC-14: Patrimonio e score
+RF-35, RF-37, RF-41, RF-42"];
+}
+actor -> cadastro [dir=none];
+actor -> login [dir=none];
+actor -> quiz [dir=none];
+actor -> receita [dir=none];
+actor -> despesa [dir=none];
+actor -> contas [dir=none];
+actor -> motor [dir=none];
+actor -> fixa [dir=none];
+actor -> variavel [dir=none];
+actor -> comparar [dir=none];
+actor -> docs [dir=none];
+actor -> patrimonio [dir=none];
+fixa -> motor [style=dashed,label="<<include>>"];
+}
