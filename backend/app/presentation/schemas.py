@@ -1151,6 +1151,22 @@ class EngagementTrendOutput(BaseModel):
     unique_users: int
 
 
+class ProfileDistributionItemOutput(BaseModel):
+    profile: Literal["conservador", "moderado", "arrojado"]
+    count: int
+    percentage: Decimal
+
+
+class ProfileDistributionOutput(BaseModel):
+    start: date | None
+    end: date | None
+    total_users: int
+    profiled_users: int
+    without_profile: int
+    items: list[ProfileDistributionItemOutput]
+    generated_at: datetime
+
+
 class EngagementOutput(BaseModel):
     start: date
     end: date

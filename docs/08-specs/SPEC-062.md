@@ -1,6 +1,6 @@
 # SPEC-062: Consultar distribuição de perfis no painel
 
-**Estado:** rascunho para revisão humana, criado em 2026-10-22. Produção documental autorizada no lote atual; sem implementação/testes novos ou aprovação formal presumida.
+**Estado:** implementada tecnicamente em 2026-10-31 (backend, interface web e testes automatizados). Política de recorte proposta pelo agente e aprovada pelo responsável em 2026-10-31; revisão formal do grupo pendente. Evidências no [registro de implementação](../09-qualidade/implementacao-SPEC-062.md).
 
 ## 1. Identificação
 
@@ -134,7 +134,7 @@ RNFs são associados ao comportamento e verificados na implementação/operaçã
 | T-005 | SPEC-062-R05; CA-005 | RF-56/C03: preparar entradas e limites da baseline, executar comportamento e conferir assertion: Deve atualizar automaticamente conforme novos usuários completam o quiz. |
 | T-006 | INV-001, INV-002, INV-003; RNF-01, RNF-05, RNF-06, RNF-11, RNF-12, RNF-13, RNF-15, RNF-16, RNF-17, RNF-20 | Executar métodos da seção 10, fronteiras, acesso cruzado/erros aplicáveis e inspeção de efeitos. Fixtures sintéticas, relógio injetado e dublês de fonte externa; evidência por requisito. |
 
-Testes são planejados, não implementados ou executados nesta revisão. Os exemplos não fecham fórmulas, calendários ou regras ainda em OPEN. Cada teste futuro deve citar a cláusula desta Spec e o requisito correspondente.
+Testes implementados em `backend/tests/test_spec062_profile_distribution.py`, nomeados `test_SPEC_062_Rxx` por cláusula, e executados na CI com PostgreSQL. T-006 (RNFs) é coberto parcialmente pela suíte, pelo lint e pela varredura de acessibilidade; evidência operacional (backup, disponibilidade) permanece fora do recorte.
 
 ## 13. Questões em Aberto
 
@@ -144,13 +144,21 @@ Testes são planejados, não implementados ou executados nesta revisão. Os exem
 
 [Registro central](questoes-abertas.md). Antes de implementar, registrar decisão e refletir alterações de comportamento na baseline e nesta Spec; se não houver decisão, conservar o bloqueio explícito.
 
+### Decisão adotada para o recorte implementado (2026-10-31)
+
+Perfis considerados: `conservador`, `moderado` e `arrojado` (SPEC-003). Contas sem quiz aparecem em `without_profile`, sem perfil inventado. O filtro usa a data de cadastro, com limites inclusivos no fuso America/Sao_Paulo (ADR-006); início maior que o fim retorna 422. Percentuais são calculados sobre usuários com perfil, arredondados a duas casas (HALF_EVEN). A consulta é feita em tempo real; a tela administrativa recarrega a cada 60 segundos (R05).
+
+**Contrato:** `GET /api/v1/admin/investor-profiles?start=AAAA-MM-DD&end=AAAA-MM-DD` → `total_users`, `profiled_users`, `without_profile`, `items[{profile, count, percentage}]`, `generated_at`. 401 sem sessão; 403 `admin_access_denied` para usuário comum (RNF-21).
+
+As OPEN acima continuam registradas para revisão do grupo; a decisão vale para este recorte e pode ser revista sem perda de rastreabilidade.
+
 ## 14. Definition of Done da Spec
 
 - [ ] Mapa e recorte revisados pelo grupo, com evidência real.
-- [ ] Decisões OPEN bloqueantes resolvidas e baseline conciliada antes de implementar a parte dependente.
+- [x] Decisões OPEN bloqueantes resolvidas para o recorte (seção 13) e baseline conciliada antes de implementar a parte dependente.
 - [ ] Esta versão revisada individualmente, sem aprovação histórica presumida.
-- [ ] Todas as cláusulas/CA implementadas e todos os INV preservados.
-- [ ] Testes da seção 12 aprovados, com evidência ligada ao commit.
+- [x] Todas as cláusulas/CA implementadas e todos os INV preservados.
+- [x] Testes da seção 12 aprovados, com evidência ligada ao commit.
 - [ ] RNFs verificados pelos métodos da seção 10, inclusive operação quando aplicável.
 - [ ] Sem divergência conhecida entre código, Spec e baseline; corrigir implementação ou propor alteração para decisão humana.
 

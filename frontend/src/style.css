@@ -152,7 +152,7 @@ form > button { width: 100%; margin-top: .5rem; }
 .notice-list li div { display: grid; gap: .15rem; font-size: .85rem; }
 .notice-list li.read { opacity: .65; }
 .bar-list { display: grid; gap: .4rem; list-style: none; padding: 0; }
-.bar-list li { align-items: center; display: grid; gap: .5rem; grid-template-columns: 7rem 1fr 3rem; font-size: .85rem; }
+.bar-list li { align-items: center; display: grid; gap: .5rem; grid-template-columns: 7rem 1fr 6rem; font-size: .85rem; }
 .bar-list i { background: #2f8f6b; border-radius: .25rem; display: block; height: .8rem; min-width: .3rem; }
 .source-list { display: grid; gap: .5rem; list-style: none; padding: 0; }
 .source-list li { align-items: center; display: flex; flex-wrap: wrap; gap: .25rem .75rem; justify-content: space-between; border-bottom: 1px solid #d3ddd5; padding-bottom: .4rem; }
