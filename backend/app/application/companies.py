@@ -176,7 +176,7 @@ class CompanyService:
                 record.official_url, method="HEAD", headers={"User-Agent": "FinNova/1.0"}
             )
             try:
-                with urlopen(request, timeout=5) as response:
+                with urlopen(request, timeout=5) as response:  # nosec B310 - host CVM oficial
                     record.link_status = "available" if response.status < 400 else "broken"
             except (HTTPError, URLError, TimeoutError, ValueError):
                 record.link_status = "broken"

@@ -89,3 +89,77 @@ jobs:
       - run: npx expo export --platform android --output-dir dist
         env:
           CI: "1"
+
+  seguranca:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      # SAST do backend: severidade média ou maior bloqueia (exceções justificadas com # nosec).
+      - run: uvx bandit -q -r backend/app -ll
+      # Dependências Python de produção sem vulnerabilidades conhecidas.
+      - run: |
+          cd backend
+          uv export --frozen --no-dev --format requirements-txt > /tmp/requirements.txt
+          uvx pip-audit -r /tmp/requirements.txt --disable-pip
+      # Dependências de runtime do cliente web: alta ou crítica bloqueia.
+      - run: npm audit --omit=dev --audit-level=high
+        working-directory: frontend
+      # Mobile: relatório não bloqueante; vulnerabilidades atuais estão no ferramental do Expo SDK.
+      - run: npm audit --omit=dev --audit-level=high || echo "::warning::npm audit do mobile encontrou vulnerabilidades no ferramental do Expo"
+        working-directory: mobile
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: finnova
+          POSTGRES_USER: finnova
+          POSTGRES_PASSWORD: finnova-ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U finnova -d finnova"
+          --health-interval 2s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv python install 3.12
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Configuração local efêmera (segredos gerados no job, C-10)
+        run: |
+          mkdir -p .local
+          cd backend && uv sync --frozen
+          {
+            echo "FINNOVA_DATABASE_URL=postgresql+psycopg://finnova:finnova-ci@127.0.0.1:5432/finnova"
+            echo "FINNOVA_JWT_SECRET=$(openssl rand -hex 32)"
+            echo "FINNOVA_DATA_KEY=$(uv run --frozen python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')"
+            echo "FINNOVA_PUBLIC_ORIGIN=https://localhost:8443"
+          } > .env
+          uv run --frozen python ../scripts/prepare-local.py
+          uv run --frozen alembic upgrade head
+      - name: Build do cliente web
+        working-directory: frontend
+        run: npm ci && npm run build
+      - name: Subir API HTTPS
+        working-directory: backend
+        run: |
+          nohup uv run --frozen uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8443 \
+            --no-proxy-headers --ssl-keyfile ../.local/localhost.key --ssl-certfile ../.local/localhost.crt > ../.local/api.log 2>&1 &
+          for i in $(seq 1 30); do curl -skf https://127.0.0.1:8443/api/v1/health && exit 0; sleep 1; done
+          cat ../.local/api.log; exit 1
+      - name: Playwright (fluxos, WCAG AA e layout)
+        working-directory: frontend
+        run: |
+          npx playwright install --with-deps chromium
+          export CHROMIUM_PATH="$(node -e "console.log(require('playwright-core').chromium.executablePath())")"
+          npm test

@@ -2566,6 +2566,15 @@ def create_app(
             COOKIE, path=COOKIE_PATH, secure=True, httponly=True, samesite="strict"
         )
 
+    @app.api_route(
+        "/api/{rest:path}",
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+        include_in_schema=False,
+    )
+    def api_not_found(rest: str):
+        """Rota de API inexistente responde 404 JSON, mesmo com o cliente web montado em /."""
+        raise AuthError("not_found", 404)
+
     frontend = Path(__file__).resolve().parents[2] / "frontend/dist"
     if frontend.is_dir():
         app.mount("/", StaticFiles(directory=frontend, html=True), name="web")

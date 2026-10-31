@@ -22,7 +22,8 @@ SPEC-018: implementação isolada com política confirmada em 2026-10-28. [Contr
 | Edição de lançamentos e saldo coerente RF-11 | Implementado na SPEC-006 | Edição/exclusão de receitas, bônus e despesas; resumo líquido por competência |
 | Calculadora, simulações, orçamento, painel e fatura | Implementação inicial no lote SPEC-004 a SPEC-024 | Rotas autenticadas, migration 012 e testes PostgreSQL por titular |
 | Indicadores oficiais | Cache local e consulta implementados; sincronização diária externa depende da operação do adaptador | Fonte oficial, agendamento e observabilidade em ambiente configurado |
-| CI obrigatória | Workflow `.github/workflows/ci.yml` (backend com PostgreSQL, frontend, verificador documental) executado em cada PR desde 2026-10-31 | Proteção de branch no GitHub ainda depende de configuração do repositório |
+| CI obrigatória | Workflow `.github/workflows/ci.yml` (backend com PostgreSQL, frontend, mobile, segurança, E2E Playwright e verificador documental) em cada PR | Proteção de branch no GitHub ainda depende de configuração do repositório |
+| Desempenho RNF-04 | `scripts/carga.py`: P95 de 257 a 566 ms local | Medição em produção (OPEN-32) |
 | Backup/monitoramento | Requisitos sem evidência operacional | Evidências operacionais próprias (RNF-08/12/14) |
 | Compartilhamento, aposentadoria, previdência, IR/DARF, resumo anual, score por grupo, conquistas, tour, canais e resumo mensal | Implementado em 2026-10-31 (SPEC-040, 044 a 052, 061, 062) | Testes `test_SPEC_NNN_Rxx` por cláusula; registros próprios em `docs/09-qualidade/` |
 | Interface web | Navegação por abas com telas para todas as APIs (PR #45) | Playwright com axe WCAG AA em `frontend/tests` |

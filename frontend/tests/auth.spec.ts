@@ -74,6 +74,8 @@ test('Swagger carrega os contratos sem depender de CDN', async ({ page }) => {
     if (!request.url().startsWith('https://localhost:8443/')) external.push(request.url());
   });
   await page.goto('/api/v1/docs');
+  // Grupos recolhidos por padrão (124 rotas): abre o grupo "auth" antes de conferir o contrato.
+  await page.locator('.swagger-ui .opblock-tag[data-tag="auth"]').click();
   await expect(page.locator('.swagger-ui .opblock-summary-path[data-path="/api/v1/auth/login"]')).toBeVisible();
   expect(external).toEqual([]);
 });
