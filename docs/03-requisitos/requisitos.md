@@ -1,5 +1,7 @@
 # Requisitos — FinNova
 
+Revisão documental: 2026-10-09, baseada em `reorganizacao-docs`. IDs anteriores preservados. RF especificado não equivale a implementado. Decisões pendentes: [OPEN](../08-specs/questoes-abertas.md).
+
 **Convenção de identificadores:** `RF-01`, `RF-02`... (Requisitos Funcionais — o que o sistema faz), `RNF-01`, `RNF-02`... (Requisitos Não Funcionais — como o sistema se comporta) e `RB-01`, `RB-02`... (Regras de Negócio — políticas e restrições do domínio), numerados sequencialmente na ordem em que aparecem no documento. Cada RF e RNF traz, além dos critérios de aceite detalhados, um **enunciado em sintaxe EARS** (*Easy Approach to Requirements Syntax*) como definição objetiva e testável do comportamento esperado. A tabela da seção 1.1 indica a qual módulo/aba cada RF pertence.
 
 **Padrões EARS adotados:** Ubiquitous (sem gatilho — vale sempre), Event-driven (`WHEN` — evento pontual), State-driven (`WHILE` — estado que persiste durante um intervalo), Unwanted behavior (`IF ... THEN` — condição indesejada, erro ou falha) e Optional feature (`WHERE` — recurso ou configuração presente). Um mesmo requisito pode ter mais de uma cláusula EARS. As Regras de Negócio permanecem em forma declarativa (invariantes do domínio), com indicação do RF que as aplica.
@@ -21,11 +23,11 @@
 | RF-03 | Conta e Acesso | Quiz de perfil de investidor | Should have | ☐ |
 | RF-04 | Conta e Acesso | Onboarding guiado | Should have | ☐ |
 | RF-05 | Conta e Acesso | Exclusão de conta e dados | Should have | ☐ |
-| RF-06 | Administração Financeira | Cadastro de renda fixa mensal | Must have | ☐ |
-| RF-07 | Administração Financeira | Cadastro de renda variável | Must have | ☐ |
+| RF-06 | Administração Financeira | Cadastro de receita recorrente mensal | Must have | ☐ |
+| RF-07 | Administração Financeira | Cadastro de receita pontual | Must have | ☐ |
 | RF-08 | Administração Financeira | Cadastro de bônus e PLR | Must have | ☐ |
 | RF-09 | Administração Financeira | Cadastro de despesas por categoria | Must have | ☐ |
-| RF-10 | Administração Financeira | Categorias padrão e personalizadas de gastos | Must have | ☐ |
+| RF-10 | Administração Financeira | Categorias padrão e personalizadas de gastos | Must have | Implementado na SPEC-055 |
 | RF-11 | Administração Financeira | Edição e exclusão de lançamentos | Must have | ☐ |
 | RF-12 | Administração Financeira | Cadastro de contas bancárias e cartões de crédito | Must have | ☐ |
 | RF-13 | Administração Financeira | Controle de fatura de cartão de crédito | Should have | ☐ |
@@ -84,6 +86,15 @@
 | RF-66 | Score de Saúde Financeira | Benchmark anônimo com usuários do mesmo perfil | Could have | ☐ |
 | RF-67 | Gamificação | Badges/conquistas por metas atingidas | Could have | ☐ |
 
+| RF-68 | Conta e Acesso | Editar dados do perfil | Must have | Implementado na SPEC-014 |
+| RF-69 | Conta e Acesso | Confirmar titularidade do e-mail | Must have | Implementado tecnicamente (SPEC-015); entrega operacional pendente |
+| RF-70 | Conta e Acesso | Recuperar senha esquecida | Must have | Implementado na SPEC-016 |
+| RF-71 | Conta e Acesso | Alterar senha autenticado | Must have | Implementado na SPEC-016 |
+| RF-72 | Conta e Acesso | Configurar preferências do usuário | Must have | Implementado na SPEC-014 |
+| RF-73 | Conta e Acesso | Consultar e encerrar sessões | Must have | Implementado na SPEC-017 |
+| RF-74 | Conta e Acesso | Renovar sessão e realizar logout | Must have | Implementado na SPEC-001 |
+
+
 ---
 
 ### 1.2 Módulo — Conta e Acesso
@@ -99,7 +110,7 @@
 
 - [ ] Deve exigir nome, e-mail e senha.
 - [ ] Deve validar formato de e-mail e impedir e-mail duplicado.
-- [ ] Senha deve ser armazenada de forma criptografada (hash).
+- [ ] Senha deve ser armazenada com hash de senha e salt; hash não é criptografia recuperável.
 
 #### RF-02 — Login e autenticação
 
@@ -146,7 +157,7 @@
 
 - [ ] Deve permitir ao usuário solicitar a exclusão da conta e de todos os dados pessoais associados.
 - [ ] Deve exigir confirmação explícita (reautenticação + confirmação por texto) antes de excluir.
-- [ ] Deve excluir ou anonimizar os dados pessoais em até 15 dias corridos após a confirmação (padrão de mercado, alinhado ao prazo de 15 dias para atendimento ao titular do art. 19, II, da LGPD).
+- [ ] Deve excluir ou anonimizar os dados pessoais em até 15 dias corridos após a confirmação, como meta de produto; retenções e tratamento de backups dependem de OPEN-05.
 - [ ] Antes de confirmar, deve informar ao usuário quais dados serão apagados e se algum dado é retido por obrigação legal.
 
 ---
@@ -157,7 +168,7 @@
 
 Reúne o registro de todas as fontes de renda e de gastos do usuário, organizados por categoria, com definição de metas e visualização em gráficos dinâmicos.
 
-#### RF-06 — Cadastro de renda fixa mensal
+#### RF-06 — Cadastro de receita recorrente mensal
 
 **Descrição:** salário ou renda fixa recorrente do usuário.
 
@@ -173,7 +184,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 - [ ] O valor deve ser considerado automaticamente no cálculo de saldo/orçamento do mês corrente e dos meses seguintes, até ser alterado.
 - [ ] Deve validar que o valor é maior que zero.
 
-#### RF-07 — Cadastro de renda variável
+#### RF-07 — Cadastro de receita pontual
 
 **Descrição:** rendas sem valor fixo mensal (freelas, comissões, renda extra).
 
@@ -958,7 +969,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 
 **Critérios de aceite:**
 
-- [ ] Deve conceder conquistas ao atingir metas gerais/por categoria (RF-14/15), metas nomeadas (RF-40) ou marcos de uso (ex.: "3 meses seguidos dentro do orçamento").
+- [ ] Deve conceder conquistas ao atingir metas gerais/por categoria (RF-14 e RF-15), metas nomeadas (RF-40) ou marcos de uso (ex.: "3 meses seguidos dentro do orçamento").
 - [ ] Deve exibir uma tela com as conquistas obtidas e as próximas conquistas disponíveis (progresso).
 - [ ] A concessão de uma conquista deve gerar uma notificação (RF-48).
 - [ ] Conquistas são apenas cosméticas/motivacionais — nunca alteram cálculos financeiros, score (RF-41) ou permissões do usuário.
@@ -1017,7 +1028,7 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 | RB-10 | M = P × (1 + i)ⁿ + Σ aportes capitalizados; taxa convertida entre mês/ano por equivalência composta, nunca proporcional simples | RF-22 |
 | RB-11 | ~~Quando a API oficial de indicadores falhar, usa-se o último valor em cache com aviso visual de defasagem — nunca um valor zerado ou inventado~~ **Reclassificada → RF-23** (tratamento de falha do sistema, cláusula IF/THEN) | RF-23 |
 | RB-12 | Documentos completos (PDF) nunca são armazenados — apenas linkados; metadados e indicadores extraídos são mantidos em cache por no máximo 12 meses e depois expurgados | RF-30, RF-32, RF-33 |
-| RB-13 | Patrimônio líquido = soma dos ativos − soma dos passivos, recalculado a cada mudança em Administração Financeira, Simulador de Investimentos, Compras Financiadas ou lançamento manual | RF-35 |
+| RB-13 | Patrimônio líquido = soma dos ativos reais registrados − soma dos passivos reais registrados. Recalcular quando uma origem real mudar; executar simulação não cria ativo nem altera patrimônio real | RF-35 |
 | RB-14 | No mapa de calor patrimonial, a cor do passivo é proporcional à sua taxa de juros e a cor do ativo é proporcional à sua rentabilidade (mais rentável = verde mais escuro) | RF-37 |
 | RB-15 | O score de saúde financeira é educativo, não constitui recomendação financeira, e sua fórmula de ponderação deve ser documentada e configurável | RF-41 |
 | RB-16 | Ao confirmar uma compra financiada como real, o saldo devedor vira passivo automático no Patrimônio | RF-47 |
@@ -1031,6 +1042,9 @@ Reúne o registro de todas as fontes de renda e de gastos do usuário, organizad
 | RB-24 | O saldo "quem deve quem" de uma conta compartilhada é recalculado a cada despesa compartilhada incluída, editada, excluída ou acerto de contas registrado | RF-61 |
 | RB-25 | A estimativa de IR usa tabela de alíquotas interna e configurável, variando por tipo de aplicação e prazo — nunca chamada em tempo real à Receita Federal | RF-64 |
 | RB-26 | O benchmark anônimo nunca expõe dados ou indicadores de um usuário individual identificável — apenas médias/percentis de grupos com tamanho mínimo definido | RF-66 |
+| RB-27 | Cadastro exige nome, e-mail válido e único e senha de pelo menos 8 caracteres. A implementação solicitada adota esse mínimo e equivalência de e-mail sem distinção de caixa conforme ADR-005; OPEN-16 preserva a pendência de revisão formal e origem da aprovação histórica, sem usar a própria Spec como evidência de aprovação. Nunca devolver senha/hash em respostas ou logs; cadastro público cria papel usuário | RF-01, RF-02 |
+| RB-28 | O motor genérico aceita valor inicial e aporte não negativos, taxa não negativa e prazo inteiro positivo; esses parâmetros não são lançamentos de renda/despesa e não estão sujeitos ao mínimo estrito de RB-01 | RF-22 |
+| RB-29 | Lançamentos e simulações pessoais são acessíveis somente ao proprietário autenticado, salvo compartilhamento aceito e explicitamente autorizado. Toda validação ocorre no servidor | RF-09, RF-11, RF-12, RF-20, RF-60 |
 
 > **Reclassificação:** uma regra de negócio descreve uma política do domínio que existiria mesmo sem o sistema. RB-03 e RB-11 descreviam comportamento do sistema (passaram para os RF indicados) e RB-19, RB-20 e RB-21 descreviam restrições técnicas (passaram para RNF). Os IDs foram mantidos, sem renumeração, para preservar a rastreabilidade.
 
@@ -1110,7 +1124,7 @@ Badge (id, usuario_id, tipo, conquistada_em)
 - A regra de cores do mapa de calor patrimonial (RF-37 — passivo por taxa de juros, ativo por rentabilidade) é um padrão sugerido e pode ser ajustada após validação com o usuário final.
 - A API pública e os webhooks (RF-52, RF-53) são recursos adicionais opcionais — não bloqueiam o núcleo do app caso fiquem para depois do MVP.
 - Internacionalização (RNF-20) sendo aplicada desde o início evita retrabalho de extrair textos hardcoded mais tarde.
-- Contas Compartilhadas (RF-60/61) dependem de vínculo manual entre dois usuários já cadastrados — não há convite para não-usuários nem integração com conta conjunta bancária real.
+- Contas Compartilhadas (RF-60 e RF-61) dependem de vínculo manual entre dois usuários já cadastrados — não há convite para não-usuários nem integração com conta conjunta bancária real.
 - A estimativa de IR (RF-64) e o comparador de previdência (RF-63) usam tabelas de alíquotas simplificadas e configuráveis internamente — não substituem apuração de contador nem consulta ao e-CAC da Receita Federal, e não constituem aconselhamento tributário.
 - O benchmark anônimo (RF-66) só é exibido quando o grupo de comparação atinge o tamanho mínimo definido; abaixo disso, a comparação fica oculta para preservar o anonimato.
 - Gamificação (RF-67) é puramente cosmética/motivacional e não deve, em nenhuma hipótese, influenciar cálculos financeiros, o score (RF-41) ou permissões de acesso.
@@ -1194,11 +1208,10 @@ Badge (id, usuario_id, tipo, conquistada_em)
 | DAU / WAU / MAU | Daily/Weekly/Monthly Active Users; métricas de usuários ativos por dia, semana ou mês, usadas para medir engajamento |
 | UTC | Tempo Universal Coordenado; referência única para gravar data e hora no FinNova (ADR-006) |
 | Mês de competência | Mês ao qual um lançamento pertence, calculado pela data no fuso America/Sao_Paulo (RB-05, ADR-006) |
-| Chave de idempotência | Identificador único que o cliente envia ao criar um lançamento; um reenvio com a mesma chave não gera registro duplicado (RNF-24) |
-
+| Chave de idempotência | Identificador único que o cliente envia ao criar um lançamento; um reenvio com a mesma chave não gera registro duplicado (RNF-
 ### 8.1 Termos do domínio (vocabulário obrigatório)
 
-Nomes usados em código, specs e documentação, alinhados às classes de `/docs/modelo-dominio.md` (regra C-14 de `CLAUDE.md`).
+Nomes usados em código, specs e documentação, alinhados às classes de `/docs/05-modelo-de-dominio/modelo-de-dominio.md` (regra C-14 de `CLAUDE.md`).
 
 | Termo | Classe | Definição |
 |---|---|---|
@@ -1217,3 +1230,80 @@ Nomes usados em código, specs e documentação, alinhados às classes de `/docs
 | Taxa equivalente composta | operação de `Simulacao` | Conversão de taxa entre períodos por `(1 + i)^n − 1`, nunca por divisão simples (RB-10) |
 | Aporte mensal | atributo de `Simulacao` | Valor investido ao fim de cada mês da simulação |
 | Comparação de cenários | operação sobre `Simulacao` | Exibição lado a lado de duas ou mais simulações do mesmo usuário (RF-25) |
+| Motor de juros compostos | `MotorJurosCompostos` | Serviço puro de SPEC-002 que normaliza taxas/períodos e calcula a evolução mensal bruta |
+| Resultado de cálculo | `ResultadoCalculo` | Objeto de valor imutável com resumo bruto, taxa mensal percentual, prazo em meses e série, sem persistência |
+| Resultado mensal | `ResultadoMensal` | Objeto de valor da série com mês, saldo inicial, aporte ao fim, juros e saldo final; não é lançamento real |
+| Erro de cálculo | `ErroCalculo` | Erro de domínio com campo/código, sem parâmetros financeiros expostos; contrato em ADR-002 |
+
+
+### 1.19 Complemento — ciclo de vida da conta (2026-10-22)
+
+Solicitado pelo usuário após análise das branches. Requisitos novos não significam código entregue. IDs anteriores preservados.
+
+#### RF-68 — Editar dados do perfil
+
+**Enunciado EARS:** WHEN o titular autenticado altera seu nome THE SYSTEM SHALL validar e persistir o novo nome. A alteração de e-mail exige reautenticação e confirmação do novo endereço antes de substituir o atual; o endereço anterior permanece ativo até a confirmação.
+
+**Critérios de aceite:**
+
+- [ ] Nome obrigatório; e-mail único inclusive sob concorrência; impedir edição de outro titular; informar erro sem perder dados válidos.
+
+#### RF-69 — Confirmar titularidade do e-mail
+
+**Enunciado EARS:** WHEN o usuário confirma o token enviado ao seu endereço THE SYSTEM SHALL marcar esse endereço como verificado. IF o token estiver expirado, já utilizado ou inválido THEN THE SYSTEM SHALL rejeitar a confirmação sem alterar o estado.
+
+**Critérios de aceite:**
+
+- [ ] Token aleatório de uso único, armazenado somente como digest; validade de 24h; reenvio com intervalo mínimo de 60s e invalidação do token anterior. Conta pendente pode consultar perfil, reenviar confirmação e sair; operações financeiras exigem e-mail verificado. Cadastro e login atuais ainda não aplicam essa restrição.
+
+#### RF-70 — Recuperar senha esquecida
+
+**Enunciado EARS:** WHEN uma recuperação é solicitada THE SYSTEM SHALL devolver a mesma resposta pública exista ou não o e-mail e enviar link somente ao endereço cadastrado. WHEN o token válido é usado THE SYSTEM SHALL atualizar o hash da senha e revogar todas as sessões.
+
+**Critérios de aceite:**
+
+- [ ] Token de uso único com validade de 30 minutos; digest no banco; nunca enviar senha; limitar pedidos e tentativas; token expirado/reutilizado não altera senha.
+
+#### RF-71 — Alterar senha autenticado
+
+**Enunciado EARS:** WHEN o titular confirma sua senha atual e uma nova senha válida THE SYSTEM SHALL atualizar o hash e revogar todas as sessões, exigindo novo login.
+
+**Critérios de aceite:**
+
+- [ ] Reautenticação obrigatória; nova senha segue RB-27; senha incorreta não altera credenciais; nunca retornar ou registrar senha ou token.
+
+#### RF-72 — Configurar preferências do usuário
+
+**Enunciado EARS:** WHEN o titular salva idioma, tema ou canais de notificação THE SYSTEM SHALL persistir suas preferências e reaplicá-las nos próximos acessos.
+
+**Critérios de aceite:**
+
+- [ ] Português/inglês; tema claro/escuro; in-app preservado e push/e-mail opcionais; dados isolados por titular; respeitar RNF-19, RNF-20 e RF-49. Seleção local de idioma atual não equivale à persistência por usuário.
+
+#### RF-73 — Consultar e encerrar sessões
+
+**Enunciado EARS:** WHEN o titular consulta sessões THE SYSTEM SHALL listar suas sessões sem expor tokens. WHEN encerra uma sessão ou todas elas THE SYSTEM SHALL revogar o acesso e a renovação correspondentes imediatamente.
+
+**Critérios de aceite:**
+
+- [x] Exibir início, expiração e sessão atual; proibir acesso a sessões alheias; revogar uma ou todas as sessões próprias de modo idempotente, sem expor tokens.
+
+#### RF-74 — Renovar sessão e realizar logout
+
+**Enunciado EARS:** WHEN o cliente renova com token válido THE SYSTEM SHALL rotacionar o refresh token. WHEN o titular faz logout THE SYSTEM SHALL revogar a sessão atual e remover o cookie.
+
+**Critérios de aceite:**
+
+- [ ] Preservar contratos da SPEC-001/ADR-005; recusar replay, token expirado e sessão revogada; logout atual não encerra outros dispositivos. Implementado na SPEC-001; novas regras de confirmação e manutenção da conta continuam pendentes.
+
+**Estado de integração:** RF-01/RF-02/RF-74 possuem implementação inicial; RF-02 inclui bloqueio por conta de cinco falhas por quinze minutos. RF-05/RF-50, painel administrativo, quiz e módulos financeiros permanecem sem implementação. RNF-14 exige evidência de restauração em ambiente isolado; workflow existente não comprova backup nem bloqueio remoto de merge.
+
+## 10. Consolidação de conta e acesso — 2026-10-22
+
+RF-68 a RF-73 foram adicionados por solicitação do usuário; são requisitos para desenvolvimento, sem aprovação formal do grupo. RF-68/RF-72 têm implementação técnica na SPEC-014, RF-69 na SPEC-015 e RF-73 na SPEC-017; os demais continuam pendentes salvo indicação explícita. RF-01 e RF-02 têm implementação funcional web na SPEC-001. O bloqueio de 5 falhas/15 minutos foi concluído no complemento de 2026-10-23, preservando o rate limit de RNF-13. Evidências e limites: [registro da SPEC-001](../09-qualidade/implementacao-SPEC-001.md). RF-05 (exclusão) e RF-50 (exportação) continuam pendentes.
+
+RF-05 deve revogar sessões ao confirmar a exclusão, impedir novos acessos e tratar vínculos pessoais, tokens, auditoria e backups conforme OPEN-05. RF-50 exige reautenticação, arquivo isolado por titular, link temporário sem acesso público, erro sem vazamento e auditoria sem conteúdo financeiro. Formatos CSV/PDF existentes são preservados; neutralizar fórmulas em CSV.
+
+O PostgreSQL entregue persiste somente identidade, sessões, refresh e contadores. Modelo financeiro é planejamento: cada módulo deverá entregar migration, restrições, isolamento por titular e testes de integridade antes de ser considerado implementado. [Matriz de cobertura](../09-qualidade/cobertura-funcional.md).
+
+SPEC-015 implementa os tempos de RF-69: token opaco de uso único por 24h, reenvio mínimo de 60s, digest/finalidade/validade no PostgreSQL e contas pendentes sem bloqueio de login. O OpenAPI contém rotas de solicitar e confirmar e-mail. Serviço de e-mail, política para contas existentes, fila/outbox, retenção e evidência operacional continuam em OPEN-17.
