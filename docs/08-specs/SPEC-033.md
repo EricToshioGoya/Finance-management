@@ -1,0 +1,165 @@
+# SPEC-033: Acompanhar metas nomeadas por ativo
+
+**Estado:** implementação técnica da SPEC-033 na branch `feature/33-named-asset-goals` (PR #70), incluindo backend, migração, interface e testes. Revisão formal do grupo, decisões OPEN ainda abertas e merge não são presumidos.
+
+## 1. Identificação
+
+- **ID:** SPEC-033
+- **Nome:** Acompanhar metas nomeadas por ativo
+- **Objetivo:** Criar meta; vincular ativo do titular; obter valor atual; calcular progresso; reutilizar projeção de aporte; atualizar quando ativo muda.
+- **Valor entregue:** progresso e aporte mensal projetado.
+
+## 2. Rastreabilidade
+
+- **Baseline:** [requisitos](../03-requisitos/requisitos.md); [visão](../01-visao/visao.md); [personas](../02-personas/personas.md).
+- **RF:** RF-40.
+- **RB:** RB-18, RB-29.
+- **RNF:** RNF-01, RNF-04, RNF-05, RNF-06, RNF-07, RNF-11, RNF-12, RNF-13, RNF-14, RNF-15, RNF-16, RNF-17, RNF-20.
+- **Fluxo:** UC-14; fluxo metas nomeadas; [catálogo de casos](../04-casos-de-uso/casos-de-uso-usuario.md) e [administração](../04-casos-de-uso/casos-de-uso-administrador.md). IDs UC só são usados quando existentes; fluxo nomeado é rastreável ao RF.
+- **Modelo:** MetaNomeada, MetaFinanceira e Ativo; [modelo conceitual](../05-modelo-de-dominio/modelo-de-dominio.md).
+- **Arquitetura:** DA-01, DA-02, DA-06, DA-07, DA-09; ADR-001, ADR-002, ADR-005, ADR-007; [arquitetura/ADRs](../07-arquitetura/arquitetura.md).
+
+## 3. Escopo
+
+**Incluído:** acompanhar metas nomeadas por ativo; entradas, saídas e casos das seções 5/9/11. Cobertura exata dos critérios da baseline em [cobertura](cobertura-requisitos.md).
+
+**Fora do escopo:** demais capacidades do [mapa](mapa-specs.md), implementação de módulos dependentes e decisões não estabelecidas. Não executar investimentos reais, integrar Open Finance ou gerar código nesta revisão.
+
+**Recorte técnico adotado:** RB-18 determina progresso absoluto como valor atual do ativo manual real; o percentual da interface é apenas `valor_atual / valor_alvo × 100`, com barra limitada visualmente a 100%. A conciliação formal de RB-18 e RF/UI permanece em OPEN-19/21. [Registro técnico](../09-qualidade/implementacao-SPEC-033.md).
+
+## 4. Dependências
+
+[SPEC-024](SPEC-024.md), [SPEC-028](SPEC-028.md). As dependências devem estar entregues para o fluxo que as consome; nenhum código é presumido pronto pela existência do arquivo.
+
+Decisões bloqueantes: OPEN-15, OPEN-19, OPEN-21. Dependência condicional é descrita no escopo; não pode criar ciclo com o consumidor.
+
+## 5. Comportamento esperado
+
+**Pré-condições:** titular autenticado; para operações financeiras, e-mail verificado conforme RF-69; decisões bloqueantes resolvidas para o recorte.
+
+**Fluxo principal:**
+
+1. Criar meta.
+2. vincular ativo do titular.
+3. obter valor atual.
+4. calcular progresso.
+5. reutilizar projeção de aporte.
+6. atualizar quando ativo muda.
+
+**Alternativa observável:** Ativo de 250 e meta de 1000 mostram valor acumulado 250; representação percentual depende da conciliação de RB-18.
+
+**Exceções:** Ativo de outro titular ou alvo zero não cria vínculo válido.
+
+**Pós-condições:** progresso e aporte mensal projetado; preservação dos invariantes. Erro não produz confirmação de resultado inexistente.
+
+### Cláusulas EARS
+
+Cada cláusula local é referenciada na tabela de testes; funcionalidades opcionais só passam a integrar a entrega após seleção do recorte.
+
+| Cláusula | Enunciado normativo | Origem / critério |
+|---|---|---|
+| SPEC-033-R01 | WHEN ocorrer o fluxo válido de acompanhar metas nomeadas por ativo THE SYSTEM SHALL entregar progresso e aporte mensal projetado. | CA-001 |
+| SPEC-033-R02 | IF ocorrer a condição de erro descrita na seção 5 THEN THE SYSTEM SHALL recusá-la preservando INV-001 e INV-002. | CA-002 |
+| SPEC-033-R03 | WHEN o fluxo de acompanhar metas nomeadas por ativo alcançar o comportamento de RF-40/C01 THE SYSTEM SHALL atender ao comportamento: permitir criar metas nomeadas com nome, valor-alvo, prazo e categoria (ex.: reserva de emergência, viagem, entrada de imóvel). | CA-003 |
+| SPEC-033-R04 | WHEN o fluxo de acompanhar metas nomeadas por ativo alcançar o comportamento de RF-40/C02 THE SYSTEM SHALL atender ao comportamento: permitir vincular a meta a um ativo específico (RF-35) que acumula o progresso. | CA-004 |
+| SPEC-033-R05 | WHEN o fluxo de acompanhar metas nomeadas por ativo alcançar o comportamento de RF-40/C03 THE SYSTEM SHALL atender ao comportamento: reaproveitar o motor de projeção RF-26 para calcular o aporte mensal necessário. | CA-005 |
+| SPEC-033-R06 | WHEN o fluxo de acompanhar metas nomeadas por ativo alcançar o comportamento de RF-40/C04 THE SYSTEM SHALL atender ao comportamento: exibir progresso visual (barra) por meta. | CA-006 |
+
+## 6. Regras e invariantes
+
+- **INV-001:** O valor acumulado acompanha o ativo; a meta não transfere dinheiro nem duplica o ativo.
+- **INV-002:** Identificadores e filtros não permitem ler/alterar dados de outro titular; compartilhamento limita-se ao aceite e escopo explícitos. Erro não confirma alteração parcial.
+- **INV-003:** Decisões OPEN bloqueantes não são substituídas por valores, regras ou provedores inventados.
+
+Regras herdadas: RB-18: O progresso de uma meta nomeada é sempre igual ao valor atual do ativo vinculado a ela; RB-29: Lançamentos e simulações pessoais são acessíveis somente ao proprietário autenticado, salvo compartilhamento aceito e explicitamente autorizado. Toda validação ocorre no servidor. Reclassificações históricas para RF/RNF mantêm rastreabilidade, não criam nova regra de domínio.
+
+## 7. Modelo de domínio envolvido
+
+MetaNomeada pertence ao usuário, tem nome, valor-alvo, prazo/categoria e referencia um Ativo do mesmo titular. Um ativo pode apoiar 0..N metas; valor/progresso não deve ser somado ao patrimônio novamente.
+
+O [modelo conceitual](../05-modelo-de-dominio/modelo-de-dominio.md) mantém a origem das entidades. Foi criada a tabela técnica `named_asset_goals` com vínculo a `net_worth_items` e exclusão em cascata. A ampliação para outros tipos de ativo e os aliases gerais permanecem em OPEN-15/19/21.
+
+## 8. Impacto arquitetural
+
+Capacidade: Acompanhar metas nomeadas por ativo. Cliente web/mobile apresenta entradas, confirmação/erro e resultado; não decide permissão nem duplica cálculo. Aplicação valida acesso, coordena transações e chama domínio/adaptadores. Domínio preserva regras sem FastAPI/ORM/I/O (ADR-001/ADR-002). Infraestrutura executa persistência e integrações necessárias, respeitando o escopo.
+
+Nenhuma integração externa adicional é escolhida nesta revisão; quando o fluxo consome taxa, e-mail ou notificação, usa o contrato da Spec provedora.
+
+ADRs relacionados: ADR-001, ADR-002, ADR-005, ADR-007. Sessão vigente é ADR-007; proposta sem estado de ADR-005 é histórica. Persistência por capacidade inclui migration e verificações futuras, sem criação de banco nesta tarefa.
+
+## 9. Contratos necessários
+
+| Direção | Conteúdo conceitual |
+|---|---|
+| Entrada | nome, valor-alvo, prazo, categoria e ativo próprio |
+| Saída | progresso e aporte mensal projetado |
+| Erro | Ativo de outro titular ou alvo zero não cria vínculo válido. |
+
+Identificadores, filtros e autorizações são verificados no servidor. Rotas, nomes JSON, limites, paginação e códigos não definidos dependem de OPEN-15; contratos externos dependem das OPEN locais. Prefixo HTTP futuro segue /api/v1 (ADR-001). Contratos de sessão existentes do ADR-007 não são alterados por esta Spec. A descrição acima não afirma endpoints publicados.
+
+## 10. Requisitos não funcionais aplicáveis
+
+| RNF | Verificação planejada e evidência exigida |
+|---|---|
+| RNF-01 (Segurança) | Inspecionar HTTPS, proteção em repouso e respostas/logs sem segredo; testar negativa de acesso. |
+| RNF-04 (Performance) | Medir P95 < 3s no fluxo completo com perfil/ambiente aprovado em OPEN-06; registrar distribuição. |
+| RNF-05 (Compatibilidade) | Exercitar mesmo contrato em web e cliente mobile; web responsiva sozinha não prova aplicativo Expo. |
+| RNF-06 (Escalabilidade / extensibilidade) | Revisar dependências/camadas e extensão sem reescrever módulos existentes. |
+| RNF-07 (Manutenibilidade) | Conferir resultados independentes e cobertura >=80% das regras financeiras exercidas. |
+| RNF-11 (Acessibilidade) | Validar teclado/toque, contraste e leitor de tela conforme WCAG 2.1 AA; alternativa textual para gráficos. |
+| RNF-12 (Observabilidade) | Injetar erro e verificar logging estruturado/alerta sem conteúdo pessoal; observabilidade operacional em OPEN-32. |
+| RNF-13 (Proteção da API) | Testar limite de 100 pedidos/minuto por endpoint sensível; distinguir bloqueio por conta e limite externo de OPEN-24. |
+| RNF-14 (Backup e recuperação) | Restaurar backup isolado, medir RPO <=24h/RTO <=4h e aplicar exclusões; depende de OPEN-05/32. |
+| RNF-15 (Documentação de API) | Comparar contratos aprovados e documentação OpenAPI da futura versão; não declarar rota nova existente. |
+| RNF-16 (Qualidade contínua) | Executar testes/lint no PR e comprovar checks obrigatórios bloqueando falha; não presumir proteção remota. |
+| RNF-17 (Versionamento de API) | Conferir prefixo /api/v1 nos contratos HTTP futuros e preservar compatibilidade aprovada. |
+| RNF-20 (Internacionalização (i18n)) | Revisar textos/erros em PT/EN externalizados; fallback não pode ocultar ausência de tradução. |
+
+RNFs são associados ao comportamento e verificados na implementação/operação; não se declara conformidade por preenchimento documental. Ver [plano](../09-qualidade/plano-qualidade.md) e OPEN-32 para ambiente e evidências.
+
+## 11. Critérios de Aceitação
+
+- **CA-001** — **Dado** o recorte habilitado, dependências prontas e entradas de referência, **Quando** executar o fluxo principal, **Então** observar: Ativo de 250 e meta de 1000 mostram valor acumulado 250; representação percentual depende da conciliação de RB-18.
+- **CA-002** — **Dado** a condição inválida ou não autorizada, **Quando** tentar executar a operação, **Então** observar: Ativo de outro titular ou alvo zero não cria vínculo válido.
+
+- **CA-003** — **Dado** titular autenticado; para operações financeiras, e-mail verificado conforme RF-69, entradas válidas e política aprovada de RF-40/C01, **Quando** exercitar esse comportamento no fluxo desta Spec, **Então** verificar: Deve permitir criar metas nomeadas com nome, valor-alvo, prazo e categoria (ex.: reserva de emergência, viagem, entrada de imóvel).
+
+- **CA-004** — **Dado** titular autenticado; para operações financeiras, e-mail verificado conforme RF-69, entradas válidas e política aprovada de RF-40/C02, **Quando** exercitar esse comportamento no fluxo desta Spec, **Então** verificar: Deve permitir vincular a meta a um ativo específico (RF-35) que acumula o progresso.
+
+- **CA-005** — **Dado** titular autenticado; para operações financeiras, e-mail verificado conforme RF-69, entradas válidas e política aprovada de RF-40/C03, **Quando** exercitar esse comportamento no fluxo desta Spec, **Então** verificar: Deve reaproveitar o motor de projeção RF-26 para calcular o aporte mensal necessário.
+
+- **CA-006** — **Dado** titular autenticado; para operações financeiras, e-mail verificado conforme RF-69, entradas válidas e política aprovada de RF-40/C04, **Quando** exercitar esse comportamento no fluxo desta Spec, **Então** verificar: Deve exibir progresso visual (barra) por meta.
+
+## 12. Casos de teste derivados
+
+| Teste | Cláusula / critério / invariantes | Execução mínima planejada |
+|---|---|---|
+| T-001 | SPEC-033-R01; CA-001; INV-001, INV-002 | Fixture específica: Ativo de 250 e meta de 1000 mostram valor acumulado 250; representação percentual depende da conciliação de RB-18. |
+| T-002 | SPEC-033-R02; CA-002; INV-001, INV-002, INV-003 | Negativa: Ativo de outro titular ou alvo zero não cria vínculo válido. Fechar política OPEN antes de testar resultado ainda indefinido. |
+| T-003 | SPEC-033-R03; CA-003 | RF-40/C01: preparar entradas e limites da baseline, executar comportamento e conferir assertion: Deve permitir criar metas nomeadas com nome, valor-alvo, prazo e categoria (ex.: reserva de emergência, viagem, entrada de imóvel). |
+| T-004 | SPEC-033-R04; CA-004 | RF-40/C02: preparar entradas e limites da baseline, executar comportamento e conferir assertion: Deve permitir vincular a meta a um ativo específico (RF-35) que acumula o progresso. |
+| T-005 | SPEC-033-R05; CA-005 | RF-40/C03: preparar entradas e limites da baseline, executar comportamento e conferir assertion: Deve reaproveitar o motor de projeção RF-26 para calcular o aporte mensal necessário. |
+| T-006 | SPEC-033-R06; CA-006 | RF-40/C04: preparar entradas e limites da baseline, executar comportamento e conferir assertion: Deve exibir progresso visual (barra) por meta. |
+| T-007 | INV-001, INV-002, INV-003; RNF-01, RNF-04, RNF-05, RNF-06, RNF-07, RNF-11, RNF-12, RNF-13, RNF-14, RNF-15, RNF-16, RNF-17, RNF-20 | Executar métodos da seção 10, fronteiras, acesso cruzado/erros aplicáveis e inspeção de efeitos. Fixtures sintéticas, relógio injetado e dublês de fonte externa; evidência por requisito. |
+
+Testes de integração da entrega foram adicionados em `backend/tests/test_spec033_named_asset_goals.py`, cobrindo as cláusulas R01–R06, entrada inválida, isolamento e alteração dinâmica do ativo. Evidências do CI ficam no PR #70. Os exemplos não encerram regras ainda em OPEN nem a revisão formal do grupo.
+
+## 13. Questões em Aberto
+
+- OPEN-15 — decisão necessária: consultar definição e estado no registro central; bloqueia o comportamento desta unidade que dela dependa.
+- OPEN-19 — decisão necessária: Conciliar inconsistências herdadas: RF-23/RNF-09 versus ADR-003 (cache vencido/referência), RF-35 versus RB-13 (simulado/real), RB-18 (valor/progresso), aliases de entidade, antigos UCs, prazo de token normativo versus proposta e retenção versus auditoria imutável / Specs consumidoras e baseline; registrar alteração aprovada, não escolher silenciosamente.
+- OPEN-21 — decisão necessária: Competência e histórico: recorrência/edição retroativa, geração mensal, saldo acumulado versus mensal, snapshots, intervalos, metas zero e escalas visuais / SPEC-006, SPEC-020 a SPEC-022, SPEC-024, SPEC-028 a SPEC-034, SPEC-040, SPEC-043, SPEC-049, SPEC-055 a SPEC-059.
+
+[Registro central](questoes-abertas.md). Antes de implementar, registrar decisão e refletir alterações de comportamento na baseline e nesta Spec; se não houver decisão, conservar o bloqueio explícito.
+
+## 14. Definition of Done da Spec
+
+- [ ] Mapa e recorte revisados pelo grupo, com evidência real.
+- [ ] Decisões OPEN bloqueantes resolvidas e baseline conciliada antes de implementar a parte dependente.
+- [ ] Esta versão revisada individualmente, sem aprovação histórica presumida.
+- [ ] Todas as cláusulas/CA implementadas e todos os INV preservados.
+- [ ] Testes da seção 12 aprovados, com evidência ligada ao commit.
+- [ ] RNFs verificados pelos métodos da seção 10, inclusive operação quando aplicável.
+- [ ] Sem divergência conhecida entre código, Spec e baseline; corrigir implementação ou propor alteração para decisão humana.
+
+Documento completo não significa capacidade pronta. A conclusão requer comportamento, verificação e revisão reais.
