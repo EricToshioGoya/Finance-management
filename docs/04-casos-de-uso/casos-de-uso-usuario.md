@@ -139,7 +139,8 @@ O catálogo complementar em [Conta e acesso](conta-acesso-complemento.md) define
 | UC-25 | Recuperar senha | RF-70 |
 | UC-26 | Alterar senha autenticado | RF-71 |
 | UC-27 | Salvar configurações da conta | RF-72 |
-| UC-28 | Renovar ou encerrar sessão | RF-73 |
+| UC-28 | Consultar e encerrar sessões | RF-73 |
+| UC-29 | Renovar sessão e realizar logout | RF-74 |
 
 UC-23/27 exigem autenticação e afetam somente o titular. UC-24 recebe token vinculado à finalidade; troca exige reautenticação e só efetiva o novo e-mail após confirmação. UC-25 responde genericamente, valida token e troca senha revogando sessões. UC-26 exige senha atual e novo login após sucesso. UC-28 renova com rotação ou revoga imediatamente; replay encerra a família.
 

@@ -1234,6 +1234,15 @@ Nomes usados em código, specs e documentação, alinhados às classes de `/docs
 | Resultado de cálculo | `ResultadoCalculo` | Objeto de valor imutável com resumo bruto, taxa mensal percentual, prazo em meses e série, sem persistência |
 | Resultado mensal | `ResultadoMensal` | Objeto de valor da série com mês, saldo inicial, aporte ao fim, juros e saldo final; não é lançamento real |
 | Erro de cálculo | `ErroCalculo` | Erro de domínio com campo/código, sem parâmetros financeiros expostos; contrato em ADR-002 |
+| Conta compartilhada | `ContaCompartilhada` | Vínculo aceito entre dois titulares para dividir despesas (RF-60); persistida em `shared_links`; no máximo um vínculo ativo por usuário |
+| Despesa compartilhada | `DespesaCompartilhada` | Despesa do pagador marcada como compartilhada, com percentual do pagador; a parte do outro membro é truncada ao centavo (RF-61) |
+| Acerto de contas | `AcertoContas` | Registro de pagamento entre membros que reduz o saldo pendente; não é transferência bancária (RF-61) |
+| Estimativa de IR | `EstimativaIR` | Estimativa educativa de imposto por regime e competência, com data-limite do DARF; não é apuração oficial (RF-64) |
+| Resumo anual auxiliar | `ResumoAnual` | Consolidação anual de rendimentos registrados, IR estimado e simulações; não é informe oficial (RF-65) |
+| Conquista | `Conquista` | Distintivo cosmético concedido uma vez por titular; não altera cálculos, score nem permissões (RF-67) |
+| Tour de primeiro acesso | `EstadoTour` | Estado do roteiro guiado por titular: não iniciado, em andamento, concluído ou pulado (RF-04) |
+| Resumo mensal | `ResumoMensal` | PDF do mês anterior enviado a quem optou; um por titular e competência (RF-51) |
+| Tentativa de entrega | `TentativaEntrega` | Resultado mínimo de envio externo (canal, status, instante), sem conteúdo nem destino (RF-49) |
 
 
 ### 1.19 Complemento — ciclo de vida da conta (2026-10-22)

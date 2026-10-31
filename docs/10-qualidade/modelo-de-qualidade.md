@@ -27,7 +27,7 @@ Mapeia as características de qualidade da norma para os requisitos do FinNova e
 | | Atratividade | RNF-19 (tema claro e escuro) | Revisão visual |
 | | Conformidade | RNF-11 (WCAG 2.1 AA), RNF-20 (i18n) | Verificação automática de acessibilidade no frontend (ferramenta a definir) |
 | **Eficiência** | Comportamento em relação ao tempo | RNF-04 (P95 < 3s), RNF-09 (defasagem de 24h) | Teste de desempenho (estratégia, seção 2) |
-| | Utilização de recursos | Sem requisito no MVP | Avaliar após a Fase 4, com dados do monitoramento |
+| | Utilização de recursos | Sem requisito no MVP | Avaliar com dados de monitoramento quando houver ambiente de produção |
 | **Manutenibilidade** | Analisabilidade | RNF-12 (logs estruturados), ADRs | Revisão de PR e logs com identificação da requisição |
 | | Modificabilidade | RNF-06, ADR-001 (módulos por aba) | Regra de dependência entre camadas verificada na revisão |
 | | Estabilidade | RNF-16 (CI bloqueia merge) | Suíte de regressão completa em todo PR |

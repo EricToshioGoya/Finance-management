@@ -231,3 +231,13 @@ RF-23 usa cache somente dentro de sua validade; ausência/vencimento exige erro 
 ## Implementação do motor puro — 2026-10-23
 
 A SPEC-002 entrega `MotorJurosCompostos`, `ResultadoCalculo` e `ResultadoMensal` em `backend/app/domain/juros_compostos.py`, sem importações de infraestrutura, apresentação ou aplicação. O contrato numérico de OPEN-03/15 e o perfil parcial de OPEN-06 estão no ADR-002. Não há rota, migration ou cálculo financeiro duplicado no cliente; a integração pertence às Specs consumidoras. Evidências no [registro da SPEC-002](../09-qualidade/implementacao-SPEC-002.md).
+
+
+## 13. Implementação consolidada — 2026-10-31
+
+- **Camadas:** `backend/app/domain` (regras puras, sem I/O: juros compostos, financeiro, aposentadoria/previdência/IR em `expansion.py`), `backend/app/application` (casos de uso por capacidade, ex.: `sharing.py`, `planning_tax.py`, `engagement_features.py`, `monthly_summary.py`, `profile_distribution.py`), `backend/app/infrastructure` (ORM, segurança, adaptadores de e-mail/canais, PDF) e `backend/app/presentation` (schemas). Rotas em `backend/app/main.py`, todas sob `/api/v1` (C-11).
+- **Jobs no ciclo de vida da API:** expurgo diário do cache CVM às 03h (SPEC-054) e resumo mensal às 06h de São Paulo (SPEC-040), ambos idempotentes; o resumo também roda por `python -m app.jobs.monthly_summary`.
+- **Canais externos (SPEC-061):** adaptador HTTPS provider-neutral (`FINNOVA_EMAIL_WEBHOOK_URL`, `FINNOVA_PUSH_WEBHOOK_URL`); sem configuração, nenhuma entrega é registrada como enviada. Não foi adicionada dependência estrutural nova (sem fila ou provedor), portanto não houve novo ADR; a escolha de provedor segue OPEN-17.
+- **Migrations:** 032 (compartilhamento), 033 (estimativas de IR), 034 (privacidade, conquistas, tour e novos tipos de notificação) e 035 (canais e resumo mensal).
+- **Cliente web:** navegação por abas (Visão geral, Lançamentos, Compartilhado, Planejamento, Investimentos, Impostos, Patrimônio, Financiamentos, Empresas, Aprender, Minha conta e Administração). O aplicativo Expo continua planejado (RNF-05 atendido pela API comum).
+- **CI:** `.github/workflows/ci.yml` (backend com PostgreSQL 16, frontend e verificador documental), atendendo RNF-16/C-12.

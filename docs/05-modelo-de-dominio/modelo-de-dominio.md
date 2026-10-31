@@ -160,3 +160,22 @@ São propostas lógicas para migrations futuras, exceto a sessão técnica já e
 ### Contrato do motor implementado
 
 SPEC-002 usa `ResultadoCalculo` e `ResultadoMensal` como objetos de valor imutáveis, sem IDs persistidos ou relacionamentos de posse. `ErroCalculo` é erro de domínio por campo/código. São detalhamentos do motor puro já descrito, sem nova entidade persistente ou alteração dos diagramas conceituais de patrimônio. Vocabulário na seção 8.1 dos requisitos e política técnica no ADR-002.
+
+
+## 8. Entidades adicionadas na implementação de 2026-10-31
+
+As Specs 040, 044 a 052, 061 e 062 foram implementadas com as entidades abaixo. Os termos foram incluídos no glossário (`requisitos.md`, seção 8.1) antes do uso, conforme a regra C-14. Os nomes de tabela são de infraestrutura; o domínio permanece sem I/O (ADR-002).
+
+| Conceito (classe) | Relações e dados | Persistência | Origem |
+|---|---|---|---|
+| ContaCompartilhada | Dois `Usuario` distintos (convidante e convidado); estado pendente, ativo, recusado, cancelado, expirado ou encerrado; no máximo um ativo por usuário | `shared_links` | SPEC-044, RF-60 |
+| DespesaCompartilhada | 1 `Despesa` do pagador ↔ 0..1 compartilhamento em uma `ContaCompartilhada`; percentual do pagador entre 0 e 100 | `shared_expenses` | SPEC-045, RF-61 |
+| AcertoContas | 0..N por `ContaCompartilhada`; pagador, recebedor, valor positivo e chave de idempotência | `shared_settlements` | SPEC-045, RF-61 |
+| EstimativaIR | 0..N por `Usuario`; regime, competência, resultado, alíquota, imposto, isenção, vencimento do DARF e versão da tabela | `tax_estimates` | SPEC-048, RF-64 |
+| Conquista | 0..N por `Usuario`, única por código | `achievements` | SPEC-051, RF-67 |
+| EstadoTour | 0..1 por `Usuario` | `onboarding_tours` | SPEC-052, RF-04 |
+| Preferência de privacidade | 0..1 por `Usuario` (comparação anônima do score) | `privacy_settings` | SPEC-050, RF-66 |
+| ResumoMensal | 0..1 por `Usuario` e competência; status do envio | `monthly_summaries`, `report_settings` | SPEC-040, RF-51 |
+| TentativaEntrega e dispositivo push | 0..N por `Usuario`; canal, status e instante; token do dispositivo cifrado | `notification_deliveries`, `push_devices` | SPEC-061, RF-49 |
+
+Cálculos puros dessas Specs (aposentadoria, previdência, IR e calendário do DARF) ficam em `backend/app/domain/expansion.py`, sem dependência de banco ou HTTP.

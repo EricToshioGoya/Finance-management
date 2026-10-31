@@ -36,18 +36,18 @@ Registro central OPEN. Responsáveis e decisões são atribuídos pelo grupo; es
 |---|---|---|---|
 | OPEN-01 | Expiração do JWT, refresh, revogação e logout | SPEC-001; RF-02 | Adotado tecnicamente em ADR-007; revisão formal pendente |
 | OPEN-02 | Algoritmo/custo de hash, identidade de cliente para rate limit e janela/duração de bloqueio de login | SPEC-001; RNF-01, RNF-13 | Adotado tecnicamente em ADR-007; revisão formal pendente |
-| OPEN-03 | Precisão interna, arredondamento monetário e tolerância de comparação numérica | SPEC-002; RB-10, RB-28 | Adotado tecnicamente em ADR-002 nesta implementação; revisão formal pendente |
+| OPEN-03 | Precisão interna, arredondamento monetário e tolerância de comparação numérica | SPEC-002; RB-10, RB-28 | Adotado tecnicamente em ADR-002 nesta implementação; revisão formal pendente; parcial: recorte aprovado pelo responsável em 2026-10-31 — SPEC-045 (centavo com o pagador), SPEC-046 a 048 |
 | OPEN-04 | Comportamento/intervalo do agendador de cache e verificação da última publicação disponível | ADR-003; RF-23 | Aberto |
-| OPEN-05 | Prazo de exclusão/exportação, retenção, anonimização e recuperação de backup sem reintroduzir dados excluídos | RF-05, RF-50, RB-19; RNF-02, RNF-14, RNF-18 | Aberto |
+| OPEN-05 | Prazo de exclusão/exportação, retenção, anonimização e recuperação de backup sem reintroduzir dados excluídos | RF-05, RF-50, RB-19; RNF-02, RNF-14, RNF-18 | Aberto; parcial: recorte aprovado pelo responsável em 2026-10-31 — SPEC-040, 044, 049, 050 |
 | OPEN-06 | Ambiente e perfil de carga para P95 < 3s; medição da disponibilidade mensal de 99,5% | RNF-04, RNF-08 | Parcial: perfil sequencial do motor definido/medido em SPEC-002; aplicação/disponibilidade pendentes |
-| OPEN-07 | Produtos, tributação configurável/versionada, taxas e convenções de calendário para resultado líquido | RF-20, RF-63, RF-64; futura SPEC-004 | Aberto |
-| OPEN-08 | Recorte final do MVP e ordem de web/mobile, administração e recursos opcionais | Visão; mapa de Specs | Parcial: web em ADR-007; MVP/mobile pendentes |
+| OPEN-07 | Produtos, tributação configurável/versionada, taxas e convenções de calendário para resultado líquido | RF-20, RF-63, RF-64; futura SPEC-004 | Aberto; parcial: recorte aprovado pelo responsável em 2026-10-31 — SPEC-046 a 048 (tabela interna versionada 2026-10) |
+| OPEN-08 | Recorte final do MVP e ordem de web/mobile, administração e recursos opcionais | Visão; mapa de Specs | Parcial: web em ADR-007; MVP/mobile pendentes; parcial: recorte aprovado pelo responsável em 2026-10-31 — SPEC-052 (tour); mobile segue pendente |
 | OPEN-09 | IDE/agente, camadas efetivamente ativas e evidência de teste da política | Governança de agentes | Aberto |
 | OPEN-10 | Fontes externas, contratos, fonte de cotação, unidade/periodicidade e referências dos indicadores | RF-23, RF-24; RNF-09 | Aberto |
-| OPEN-11 | Critérios de quiz, score, alertas, conquistas e amostra de benchmark | RF-03, RF-41, RF-66, RF-67 | Aberto |
+| OPEN-11 | Critérios de quiz, score, alertas, conquistas e amostra de benchmark | RF-03, RF-41, RF-66, RF-67 | Aberto; parcial: recorte aprovado pelo responsável em 2026-10-31 — SPEC-050, 051, 062 |
 | OPEN-12 | Ciclo de cartão, pagamento de fatura, parcelas e tratamento de registro de financiamento | RF-13, RF-45 a RF-47 | Aberto |
 | OPEN-13 | Política de promoção/criação inicial de administrador, se a promoção virar funcionalidade | RF-54; exige novo RF para promoção | Aberto |
-| OPEN-14 | Pesquisa de alternativas existentes com fontes atuais | Benchmark do problema; RF-66 não substitui pesquisa | Aberto |
+| OPEN-14 | Pesquisa de alternativas existentes com fontes atuais | Benchmark do problema; RF-66 não substitui pesquisa | Parcial: benchmark em [docs/01-visao/benchmark.md](../01-visao/benchmark.md) (2026-10-18); validação do grupo com fontes atuais pendente |
 | OPEN-15 | Detalhes de contrato ainda ausentes para consumidores; autenticação, confirmação de e-mail e motor têm contratos próprios. Preservar login de RF-02 e prefixo de ADR-001 | SPEC-001, SPEC-002, SPEC-013, SPEC-015 | Parcial: autenticação em ADR-007; motor em ADR-002; confirmação em ADR-008; HTTP dos consumidores pendente |
 | OPEN-16 | Confirmar origem e aprovação da política de cadastro incorporada à RB-27, incluindo mínimo de 8 caracteres; definir equivalência/normalização de e-mail antes de impor unicidade sem distinção de caixa | RF-01, RB-27, SPEC-001; vínculo anterior à Spec não comprova aprovação humana | Adotado tecnicamente em ADR-007; revisão formal pendente |
 
@@ -61,7 +61,7 @@ O pedido do usuário nesta sessão autoriza implementar SPEC-001 e enviar à bra
 
 | ID | Decisão | Impacto | Estado |
 |---|---|---|---|
-| OPEN-17 | Selecionar provedor transacional, remetente/domínio, fila/outbox, configuração de entrega/retry e evidência operacional | RF-69, RF-70; SPEC-015, SPEC-016 | Aberto; SPEC-015 fornece adaptador HTTPS e falha segura, sem configuração de provedor |
+| OPEN-17 | Selecionar provedor transacional, remetente/domínio, fila/outbox, configuração de entrega/retry e evidência operacional | RF-69, RF-70; SPEC-015, SPEC-016 | Aberto; SPEC-015 fornece adaptador HTTPS e falha segura, sem configuração de provedor; parcial: recorte aprovado pelo responsável em 2026-10-31 — SPEC-061 (despachante HTTPS configurável, sem provedor fixado); operação segue pendente |
 | OPEN-18 | Adequar bloqueio por conta exigido pela main ao rate limit implementado; incluir testes e mitigação de abuso | RF-02, SPEC-001 | Solução técnica implementada nesta entrega: cinco falhas/15min, contagem por endereço normalizado, erro genérico e Retry-After; ver ADR-007 e registro de testes |
 
 OPEN-01: a política técnica atual já usa access de 15min, refresh rotativo e sessão absoluta de 7 dias, com logout revogável. Não está mais tecnicamente indefinida; revisão formal histórica continua separada. OPEN-05 deve preservar prazos explícitos da baseline main; restauração não pode reintroduzir contas apagadas. Autorização desta sessão cobre integração e documentação, sem fingir aprovação histórica do grupo nem autorizar código adicional.
@@ -74,17 +74,17 @@ O pedido atual autoriza gerar todas as Specs no lote. Não equivale a aprovaçã
 |---|---|---|---|
 | OPEN-19 | Conciliar inconsistências herdadas: RF-23/RNF-09 versus ADR-003 (cache vencido/referência), RF-35 versus RB-13 (simulado/real), RB-18 (valor/progresso), aliases de entidade, antigos UCs, prazo de token normativo versus proposta e retenção versus auditoria imutável | Specs consumidoras e baseline; registrar alteração aprovada, não escolher silenciosamente | Aberto |
 | OPEN-20 | Comparações/métricas: base percentual, zero, moeda/prazo/tributação compatíveis; janela de retornos, desvio e anualização; critério de vantagem financeira | SPEC-010, SPEC-025, SPEC-037 | Aberto |
-| OPEN-21 | Competência e histórico: recorrência/edição retroativa, geração mensal, saldo acumulado versus mensal, snapshots, intervalos, metas zero e escalas visuais | SPEC-006, SPEC-020 a SPEC-022, SPEC-024, SPEC-028 a SPEC-034, SPEC-040, SPEC-043, SPEC-049, SPEC-055 a SPEC-059 | Aberto |
-| OPEN-22 | Cálculos de expansão: sistema de amortização, encargos, confirmação/atualização de dívida; retirada na aposentadoria; regimes previdenciários e calendário tributário | SPEC-036 a SPEC-038, SPEC-046 a SPEC-048; sem fixar legislação/alíquotas nesta etapa | Aberto |
+| OPEN-21 | Competência e histórico: recorrência/edição retroativa, geração mensal, saldo acumulado versus mensal, snapshots, intervalos, metas zero e escalas visuais | SPEC-006, SPEC-020 a SPEC-022, SPEC-024, SPEC-028 a SPEC-034, SPEC-040, SPEC-043, SPEC-049, SPEC-055 a SPEC-059 | Aberto; parcial: recorte aprovado pelo responsável em 2026-10-31 — SPEC-040, 049, 062 |
+| OPEN-22 | Cálculos de expansão: sistema de amortização, encargos, confirmação/atualização de dívida; retirada na aposentadoria; regimes previdenciários e calendário tributário | SPEC-036 a SPEC-038, SPEC-046 a SPEC-048; sem fixar legislação/alíquotas nesta etapa | Aberto; parcial: recorte aprovado pelo responsável em 2026-10-31 — SPEC-046 a 048 |
 | OPEN-23 | Câmbio: moedas, PTAX compra/venda, data-base, fallback, projeção cambial e compatibilidade de períodos | SPEC-026 | Aberto |
 | OPEN-24 | API pública: modelo de credencial própria, concessão/revogação/escopos, subconjunto de endpoints e rate limits de terceiros | SPEC-041 | Aberto |
 | OPEN-25 | Webhooks: HMAC/canonicalização, segredo/rotação, URL permitida/SSRF, reenvios, duplicidade e registro de tentativas | SPEC-042 | Aberto |
-| OPEN-26 | Eventos e notificações: gatilhos/antecedência, identidade/deduplicação/retry, falhas de coleta, política in-app/opt-out, canais externos, retenção e disparo mensal | SPEC-027, SPEC-039, SPEC-040, SPEC-042, SPEC-051, SPEC-060, SPEC-061 | Aberto |
+| OPEN-26 | Eventos e notificações: gatilhos/antecedência, identidade/deduplicação/retry, falhas de coleta, política in-app/opt-out, canais externos, retenção e disparo mensal | SPEC-027, SPEC-039, SPEC-040, SPEC-042, SPEC-051, SPEC-060, SPEC-061 | Aberto; parcial: recorte aprovado pelo responsável em 2026-10-31 — SPEC-040, 051, 061 |
 | OPEN-27 | CVM: contratos de cadastro/DFP/ITR/FRE/IPE, contas/unidades, reapresentações, identidade de documento, periodicidade de verificação de links e doze meses de calendário | SPEC-012, SPEC-027, SPEC-053, SPEC-054 | Aberto |
 | OPEN-28 | Patrimônio: fechar a contradição entre investimento simulado/registrado em RF-35 e apenas patrimônio real em RB-13; origem de investimento real não modelada integralmente | SPEC-028 e consumidores; proibido considerar projeção um ativo entregue | Aberto |
-| OPEN-29 | Portabilidade/exclusão/arquivos: alcance além de lançamentos, links temporários, expiração/retentativas, titularidade compartilhada e dados de auditoria/backups | SPEC-018, SPEC-019, SPEC-049; complementar OPEN-05 | Aberto |
-| OPEN-30 | Conteúdo/UI: acervo e revisão de PT/EN, termos sem verbete, fluxo inicial sem quiz, estado de tour e limites/formatos de entrada ainda sem contrato | SPEC-013, SPEC-035, SPEC-052; complementar OPEN-15 | Aberto |
-| OPEN-31 | Compartilhamento/mobile: convites e visibilidade após rompimento, conflitos de edição/arredondamento/acertos; política de sincronização offline e isolamento local | SPEC-044, SPEC-045, SPEC-006, SPEC-056 a SPEC-059; RNF-22/24 | Aberto |
+| OPEN-29 | Portabilidade/exclusão/arquivos: alcance além de lançamentos, links temporários, expiração/retentativas, titularidade compartilhada e dados de auditoria/backups | SPEC-018, SPEC-019, SPEC-049; complementar OPEN-05 | Aberto; parcial: recorte aprovado pelo responsável em 2026-10-31 — SPEC-049 (download direto, sem link temporário) |
+| OPEN-30 | Conteúdo/UI: acervo e revisão de PT/EN, termos sem verbete, fluxo inicial sem quiz, estado de tour e limites/formatos de entrada ainda sem contrato | SPEC-013, SPEC-035, SPEC-052; complementar OPEN-15 | Aberto; parcial: recorte aprovado pelo responsável em 2026-10-31 — SPEC-052 |
+| OPEN-31 | Compartilhamento/mobile: convites e visibilidade após rompimento, conflitos de edição/arredondamento/acertos; política de sincronização offline e isolamento local | SPEC-044, SPEC-045, SPEC-006, SPEC-056 a SPEC-059; RNF-22/24 | Aberto; parcial: recorte aprovado pelo responsável em 2026-10-31 — SPEC-044, 045 |
 | OPEN-32 | Verificação operacional transversal: ambiente de carga/disponibilidade, serviço de monitoramento, backup/restore, acesso a chaves e proteção de branch; não criar Spec isolada por RNF | RNF-08/12/14/16 aplicáveis nas entregas; complementar OPEN-06/09 | Aberto |
 | OPEN-33 | Confirmar o recorte Must have antigo versus RF-68 a RF-74 e calendário; priorizar módulos opcionais sem confundir catálogo completo com promessa do semestre | Mapa completo; complementar OPEN-08 | Aberto |
 
@@ -115,3 +115,14 @@ O pedido do usuário autorizou a implementação técnica de recuperação e alt
 ## Implementação da SPEC-055 — 2026-10-25
 
 O pedido do usuário autorizou a implementação técnica de categorias. O catálogo padrão é fixo e a ocultação é somente por titular; categorias pessoais recebem cor e unicidade por titular. OPEN-21 continua aberto para recorrência, edição retroativa, históricos e módulos consumidores ainda não implementados.
+
+## Recortes aprovados em 2026-10-31
+
+As políticas abaixo foram propostas pelo agente de codificação e aprovadas pelo responsável na sessão de 2026-10-31 para implementar as Specs restantes. Cada Spec registra a decisão na seção 13; as OPEN permanecem abertas para revisão e aceite formal do grupo.
+
+- SPEC-044/045 (OPEN-31/03): convite genérico, um vínculo ativo, expiração em 7 dias, histórico somente leitura; divisão 50/50 ou percentual somando 100%, centavo com quem pagou, acerto limitado e idempotente.
+- SPEC-046/047/048 (OPEN-07/22/03): retirada padrão de 4% a.a.; tabelas regressivas de previdência e renda fixa, progressiva por alíquota informada; ações 15% com isenção até R$ 20 mil/mês, FIIs e day trade 20%; DARF no último dia útil do mês seguinte (feriados nacionais fixos e Sexta-feira Santa).
+- SPEC-049 (OPEN-05/21/29): resumo anual em JSON/CSV/PDF com aviso de não oficialidade; ano sem dados retorna 404.
+- SPEC-050/051/052 (OPEN-05/08/11/26/30): grupo mínimo de 30; três conquistas cosméticas; tour de quatro etapas com roteiro por perfil.
+- SPEC-061/040 (OPEN-17/26/05/21): canais opt-in com despachante HTTPS configurável; resumo mensal opt-in, um envio por mês, falha registrada.
+- SPEC-062 (OPEN-11/21): perfis do quiz, contas sem perfil à parte, filtro por cadastro no fuso de São Paulo.

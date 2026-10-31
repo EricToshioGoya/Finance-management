@@ -21,7 +21,7 @@ A maior parte dos testes fica na base, onde são rápidos e baratos; quanto mais
 |---|---|---|---|---|
 | Unitário (base) | Maioria dos testes | Domínio puro: entidades, regras de negócio e motores de cálculo | pytest + pytest-cov | Todo commit e PR |
 | Integração | Menos que unitários | API + banco: endpoints, persistência, autenticação, autorização, posse dos dados, idempotência e fuso | pytest + cliente HTTP do FastAPI + PostgreSQL em Docker | Todo PR |
-| Frontend | Por componente com regra | Componentes e regras de interface | Vitest/Jest | Todo PR (Fase 4) |
+| Frontend | Por fluxo de interface | Navegação, formulários, acessibilidade (axe WCAG AA) e layout responsivo | Playwright + @axe-core/playwright | Local com API HTTPS; CI executa lint e build |
 | Ponta a ponta (topo) | Poucos, só o fluxo principal | Cadastro → login → despesa → simulação | A definir | Antes da entrega final |
 | Desempenho | Cenários do RNF-04 | P95 < 3s em simulações e dashboards | Locust (proposta) | Antes da entrega final e quando o fluxo central mudar |
 
@@ -72,7 +72,7 @@ Nenhum teste automatizado chama serviço externo real (`CLAUDE.md` C-17).
 
 | Gate | Critério |
 |---|---|
-| Lint | Sem erros (ferramenta a confirmar na Fase 4; proposta: ruff e ESLint) |
+| Lint | Sem erros: `ruff check` e `ruff format --check` no backend; `tsc --noEmit` e ESLint no frontend (CI) |
 | Testes | 100% passando, incluindo as suítes da seção 4 |
 | Cobertura | ≥ 80% no pacote de domínio de cálculo financeiro (RNF-07) |
 | Segurança | Sem vulnerabilidade alta nas dependências (`docs/09-seguranca/seguranca-ssdlc.md`) |
@@ -103,3 +103,10 @@ O código gerado por agente segue as mesmas regras, com atenção redobrada a:
 ## 11. Questões em aberto
 
 - **Carga do teste de desempenho:** o RNF-04 define o P95, mas não o número de usuários simultâneos a simular.
+
+## Situação atual (2026-10-31)
+
+- Backend: `pytest` com PostgreSQL temporário por sessão de teste; cobertura mínima de 90% exigida na CI (atual: 92%). Testes das Specs implementadas em 2026-10-31 seguem o padrão `test_SPEC_NNN_Rxx_...`.
+- Dublês: canais externos (SPEC-061), entrega de e-mail (SPEC-015) e fontes de mercado usam dublês em memória; nenhum teste chama serviço externo real (C-17).
+- CI: `.github/workflows/ci.yml` executa backend, frontend e verificador documental em cada PR.
+- Pendente: testes E2E do frontend na CI (exigem API HTTPS e navegador), teste de carga (RNF-04) e restauração de backup (RNF-14).

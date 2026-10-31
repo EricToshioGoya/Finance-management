@@ -2,7 +2,7 @@
 
 Plataforma **web e mobile** que unifica **controle financeiro pessoal** e **simulação de investimentos** em um só lugar. Diferente de apps que tratam essas duas frentes separadamente, o sistema conecta o controle de gastos à decisão de investir: mostra quanto sobra no orçamento e simula o que esse valor pode render, adaptando a experiência ao nível de conhecimento do usuário (iniciante ou avançado) por meio de um quiz de perfil de investidor.
 
-- **Status:** rascunho
+- **Status:** rascunho revisado em 2026-10-31 para refletir o sistema implementado
 - **Versão do documento:** 0.6
 - **Última atualização:** 2026-10-18
 
@@ -125,16 +125,16 @@ Ordem sugerida: núcleo funcional primeiro (conta + lançamentos + simulações 
 
 ADRs existentes registram monólito em camadas, motor isolado, cache de indicadores e indexação CVM. [Arquitetura](../07-arquitetura/arquitetura.md) organiza drivers e responsabilidades. Parâmetros ainda não decididos permanecem em [OPEN](../08-specs/questoes-abertas.md).
 
-Framework e bibliotecas listados são escolhas documentadas, não dependências instaladas. Serviço de deploy, notificações e provedor de cotações mantêm alternativas explícitas. Sem aplicação implementada, não há resultado validado de desempenho, segurança ou disponibilidade.
+FastAPI, SQLAlchemy/Alembic, PostgreSQL e React + Vite estão instalados e em uso; o aplicativo Expo ainda não foi iniciado. Serviço de deploy, provedor de notificações (OPEN-17) e provedor de cotações mantêm alternativas explícitas. Há testes automatizados e CI, mas ainda não há resultado validado em produção de desempenho, disponibilidade ou backup.
 
-Benchmark de produtos existentes está pendente (OPEN-14). Não foi substituído por RF-66, que compara usuários da própria plataforma.
+O benchmark de produtos existentes (Mobills, Organizze, Kinvo e Gorila) está em [benchmark.md](benchmark.md); a validação formal pelo grupo segue em OPEN-14. Ele não se confunde com RF-66, que compara usuários da própria plataforma.
 
 
 ## Ciclo de vida da conta e recorte atualizado
 
 O produto deve permitir manter identidade e preferências, confirmar a posse do e-mail, recuperar/alterar senha e encerrar sessões (RF-68 a RF-74). Esses recursos completam Conta e Acesso e antecedem a liberação de dados financeiros para contas não verificadas. O usuário pode acessar a manutenção da conta pendente para concluir a confirmação.
 
-A main consolidada possui somente a implementação inicial de autenticação; funcionalidades financeiras, perfil/quiz e administração seguem planejadas. Exclusão/exportação (RF-05/RF-50), backups/restauração (RNF-14), observabilidade e permissões continuam critérios de entrega próprios, sem alegação de produção pronta.
+Em 2026-10-31 a `main` contém backend e cliente web para as 62 Specs (conta e acesso, finanças pessoais, simulações, empresas/CVM, patrimônio, score, educação, compartilhamento, impostos, notificações e administração). Exclusão/exportação (RF-05/RF-50), backups/restauração (RNF-14), observabilidade e permissões continuam critérios de entrega próprios, sem alegação de produção pronta.
 
 ## Ciclo de vida da conta
 

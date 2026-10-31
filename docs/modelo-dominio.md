@@ -1,5 +1,7 @@
 # Modelo de Domínio — FinNova
 
+> **Histórico.** A fonte vigente do modelo de domínio é [`05-modelo-de-dominio/modelo-de-dominio.md`](05-modelo-de-dominio/modelo-de-dominio.md), alinhada às Specs do grupo e ao código. Este arquivo e os diagramas em `docs/uml/` são mantidos como registro da versão de 2026-10-18; em caso de divergência de nomes (ex.: `Renda` x `ReceitaRecorrente`, `IndicadorOficial` x `IndicadorMercadoCache`), prevalece a versão vigente.
+
 - **Versão:** V1 (recorte Must have) + modelo completo de referência
 - **Última atualização:** 2026-10-18
 
