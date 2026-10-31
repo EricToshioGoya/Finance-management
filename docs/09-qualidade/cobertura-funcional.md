@@ -26,7 +26,7 @@ SPEC-018: implementação isolada com política confirmada em 2026-10-28. [Contr
 | Backup/monitoramento | Requisitos sem evidência operacional | Evidências operacionais próprias (RNF-08/12/14) |
 | Compartilhamento, aposentadoria, previdência, IR/DARF, resumo anual, score por grupo, conquistas, tour, canais e resumo mensal | Implementado em 2026-10-31 (SPEC-040, 044 a 052, 061, 062) | Testes `test_SPEC_NNN_Rxx` por cláusula; registros próprios em `docs/09-qualidade/` |
 | Interface web | Navegação por abas com telas para todas as APIs (PR #45) | Playwright com axe WCAG AA em `frontend/tests` |
-| Aplicativo mobile (Expo) | Não implementado | Depende do recorte de OPEN-08; a API é a mesma (RNF-05) |
+| Aplicativo mobile (Expo) | Versão mínima em `mobile/`: login, resumo do mês, despesa e avisos | Typecheck, testes unitários e bundle Android na CI; teste em dispositivo e push dependem de OPEN-08/17 |
 
 A integração de 2026-10-22 incorporou código existente. O complemento de 2026-10-23 implementou o bloqueio e executou regressão funcional; ver [registro da SPEC-001](implementacao-SPEC-001.md). SPEC-002 foi implementada em seguida, com [evidência própria](implementacao-SPEC-002.md); as capacidades restantes permanecem planejadas.
 

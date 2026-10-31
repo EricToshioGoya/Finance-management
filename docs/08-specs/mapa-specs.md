@@ -31,7 +31,7 @@ Total: 62 de 62 Specs com implementação técnica. Correção em relação à v
 
 - Cobertura por cláusula (C-02) das Specs com testes agrupados (`test_spec004_007_008_010_013_020_024.py`, `test_spec057_058_variable_income.py`, `test_spec059_006_expenses_and_editing.py`).
 - Registros de SPEC-014, 015, 016, 017, 029, 042, 043 e 055 foram criados em 2026-10-31 a partir do código e dos testes; falta a validação do grupo.
-- Operação: provedor de e-mail/push (OPEN-17), sincronização agendada de fontes externas, backup/monitoramento (RNF-08/12/14) e aplicativo mobile Expo (RNF-05, OPEN-08).
+- Operação: provedor de e-mail/push (OPEN-17), sincronização agendada de indicadores BCB/CVM (OPEN-04/10), backup/monitoramento (RNF-08/12/14) e publicação do aplicativo Expo (versão mínima em `mobile/`; recorte em OPEN-08).
 - Revisão e aceite formal do grupo para todas as decisões de recorte registradas na seção 13 de cada Spec.
 
 ### Specs implementadas em 2026-10-31 (recorte aprovado)

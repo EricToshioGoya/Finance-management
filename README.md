@@ -3,7 +3,7 @@
 Plataforma web e mobile que une **controle financeiro pessoal** e **simulação de investimentos**: mostra quanto sobra no orçamento e simula quanto esse valor pode render, com taxas oficiais (Selic, CDI, IPCA) e experiência adaptada ao perfil do investidor, seja iniciante ou avançado.
 
 - **Categoria do tema:** sistema de apoio à decisão (principal) e de acompanhamento de progresso (secundária).
-- **Status (2026-10-31):** backend FastAPI e cliente web React implementados para as 62 Specs, com CI no GitHub Actions; aplicativo mobile (Expo) e operação em produção ainda pendentes. Situação detalhada em [mapa de Specs](docs/08-specs/mapa-specs.md).
+- **Status (2026-10-31):** backend FastAPI e cliente web React implementados para as 62 Specs, com CI no GitHub Actions; aplicativo mobile Expo mínimo (login, resumo do mês, lançamento de despesa e avisos); operação em produção ainda pendente. Situação detalhada em [mapa de Specs](docs/08-specs/mapa-specs.md).
 
 ## Contexto acadêmico
 
@@ -30,6 +30,7 @@ Testes e lint:
 cd backend && uv run --frozen ruff check . && uv run --frozen pytest -q --cov=app --cov-fail-under=90
 cd frontend && npm run lint && npm run build && npm test   # npm test exige a API HTTPS ativa
 python scripts/verificar-documentacao.py
+cd mobile && npm ci && npm run typecheck && npm test && npx expo start   # app móvel (ajuste extra.apiUrl em app.json)
 ```
 
 A documentação interativa da API fica em `https://localhost:8443/api/v1/docs`. Variáveis de ambiente estão em `backend/.env.example` (nunca versionar `.env`, regra C-10).
@@ -63,6 +64,7 @@ A documentação interativa da API fica em `https://localhost:8443/api/v1/docs`.
 ├── .github/      # CI (testes, lint e verificação documental)
 ├── backend/      # API FastAPI: app/domain (regras puras), app/application, app/infrastructure, migrations, tests
 ├── frontend/     # cliente web React + TypeScript + Vite e testes Playwright
+├── mobile/       # aplicativo React Native com Expo (mesma API /api/v1)
 ├── scripts/      # preparação local, smoke tests e verificador de documentação
 └── docs/         # documentação viva
 ```

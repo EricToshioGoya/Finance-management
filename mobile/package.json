@@ -1,0 +1,26 @@
+{
+  "name": "finnova-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "node_modules/expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --experimental-strip-types src/format.test.ts"
+  },
+  "dependencies": {
+    "expo": "52.0.49",
+    "expo-asset": "11.0.5",
+    "expo-constants": "17.0.8",
+    "expo-secure-store": "14.0.1",
+    "expo-status-bar": "2.0.1",
+    "react": "18.3.1",
+    "react-native": "0.76.9"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "typescript": "5.8.3"
+  }
+}

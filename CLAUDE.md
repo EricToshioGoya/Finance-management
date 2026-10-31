@@ -18,7 +18,7 @@ Fontes de verdade, em ordem de precedência:
 4. Modelo de domínio: `docs/05-modelo-de-dominio/modelo-de-dominio.md` (versão vigente; `docs/modelo-dominio.md` e `docs/uml/` são histórico).
 5. Combinados de trabalho: `docs/combinados.md`.
 
-Stack definida: Python 3.12+ com FastAPI, Pydantic e SQLAlchemy/Alembic; PostgreSQL; React + TypeScript + Vite (web); React Native com Expo (mobile, ainda não iniciado). Detalhes em `docs/07-arquitetura/arquitetura.md`, seção 5.
+Stack definida: Python 3.12+ com FastAPI, Pydantic e SQLAlchemy/Alembic; PostgreSQL; React + TypeScript + Vite (web); React Native com Expo (mobile, versão mínima em `mobile/`). Detalhes em `docs/07-arquitetura/arquitetura.md`, seção 5.
 
 ---
 
@@ -80,6 +80,7 @@ Convenções:
 - Executar: `scripts/start-local.sh` (API e web em `https://localhost:8443`).
 - Backend (em `backend/`): `uv run --frozen ruff check .`, `uv run --frozen ruff format --check .`, `uv run --frozen alembic upgrade head` e `uv run --frozen pytest -q --cov=app --cov-fail-under=90`.
 - Frontend (em `frontend/`): `npm run lint`, `npm run build` e `npm test` (Playwright; exige a API HTTPS ativa).
+- Mobile (em `mobile/`): `npm run typecheck`, `npm test` e `npx expo start`.
 - Documentação: `python scripts/verificar-documentacao.py` após qualquer mudança em `docs/`.
 - Testes de backend nomeiam a cláusula: `test_SPEC_NNN_Rxx_...` (C-02).
 
@@ -95,6 +96,7 @@ Convenções:
 ├── .github/workflows/   # CI: backend (PostgreSQL), frontend e verificador documental
 ├── backend/             # app/domain (puro), app/application, app/infrastructure, app/presentation, migrations, tests
 ├── frontend/            # React + TypeScript + Vite; testes Playwright em frontend/tests
+├── mobile/              # React Native + Expo (login, resumo, despesa, avisos)
 ├── scripts/             # setup/execução local, smoke e verificador de documentação
 └── docs/                # documentação viva (visão → specs → qualidade)
 ```
