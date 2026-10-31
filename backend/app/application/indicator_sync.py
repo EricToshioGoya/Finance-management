@@ -133,9 +133,10 @@ class IndicatorSyncService:
 async def run_with_retries(
     run_once: Callable[[tuple[str, ...]], Awaitable[dict[str, str]]],
     sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
+    items: tuple[str, ...] = ITEMS,
 ) -> dict[str, str]:
-    """Executa todos os itens e repete apenas os que falharam (OPEN-04: 5, 15 e 45 min)."""
-    result = await run_once(ITEMS)
+    """Executa todos os itens e repete apenas os que falharam (ADR-009: 5, 15 e 45 min)."""
+    result = await run_once(items)
     for delay in RETRY_DELAYS:
         failed = tuple(item for item, status in result.items() if status == "failed")
         if not failed:
