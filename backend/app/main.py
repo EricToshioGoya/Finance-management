@@ -20,7 +20,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import create_engine, delete, text
+from sqlalchemy import create_engine, delete, select, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
@@ -35,6 +35,7 @@ from app.application.profile_distribution import ProfileDistributionService
 from app.application.sharing import SharingService
 from app.application.planning_tax import PlanningTaxService
 from app.application.engagement_features import EngagementFeaturesService
+from app.application.monthly_summary import MonthlySummaryService
 from app.application.webhooks import HttpWebhookDelivery, WebhookService
 from app.application.market_quotes import MarketQuoteService
 from app.config import Settings, get_settings
@@ -55,7 +56,13 @@ from app.infrastructure.email_delivery import (
     UnconfiguredEmailConfirmationDelivery,
     WebhookEmailConfirmationDelivery,
 )
-from app.infrastructure.models import RateBucket
+from app.infrastructure.models import (
+    NotificationDeliveryRecord,
+    PushDeviceRecord,
+    RateBucket,
+)
+from app.infrastructure.pdf import pdf_document
+from app.infrastructure.channel_delivery import HttpsChannelDelivery, UnconfiguredChannelDelivery
 from app.infrastructure.security import Security
 from app.presentation.schemas import (
     AccountCreateInput,
@@ -96,6 +103,11 @@ from app.presentation.schemas import (
     EngagementOutput,
     ProfileDistributionOutput,
     AnnualSummaryOutput,
+    DeliveryOutput,
+    MonthlySummaryOutput,
+    PushDeviceInput,
+    ReportSettingsInput,
+    ReportSettingsOutput,
     AchievementOutput,
     PrivacySettingsInput,
     PrivacySettingsOutput,
@@ -228,14 +240,16 @@ def create_app(
                 settings.deletion_journal_path, settings.data_key.get_secret_value()
             ).apply(db)
         task = asyncio.create_task(run_daily_cvm_cache_purge(app))
+        summary_task = asyncio.create_task(run_daily_monthly_summary(app))
         try:
             yield
         finally:
-            task.cancel()
-            try:
-                await task
-            except asyncio.CancelledError:
-                pass
+            for running in (task, summary_task):
+                running.cancel()
+                try:
+                    await running
+                except asyncio.CancelledError:
+                    pass
 
     app = FastAPI(
         lifespan=lifespan,
@@ -259,6 +273,15 @@ def create_app(
     app.state.engine, app.state.sessions, app.state.security = engine, sessions, security
     app.state.email_delivery = email_delivery
     app.state.webhook_delivery = HttpWebhookDelivery()
+    # SPEC-061: canais externos opcionais; sem despachante configurado, nada é enviado.
+    app.state.channel_delivery = {
+        "email": HttpsChannelDelivery(settings.email_webhook_url.get_secret_value())
+        if settings.email_webhook_url is not None
+        else UnconfiguredChannelDelivery(),
+        "push": HttpsChannelDelivery(settings.push_webhook_url.get_secret_value())
+        if settings.push_webhook_url is not None
+        else UnconfiguredChannelDelivery(),
+    }
     app.state.clock = lambda: datetime.now(UTC)
 
     async def run_daily_cvm_cache_purge(application: FastAPI) -> None:
@@ -274,6 +297,28 @@ def create_app(
                     CvmCacheService(db, clock=application.state.clock).purge_expired()
             except (OSError, SQLAlchemyError):
                 # No completed run is persisted on a failed transaction; retry at the next schedule.
+                continue
+
+    async def run_daily_monthly_summary(application: FastAPI) -> None:
+        """SPEC-040: às 06h de São Paulo gera o resumo do mês anterior (idempotente)."""
+        sao_paulo = ZoneInfo("America/Sao_Paulo")
+        while True:
+            now = application.state.clock().astimezone(sao_paulo)
+            scheduled = datetime.combine(now.date(), clock_time(hour=6), tzinfo=sao_paulo)
+            if now >= scheduled:
+                scheduled += timedelta(days=1)
+            await asyncio.sleep((scheduled - now).total_seconds())
+            try:
+                with sessions() as db:
+                    auth = AuthService(
+                        db,
+                        settings,
+                        security,
+                        clock=application.state.clock,
+                        channel_delivery=application.state.channel_delivery,
+                    )
+                    MonthlySummaryService(db, auth).run()
+            except (OSError, SQLAlchemyError):
                 continue
 
     def persist_usage_event(user_id: uuid.UUID, module: str, action: str) -> None:
@@ -295,6 +340,7 @@ def create_app(
                 security,
                 clock=app.state.clock,
                 email_delivery=app.state.email_delivery,
+                channel_delivery=app.state.channel_delivery,
             )
 
     def company_service() -> Generator[CompanyService, None, None]:
@@ -2113,45 +2159,6 @@ def create_app(
         rendered = str(value)
         return "'" + rendered if rendered.lstrip().startswith(("=", "+", "-", "@")) else rendered
 
-    def pdf_document(lines: list[str]) -> bytes:
-        # Standard PDF, paginated so a long statement does not silently truncate.
-        pages = [lines[index : index + 42] for index in range(0, len(lines), 42)] or [[]]
-        objects: list[bytes] = [b"", b"", b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"]
-        kids: list[str] = []
-        for page in pages:
-            page_id, stream_id = len(objects) + 1, len(objects) + 2
-            kids.append(f"{page_id} 0 R")
-            page_object = (
-                f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] "
-                f"/Resources << /Font << /F1 3 0 R >> >> /Contents {stream_id} 0 R >>"
-            )
-            objects.append(page_object.encode())
-            safe = [
-                line.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)") for line in page
-            ]
-            stream = (
-                "BT /F1 10 Tf 40 795 Td "
-                + " Tj 0 -16 Td ".join(f"({line})" for line in safe)
-                + " Tj ET"
-            ).encode("cp1252", errors="replace")
-            objects.append(
-                f"<< /Length {len(stream)} >>\nstream\n".encode() + stream + b"\nendstream"
-            )
-        objects[0] = b"<< /Type /Catalog /Pages 2 0 R >>"
-        objects[1] = f"<< /Type /Pages /Kids [{' '.join(kids)}] /Count {len(pages)} >>".encode()
-        body, offsets = bytearray(b"%PDF-1.4\n"), [0]
-        for index, obj in enumerate(objects, 1):
-            offsets.append(len(body))
-            body.extend(f"{index} 0 obj\n".encode() + obj + b"\nendobj\n")
-        xref = len(body)
-        body.extend(f"xref\n0 {len(offsets)}\n0000000000 65535 f \n".encode())
-        for offset in offsets[1:]:
-            body.extend(f"{offset:010d} 00000 n \n".encode())
-        body.extend(
-            f"trailer\n<< /Size {len(offsets)} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n".encode()
-        )
-        return bytes(body)
-
     # ---------- SPEC-046 a SPEC-049 ----------
     def owner_id(auth: AuthService, credentials) -> uuid.UUID:
         if not credentials:
@@ -2304,6 +2311,88 @@ def create_app(
     def put_tour(data: TourActionInput, auth: Service, credentials: Credentials):
         return EngagementFeaturesService(auth.db, auth).update_tour(
             owner_id(auth, credentials), data.action, data.step
+        )
+
+    # ---------- SPEC-061: canais externos opcionais ----------
+    @app.post(f"{NOTIFICATION_PREFIX}/push-devices", status_code=201, tags=["notifications"])
+    def register_push_device(data: PushDeviceInput, auth: Service, credentials: Credentials):
+        user_id = owner_id(auth, credentials)
+        auth.require_category_owner(user_id)
+        lookup = security.lookup(data.token)
+        exists = auth.db.scalar(
+            select(PushDeviceRecord.id).where(
+                PushDeviceRecord.user_id == user_id, PushDeviceRecord.token_lookup == lookup
+            )
+        )
+        if exists is None:
+            auth.db.add(
+                PushDeviceRecord(
+                    user_id=user_id,
+                    token_encrypted=security.encrypt(data.token),
+                    token_lookup=lookup,
+                    created_at=auth.clock(),
+                )
+            )
+            auth.db.commit()
+        return {"registered": True}
+
+    @app.delete(f"{NOTIFICATION_PREFIX}/push-devices", status_code=204, tags=["notifications"])
+    def remove_push_devices(auth: Service, credentials: Credentials):
+        user_id = owner_id(auth, credentials)
+        for device in auth.db.scalars(
+            select(PushDeviceRecord).where(PushDeviceRecord.user_id == user_id)
+        ):
+            auth.db.delete(device)
+        auth.db.commit()
+        return Response(status_code=204)
+
+    @app.get(
+        f"{NOTIFICATION_PREFIX}/deliveries",
+        response_model=list[DeliveryOutput],
+        tags=["notifications"],
+    )
+    def list_deliveries(auth: Service, credentials: Credentials):
+        """Resultado mínimo das tentativas externas do próprio titular (sem conteúdo)."""
+        user_id = owner_id(auth, credentials)
+        return list(
+            auth.db.scalars(
+                select(NotificationDeliveryRecord)
+                .where(NotificationDeliveryRecord.user_id == user_id)
+                .order_by(NotificationDeliveryRecord.attempted_at.desc())
+                .limit(50)
+            )
+        )
+
+    # ---------- SPEC-040: resumo mensal automático optativo ----------
+    @app.get(f"{PROFILE_PREFIX}/reports", response_model=ReportSettingsOutput, tags=["profile"])
+    def get_report_settings(auth: Service, credentials: Credentials):
+        return MonthlySummaryService(auth.db, auth).settings(owner_id(auth, credentials))
+
+    @app.put(f"{PROFILE_PREFIX}/reports", response_model=ReportSettingsOutput, tags=["profile"])
+    def put_report_settings(data: ReportSettingsInput, auth: Service, credentials: Credentials):
+        return MonthlySummaryService(auth.db, auth).set_settings(
+            owner_id(auth, credentials), data.monthly_summary_enabled
+        )
+
+    @app.get(
+        f"{FINANCIAL_PREFIX}/monthly-summaries",
+        response_model=list[MonthlySummaryOutput],
+        tags=["financial"],
+    )
+    def monthly_summaries(auth: Service, credentials: Credentials):
+        return MonthlySummaryService(auth.db, auth).history(owner_id(auth, credentials))
+
+    @app.get(f"{FINANCIAL_PREFIX}/monthly-summaries/{{competence}}/pdf", tags=["financial"])
+    def monthly_summary_pdf(competence: str, auth: Service, credentials: Credentials):
+        try:
+            month = date.fromisoformat(f"{competence}-01")
+        except ValueError as exc:
+            raise AuthError("invalid_competence", 400) from exc
+        content = MonthlySummaryService(auth.db, auth).download(owner_id(auth, credentials), month)
+        return Response(
+            content=content,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=resumo-{competence}.pdf"},
         )
 
     @app.get(f"{FINANCIAL_PREFIX}/exports/csv", tags=["financial"])

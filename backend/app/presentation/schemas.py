@@ -1498,3 +1498,32 @@ class TourActionInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     action: Literal["start", "advance", "complete", "skip", "reopen"]
     step: int | None = Field(default=None, ge=0, le=3)
+
+
+# ---------- SPEC-061/040 ----------
+class PushDeviceInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    token: str = Field(min_length=16, max_length=4096)
+
+
+class DeliveryOutput(BaseModel):
+    notification_id: UUID | None
+    source: str
+    channel: Literal["email", "push"]
+    status: Literal["sent", "failed", "provider_unavailable", "no_destination"]
+    attempted_at: datetime
+
+
+class ReportSettingsInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    monthly_summary_enabled: bool
+
+
+class ReportSettingsOutput(ReportSettingsInput):
+    pass
+
+
+class MonthlySummaryOutput(BaseModel):
+    competence: str
+    status: Literal["sent", "failed", "provider_unavailable", "no_destination"]
+    generated_at: datetime

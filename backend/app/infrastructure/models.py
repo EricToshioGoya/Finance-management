@@ -979,3 +979,76 @@ class OnboardingTourRecord(Base):
     status: Mapped[str] = mapped_column(String(12))
     step: Mapped[int] = mapped_column(default=0)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class PushDeviceRecord(Base):
+    """SPEC-061: destino push do titular (token do dispositivo, cifrado em repouso)."""
+
+    __tablename__ = "push_devices"
+    __table_args__ = (UniqueConstraint("user_id", "token_lookup", name="uq_push_device_token"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    token_encrypted: Mapped[bytes] = mapped_column(LargeBinary)
+    token_lookup: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class NotificationDeliveryRecord(Base):
+    """SPEC-061: resultado mínimo de cada tentativa externa (sem conteúdo nem destino)."""
+
+    __tablename__ = "notification_deliveries"
+    __table_args__ = (
+        CheckConstraint("channel IN ('email', 'push')", name="valid_delivery_channel"),
+        CheckConstraint(
+            "status IN ('sent', 'failed', 'provider_unavailable', 'no_destination')",
+            name="valid_delivery_status",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    notification_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("notifications.id", ondelete="CASCADE")
+    )
+    source: Mapped[str] = mapped_column(String(40))
+    channel: Mapped[str] = mapped_column(String(10))
+    status: Mapped[str] = mapped_column(String(24))
+    attempted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class ReportSettingsRecord(Base):
+    """SPEC-040: opt-in do resumo mensal automático."""
+
+    __tablename__ = "report_settings"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    monthly_summary_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class MonthlySummaryRecord(Base):
+    """SPEC-040: um resumo por titular e competência (idempotência do envio)."""
+
+    __tablename__ = "monthly_summaries"
+    __table_args__ = (
+        UniqueConstraint("user_id", "competence", name="uq_monthly_summary"),
+        CheckConstraint(
+            "status IN ('sent', 'failed', 'provider_unavailable', 'no_destination')",
+            name="valid_monthly_summary_status",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    competence: Mapped[date] = mapped_column(Date)
+    status: Mapped[str] = mapped_column(String(24))
+    generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     refresh_seconds: int = 604800
     rate_limit: int = 100
     email_webhook_url: SecretStr | None = None
+    # SPEC-061: despachante HTTPS do canal push (ex.: gateway para FCM). Opcional.
+    push_webhook_url: SecretStr | None = None
     deletion_journal_path: str = "../.local/account-deletions.sqlite3"
     initial_admin_email: str | None = None
 
@@ -48,6 +50,10 @@ class Settings(BaseSettings):
             delivery = urlsplit(self.email_webhook_url.get_secret_value())
             if delivery.scheme != "https" or not delivery.hostname:
                 raise ValueError("email_webhook_url must be an HTTPS URL")
+        if self.push_webhook_url is not None:
+            push = urlsplit(self.push_webhook_url.get_secret_value())
+            if push.scheme != "https" or not push.hostname:
+                raise ValueError("push_webhook_url must be an HTTPS URL")
         if self.initial_admin_email is not None and "@" not in self.initial_admin_email:
             raise ValueError("initial_admin_email must be a valid email address")
         if min(self.access_seconds, self.refresh_seconds, self.rate_limit) <= 0:

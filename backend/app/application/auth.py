@@ -42,12 +42,14 @@ from app.infrastructure.models import (
     NamedAssetGoalRecord,
     NetWorthItemRecord,
     NetWorthSnapshotRecord,
+    NotificationDeliveryRecord,
     NotificationPreferenceRecord,
     NotificationRecord,
     OfficialDocumentRecord,
     OneTimeIncomeRecord,
     PasswordResetTokenRecord,
     PublicCompanyRecord,
+    PushDeviceRecord,
     RecurringIncomeRecord,
     RefreshRecord,
     SessionRecord,
@@ -178,9 +180,12 @@ class AuthService:
         security: Security,
         clock: Callable[[], datetime] | None = None,
         email_delivery: EmailConfirmationDelivery | None = None,
+        channel_delivery: dict[str, object] | None = None,
     ):
         self.db, self.settings, self.security = db, settings, security
         self.email_delivery = email_delivery
+        # SPEC-061: adaptadores por canal externo ({"email": ..., "push": ...}).
+        self.channel_delivery = channel_delivery or {}
         self.clock = clock or (lambda: datetime.now(UTC))
 
     def public_user(self, record: UserRecord) -> User:
@@ -698,7 +703,76 @@ class AuthService:
                 )
             )
             return False, self.notification_output(existing) if existing is not None else None
+        self.dispatch_external(user_id, record.title, record.message, record.id, kind)
         return True, self.notification_output(record)
+
+    def dispatch_external(
+        self,
+        user_id: uuid.UUID,
+        title: str,
+        message: str,
+        notification_id: uuid.UUID | None,
+        source: str,
+        channels: tuple[str, ...] = ("email", "push"),
+        attachment: tuple[str, bytes] | None = None,
+    ) -> dict[str, str]:
+        """SPEC-061: entrega em canais opcionais habilitados; o in-app continua sendo a base.
+
+        Falhas são registradas com resultado mínimo (sem conteúdo nem destino) e nunca
+        desfazem a notificação in-app nem registram sucesso indevido.
+        """
+        from app.infrastructure.channel_delivery import ChannelDeliveryError, ChannelUnavailable
+
+        preferences = self.db.get(UserPreferencesRecord, user_id)
+        enabled = {
+            "email": preferences is not None and preferences.email_notifications,
+            "push": preferences is not None and preferences.push_notifications,
+        }
+        results: dict[str, str] = {}
+        for channel in channels:
+            if not enabled[channel]:
+                continue
+            if channel == "email":
+                user = self.db.get(UserRecord, user_id)
+                destinations = [self.security.decrypt(user.email_encrypted)] if user else []
+            else:
+                destinations = [
+                    self.security.decrypt(device.token_encrypted)
+                    for device in self.db.scalars(
+                        select(PushDeviceRecord).where(PushDeviceRecord.user_id == user_id)
+                    )
+                ]
+            adapter = self.channel_delivery.get(channel)
+            status = "no_destination" if not destinations else "sent"
+            for destination in destinations:
+                try:
+                    if adapter is None:
+                        raise ChannelUnavailable(channel)
+                    adapter.send(
+                        channel=channel,
+                        destination=destination,
+                        title=title,
+                        message=message,
+                        attachment=attachment,
+                    )
+                except ChannelUnavailable:
+                    status = "provider_unavailable"
+                except (ChannelDeliveryError, OSError):
+                    status = "failed"
+            self.db.add(
+                NotificationDeliveryRecord(
+                    user_id=user_id,
+                    notification_id=notification_id,
+                    source=source,
+                    channel=channel,
+                    status=status,
+                    attempted_at=self.clock(),
+                )
+            )
+            results[channel] = status
+        if results:
+            self.db.commit()
+        return results
 
     def list_notifications(
         self, user_id: uuid.UUID, unread_only: bool = False
