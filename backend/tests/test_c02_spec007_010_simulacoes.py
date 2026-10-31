@@ -2,8 +2,6 @@
 
 from datetime import UTC, datetime, timedelta
 
-import pytest
-
 from tests.clause_support import (
     FIN,
     clear_indicators,
@@ -27,10 +25,6 @@ VARIABLE = {
     "expected_annual_return": "12",
     "term_months": 12,
 }
-PENDING_SYNC = (
-    "Sincronização automática com BCB/SGS e Tesouro Transparente depende de OPEN-04/OPEN-10 "
-    "(séries, unidade e agendamento ainda sem decisão)."
-)
 
 
 # ---------------- SPEC-007 ----------------
@@ -49,11 +43,6 @@ def test_SPEC_007_R02_missing_indicator_is_unavailable_never_zero(client, app):
     clear_indicators(app)
     response = client.get(f"{FIN}/indicators/selic", headers=headers)
     assert response.status_code == 503 and response.json()["detail"] == "indicator_unavailable"
-
-
-@pytest.mark.xfail(raises=ImportError, strict=True, reason=PENDING_SYNC)
-def test_SPEC_007_R03_R04_R06_daily_sync_from_official_sources():
-    from app.application import indicator_sync  # noqa: F401
 
 
 def test_SPEC_007_R07_source_failure_keeps_last_value_with_warning(client, app):

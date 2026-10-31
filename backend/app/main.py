@@ -29,6 +29,8 @@ from app.application.auth import PROFILE_GUIDANCE, QUIZ_QUESTIONS, AuthError, Au
 from app.application.companies import CompanyService
 from app.application.cvm_cache import CvmCacheService
 from app.application.exchange_rates import ExchangeRateService
+from app.application.indicator_sync import IndicatorSyncService
+from app.application.indicator_sync import run_with_retries as run_indicator_sync_with_retries
 from app.application.external_api import ExternalApiService
 from app.application.engagement import EngagementService
 from app.application.profile_distribution import ProfileDistributionService
@@ -61,6 +63,7 @@ from app.infrastructure.models import (
     PushDeviceRecord,
     RateBucket,
 )
+from app.infrastructure.official_sources import OfficialSources
 from app.infrastructure.pdf import pdf_document
 from app.infrastructure.channel_delivery import HttpsChannelDelivery, UnconfiguredChannelDelivery
 from app.infrastructure.security import Security
@@ -189,6 +192,7 @@ from app.presentation.schemas import (
     StressCompareOutput,
     TargetContributionInput,
     TargetContributionOutput,
+    TreasuryBondRateOutput,
     TaxProjectionInput,
     TaxProjectionOutput,
     TokenOutput,
@@ -242,10 +246,13 @@ def create_app(
             ).apply(db)
         task = asyncio.create_task(run_daily_cvm_cache_purge(app))
         summary_task = asyncio.create_task(run_daily_monthly_summary(app))
+        background = [task, summary_task]
+        if settings.official_sources_sync:
+            background.append(asyncio.create_task(run_daily_indicator_sync(app)))
         try:
             yield
         finally:
-            for running in (task, summary_task):
+            for running in background:
                 running.cancel()
                 try:
                     await running
@@ -319,6 +326,28 @@ def create_app(
                         channel_delivery=application.state.channel_delivery,
                     )
                     MonthlySummaryService(db, auth).run()
+            except (OSError, SQLAlchemyError):
+                continue
+
+    async def run_daily_indicator_sync(application: FastAPI) -> None:
+        """ADR-009/OPEN-04: às 07h de São Paulo sincroniza SGS, PTAX e Tesouro Direto."""
+        sao_paulo = ZoneInfo("America/Sao_Paulo")
+        sources = OfficialSources()
+
+        def run_once(items: tuple[str, ...]) -> dict[str, str]:
+            with sessions() as db:
+                return IndicatorSyncService(db, application.state.clock, sources).run(items)
+
+        while True:
+            now = application.state.clock().astimezone(sao_paulo)
+            scheduled = datetime.combine(now.date(), clock_time(hour=7), tzinfo=sao_paulo)
+            if now >= scheduled:
+                scheduled += timedelta(days=1)
+            await asyncio.sleep((scheduled - now).total_seconds())
+            try:
+                await run_indicator_sync_with_retries(
+                    lambda items: asyncio.to_thread(run_once, items)
+                )
             except (OSError, SQLAlchemyError):
                 continue
 
@@ -1764,6 +1793,18 @@ def create_app(
         user, _ = auth.authenticate(credentials.credentials)
         auth.require_category_owner(user.id)
         return IndicatorOutput.model_validate(auth.indicator(code))
+
+    @app.get(
+        f"{FINANCIAL_PREFIX}/treasury-bonds",
+        response_model=list[TreasuryBondRateOutput],
+        tags=["financial"],
+    )
+    def treasury_bonds(auth: Service, credentials: Credentials):
+        if not credentials:
+            raise AuthError("invalid_session")
+        user, _ = auth.authenticate(credentials.credentials)
+        auth.require_category_owner(user.id)
+        return [TreasuryBondRateOutput.model_validate(item) for item in auth.treasury_rates()]
 
     @app.post(
         f"{FINANCIAL_PREFIX}/target-contributions",

@@ -1,6 +1,6 @@
 # SPEC-007: Consultar indicador oficial válido em cache
 
-**Estado:** implementada tecnicamente no código do grupo, incorporado à `main` em 2026-10-31 (PR #43); testes automatizados em `backend/tests/test_spec004_007_008_010_013_020_024.py` e interface web na navegação por abas (PR #45). Cobertura por cláusula (C-02) concluída em 2026-10-31: cada cláusula `SHALL` tem teste `test_SPEC_007_Rxx` em `backend/tests/test_c02_spec007_010_simulacoes.py`; R03, R04 e R06 (sincronização com a fonte oficial) estão marcadas como `xfail` estrito até a decisão de OPEN-04/OPEN-10; aprovação formal do grupo pendente.
+**Estado:** implementada tecnicamente no código do grupo, incorporado à `main` em 2026-10-31 (PR #43); testes automatizados em `backend/tests/test_spec004_007_008_010_013_020_024.py` e interface web na navegação por abas (PR #45). Cobertura por cláusula (C-02) concluída em 2026-10-31: cada cláusula `SHALL` tem teste `test_SPEC_007_Rxx` em `backend/tests/test_c02_spec007_010_simulacoes.py`; R03, R04 e R06 implementadas em 2026-10-31 conforme OPEN-04/OPEN-10 e ADR-009 (SGS 432/4389/13522, Tesouro Transparente, rotina diária às 07:00 com novas tentativas), com testes em `backend/tests/test_c02_spec007_indicator_sync.py`; aprovação formal do grupo pendente.
 
 ## 1. Identificação
 

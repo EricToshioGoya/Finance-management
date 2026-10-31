@@ -8,6 +8,7 @@ type Simulation = { id: string; kind: string; label: string; final_amount: strin
 type Comparison = { simulations: Simulation[]; difference_from_first: string[]; difference_percent_from_first: (string | null)[]; best_simulation_id: string };
 type Indicator = { code: string; value: string; unit: string; reference_date: string; checked_at: string; source: string; stale: boolean };
 type SimKind = 'fixed' | 'variable' | 'foreign';
+type TreasuryRate = { bond_type: string; maturity: string; buy_rate: string; reference_date: string; checked_at: string; source: string; stale: boolean };
 
 /** Calculadora (SPEC-013/004), simulações (SPEC-008/009/026), comparação (SPEC-010) e indicadores (SPEC-007). */
 export function Investments({ token, lang }: { token: string; lang: Lang }) {
@@ -17,6 +18,7 @@ export function Investments({ token, lang }: { token: string; lang: Lang }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [comparison, setComparison] = useState<Comparison | null>(null);
   const [indicators, setIndicators] = useState<Record<string, Indicator | null>>({});
+  const [treasury, setTreasury] = useState<TreasuryRate[] | null>(null);
   const [simKind, setSimKind] = useState<SimKind>('fixed');
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
@@ -32,6 +34,7 @@ export function Investments({ token, lang }: { token: string; lang: Lang }) {
         .then(value => setIndicators(current => ({ ...current, [code]: value })))
         .catch(() => setIndicators(current => ({ ...current, [code]: null })));
     }
+    void api<TreasuryRate[]>(token, '/financial/treasury-bonds').then(setTreasury).catch(() => setTreasury([]));
   }, [token]);
 
   async function calculate(event: FormEvent<HTMLFormElement>) {
@@ -94,6 +97,14 @@ export function Investments({ token, lang }: { token: string; lang: Lang }) {
             : <small>{item === null ? (pt ? 'Indisponível no cache local' : 'Unavailable in local cache') : (pt ? 'Carregando…' : 'Loading…')}</small>}
         </div>;
       })}</div>
+      <h4>{pt ? 'Tesouro Direto (taxa de compra)' : 'Tesouro Direto (buy rate)'}</h4>
+      {treasury === null ? <p>{pt ? 'Carregando…' : 'Loading…'}</p> : treasury.length === 0
+        ? <p className="hint">{pt ? 'Sem taxas do Tesouro Direto no cache local.' : 'No Tesouro Direto rates in the local cache.'}</p>
+        : <div className="table-wrap" tabIndex={0}><table>
+          <caption>{pt ? 'Fonte' : 'Source'}: {treasury[0].source} · {pt ? 'data-base' : 'base date'} {shortDate(treasury[0].reference_date, lang)}{treasury[0].stale ? (pt ? ' · desatualizado' : ' · stale') : ''}</caption>
+          <thead><tr><th>{pt ? 'Título' : 'Bond'}</th><th>{pt ? 'Vencimento' : 'Maturity'}</th><th className="num">{pt ? 'Taxa (% a.a.)' : 'Rate (% p.a.)'}</th></tr></thead>
+          <tbody>{treasury.map(item => <tr key={`${item.bond_type}-${item.maturity}`}><td>{item.bond_type}</td><td>{shortDate(item.maturity, lang)}</td><td className="num">{percent(item.buy_rate, lang)}</td></tr>)}</tbody>
+        </table></div>}
     </section>
 
     <div className="grid-2">

@@ -46,7 +46,8 @@ def app(application):
         db.execute(
             text(
                 "TRUNCATE users, auth_sessions, refresh_tokens, auth_rate_buckets, "
-                "auth_login_attempts, market_indicators, exchange_rates CASCADE"
+                "auth_login_attempts, market_indicators, exchange_rates, "
+                "treasury_bond_rates CASCADE"
             )
         )
     return application

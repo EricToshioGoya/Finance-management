@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     push_webhook_url: SecretStr | None = None
     deletion_journal_path: str = "../.local/account-deletions.sqlite3"
     initial_admin_email: str | None = None
+    # ADR-009: rotinas agendadas que consultam fontes oficiais; desligadas por padrão (C-17).
+    official_sources_sync: bool = False
 
     @field_validator("jwt_secret")
     @classmethod

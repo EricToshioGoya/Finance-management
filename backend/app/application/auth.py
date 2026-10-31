@@ -54,6 +54,7 @@ from app.infrastructure.models import (
     RefreshRecord,
     SessionRecord,
     SimulationRecord,
+    TreasuryBondRateRecord,
     UsageEventRecord,
     UserPreferencesRecord,
     UserRecord,
@@ -1499,6 +1500,27 @@ class AuthService:
             "source": record.source,
             "stale": stale,
         }
+
+    def treasury_rates(self) -> list[dict[str, object]]:
+        """SPEC-007-R04: taxas do Tesouro Direto do cache local; nunca chama a fonte."""
+        records = self.db.scalars(
+            select(TreasuryBondRateRecord).order_by(
+                TreasuryBondRateRecord.bond_type, TreasuryBondRateRecord.maturity
+            )
+        )
+        now = self.clock()
+        return [
+            {
+                "bond_type": record.bond_type,
+                "maturity": record.maturity,
+                "buy_rate": record.buy_rate,
+                "reference_date": record.reference_date,
+                "checked_at": record.checked_at,
+                "source": record.source,
+                "stale": now - record.checked_at > timedelta(hours=24),
+            }
+            for record in records
+        ]
 
     def save_simulation(
         self, user_id: uuid.UUID, kind: str, label: str, payload: dict[str, object], final: Decimal

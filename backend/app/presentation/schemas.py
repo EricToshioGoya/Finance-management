@@ -916,6 +916,18 @@ class IndicatorOutput(BaseModel):
     stale: bool
 
 
+class TreasuryBondRateOutput(BaseModel):
+    """SPEC-007-R04: taxa de compra do Tesouro Direto lida do cache local."""
+
+    bond_type: str
+    maturity: date
+    buy_rate: Decimal
+    reference_date: date
+    checked_at: datetime
+    source: str
+    stale: bool
+
+
 class SimulationCreateInput(CalculatorInput):
     model_config = ConfigDict(extra="forbid")
     label: str = Field(min_length=1, max_length=100)
