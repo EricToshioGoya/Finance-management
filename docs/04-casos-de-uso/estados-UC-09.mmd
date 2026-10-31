@@ -1,0 +1,14 @@
+stateDiagram-v2
+    [*] --> Validando
+    Validando --> Rejeitada: parâmetros inválidos
+    Validando --> ObtendoTaxa: parâmetros válidos
+    ObtendoTaxa --> AguardandoTaxaManual: cache ausente ou vencido
+    AguardandoTaxaManual --> Validando: taxa manual informada
+    AguardandoTaxaManual --> Cancelada: usuário cancela
+    ObtendoTaxa --> Calculando: taxa disponível
+    Calculando --> Rejeitada: erro do motor
+    Calculando --> Persistindo: resultado calculado
+    Persistindo --> Concluida: simulação registrada
+    Rejeitada --> [*]
+    Cancelada --> [*]
+    Concluida --> [*]

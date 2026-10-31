@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: finnova
+          POSTGRES_USER: finnova
+          POSTGRES_PASSWORD: finnova-ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U finnova -d finnova"
+          --health-interval 2s --health-timeout 3s --health-retries 20
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      FINNOVA_DATABASE_URL: postgresql+psycopg://finnova:finnova-ci@127.0.0.1:5432/finnova
+      FINNOVA_PUBLIC_ORIGIN: https://localhost:8443
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv python install 3.12
+      - run: uv sync --frozen
+      # Segredos efêmeros gerados no job; nada é versionado (regra C-10).
+      - name: Gerar segredos efêmeros
+        run: |
+          mkdir -p ../.local
+          echo "FINNOVA_JWT_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+          echo "FINNOVA_DATA_KEY=$(uv run --frozen python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')" >> "$GITHUB_ENV"
+      - run: uv run --frozen ruff check .
+      - run: uv run --frozen ruff format --check .
+      - run: uv run --frozen alembic upgrade head
+      - run: uv run --frozen pytest -q --cov=app --cov-fail-under=90
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+      - run: npm run lint
+      - run: npm run build
+
+  documentacao:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python scripts/verificar-documentacao.py

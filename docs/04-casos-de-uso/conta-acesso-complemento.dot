@@ -1,0 +1,23 @@
+digraph conta_acesso {
+  rankdir=LR;
+  node [shape=box, style="rounded", fontname="Helvetica"];
+  Cadastro [label="Cadastro\n(UC-01)"];
+  Pendente [label="E-mail pendente"];
+  Confirmado [label="E-mail confirmado\n(UC-24)"];
+  Sessao [label="Sessão ativa\n(UC-02, UC-29)"];
+  Perfil [label="Perfil e preferências\n(UC-23, UC-27)"];
+  Senha [label="Alterar senha\n(UC-26)"];
+  Recuperacao [label="Recuperar senha\n(UC-25)"];
+  Encerrada [label="Sessões encerradas\n(UC-28)"];
+  Cadastro -> Pendente;
+  Pendente -> Confirmado [label="token válido"];
+  Pendente -> Pendente [label="reenvio invalida\ntoken anterior"];
+  Confirmado -> Sessao [label="login"];
+  Pendente -> Sessao [label="login"];
+  Sessao -> Perfil;
+  Sessao -> Senha [label="senha atual"];
+  Senha -> Encerrada [label="revoga outras sessões"];
+  Recuperacao -> Encerrada [label="token 30 min"];
+  Sessao -> Encerrada [label="logout / revogar"];
+  Perfil -> Pendente [label="troca de e-mail"];
+}
