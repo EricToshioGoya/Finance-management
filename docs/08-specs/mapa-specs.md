@@ -12,7 +12,57 @@ Foram preservados SPEC-001 a SPEC-017. Specs amplas foram delimitadas e o restan
 - RNFs são associados às Specs, incluindo recuperação operacional e compatibilidade; não foram criadas Specs de backend, banco ou RNF isolado.
 - Lacunas/inconsistências: OPEN-19 a OPEN-33 complementam as anteriores. Cache vencido, patrimônio simulado, aliases, métricas/calendários, retenção/auditoria e prazo normativo versus proposta exigem decisão explícita. Revisões históricas não provam conformidade atual.
 
-## Situação de implementação — 2026-10-23
+## Situação de implementação — 2026-10-31
+
+Fonte: campo **Estado** de cada Spec em `docs/08-specs/` e registros em `docs/09-qualidade/`, conforme cópia do repositório do grupo em 2026-10-31. Este repositório ainda não contém código em `src/` nem testes em `tests/`; a implementação existe apenas no repositório do grupo. Nenhuma Spec possui aprovação formal do grupo.
+
+### Resumo
+
+| Situação | Qtd. | Specs |
+|---|---|---|
+| Implementada tecnicamente, aguardando revisão humana e/ou CI | 21 | 001, 002, 003, 011, 012, 014, 015, 016, 017, 018, 023, 025, 026, 027, 028, 034, 039, 053, 054, 055, 060 |
+| Implementada, com validação automatizada registrada no PR | 2 | 042, 043 |
+| Implementação em andamento ou em validação em branch/PR, sem merge confirmado | 7 | 019, 029, 030, 031, 032, 033, 035 |
+| Implementação provisória ou recorte técnico, com decisões OPEN pendentes | 4 | 036, 037, 038, 041 |
+| Rascunho, sem implementação | 28 | 004, 005, 006, 007, 008, 009, 010, 013, 020, 021, 022, 024, 040, 044, 045, 046, 047, 048, 049, 050, 051, 052, 056, 057, 058, 059, 061, 062 |
+
+Total: 62 Specs; 34 com implementação (completa, em andamento ou provisória) e 28 pendentes.
+
+### Specs com implementação sem registro em `docs/09-qualidade/`
+
+SPEC-014, SPEC-015, SPEC-016, SPEC-017, SPEC-029, SPEC-042, SPEC-043 e SPEC-055.
+
+### Detalhamento das Specs incluídas após 2026-10-23
+
+- SPEC-003: implementada em branch de trabalho; política de quiz confirmada pelo responsável em 2026-10-28. [Registro](../09-qualidade/implementacao-SPEC-003.md).
+- SPEC-011: implementação técnica autorizada em 2026-10-28; revisão formal do grupo pendente. [Registro](../09-qualidade/implementacao-SPEC-011.md).
+- SPEC-012: implementada em branch de trabalho; recorte local confirmado pelo responsável em 2026-10-28. [Registro](../09-qualidade/implementacao-SPEC-012.md).
+- SPEC-018: implementação isolada autorizada em 2026-10-28. [Registro](../09-qualidade/implementacao-SPEC-018.md).
+- SPEC-019: implementação isolada em andamento. [Registro](../09-qualidade/implementacao-SPEC-019.md).
+- SPEC-023: implementada tecnicamente em 2026-10-29. [Registro](../09-qualidade/implementacao-SPEC-023.md).
+- SPEC-025: implementação técnica autorizada em 2026-10-29; aguardando CI e revisão humana. [Registro](../09-qualidade/implementacao-SPEC-025.md).
+- SPEC-026: implementada tecnicamente em 2026-10-30; política de câmbio confirmada pelo responsável. [Registro](../09-qualidade/implementacao-SPEC-026.md).
+- SPEC-027: implementada tecnicamente em 2026-10-30. [Registro](../09-qualidade/implementacao-SPEC-027.md).
+- SPEC-028: implementada tecnicamente em 2026-10-29. [Registro](../09-qualidade/implementacao-SPEC-028.md).
+- SPEC-029: implementação em andamento na branch `feature/29-net-worth-history`; execução do CI pendente.
+- SPEC-030: em validação na branch `feature/30-net-worth-heatmap` (PR #67). [Registro](../09-qualidade/implementacao-SPEC-030.md).
+- SPEC-031: em validação no PR #68 (`feature/31-portfolio-allocation`). [Registro](../09-qualidade/implementacao-SPEC-031.md).
+- SPEC-032: implementação técnica no PR #69 (`feature/32-financial-stress`); OPEN-03/OPEN-21 pendentes. [Registro](../09-qualidade/implementacao-SPEC-032.md).
+- SPEC-033: implementação técnica no PR #70 (`feature/33-named-asset-goals`). [Registro](../09-qualidade/implementacao-SPEC-033.md).
+- SPEC-034: implementada tecnicamente em 2026-10-29. [Registro](../09-qualidade/implementacao-SPEC-034.md).
+- SPEC-035: em validação na branch `feature/35-education-help`; conteúdo editorial sujeito a OPEN-30. [Registro](../09-qualidade/implementacao-SPEC-035.md).
+- SPEC-036: implementação provisória na branch `feature/36-financing-amortization`; OPEN-12/22 pendentes. [Registro](../09-qualidade/implementacao-SPEC-036.md).
+- SPEC-037: implementação provisória na branch `feature/37-finance-vs-invest`; OPEN-20/22 pendentes. [Registro](../09-qualidade/implementacao-SPEC-037.md).
+- SPEC-038: recorte técnico na branch `feature/38-confirm-real-financing`; OPEN-12/15/21/22 pendentes. [Registro](../09-qualidade/implementacao-SPEC-038.md).
+- SPEC-039: implementada tecnicamente em 2026-10-29; aguardando CI e revisão humana. [Registro](../09-qualidade/implementacao-SPEC-039.md).
+- SPEC-041: implementação técnica em `feature/41-authorized-read-api`; recorte de chave API de leitura provisório; OPEN-24/15 pendentes. [Registro](../09-qualidade/implementacao-SPEC-041.md).
+- SPEC-042: implementada em 2026-10-31; validação automatizada registrada no PR da implementação.
+- SPEC-043: implementada em 2026-10-31; validação automatizada registrada no PR da implementação.
+- SPEC-053: implementada tecnicamente em 2026-10-28. [Registro](../09-qualidade/implementacao-SPEC-053.md).
+- SPEC-054: implementada tecnicamente em 2026-10-29. [Registro](../09-qualidade/implementacao-SPEC-054.md).
+- SPEC-060: implementação técnica autorizada em 2026-10-28; revisão formal do grupo pendente. [Registro](../09-qualidade/implementacao-SPEC-060.md).
+
+### Registro anterior — 2026-10-23
 
 - SPEC-001: implementação funcional web e bloqueio concluídos na feature/spec001-completa; PR #12 permanece separado.
 - SPEC-002: motor puro implementado na feature/13-motor-spec002; evidências no [registro](../09-qualidade/implementacao-SPEC-002.md).
