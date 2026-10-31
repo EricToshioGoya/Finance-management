@@ -1,6 +1,6 @@
 # SPEC-033: Acompanhar metas nomeadas por ativo
 
-**Estado:** implementação técnica da SPEC-033 na branch `feature/33-named-asset-goals` (PR #70), incluindo backend, migração, interface e testes. Revisão formal do grupo, decisões OPEN ainda abertas e merge não são presumidos.
+**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação técnica da SPEC-033 na branch `feature/33-named-asset-goals` (PR #70), incluindo backend, migração, interface e testes. Revisão formal do grupo, decisões OPEN ainda abertas e merge não são presumidos.
 
 ## 1. Identificação
 

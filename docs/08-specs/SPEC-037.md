@@ -1,6 +1,6 @@
 # SPEC-037: Comparar financiamento e compra após investir
 
-**Estado:** implementação técnica provisória na branch `feature/37-finance-vs-invest` (backend, interface web, testes). OPEN-20/22 ainda dependem de decisão formal do grupo; não há aprovação histórica presumida.
+**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação técnica provisória na branch `feature/37-finance-vs-invest` (backend, interface web, testes). OPEN-20/22 ainda dependem de decisão formal do grupo; não há aprovação histórica presumida.
 
 ## 1. Identificação
 

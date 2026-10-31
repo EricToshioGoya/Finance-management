@@ -1,5 +1,7 @@
 # Issues do MVP — FinNova
 
+> **Situação (2026-10-31):** todas as capacidades destas issues estão implementadas no código da `main` (ver [mapa de Specs](../08-specs/mapa-specs.md)). O arquivo é mantido como registro do planejamento original.
+
 14 issues cobrindo os requisitos de prioridade **Must Have** do MVP (módulos de Conta e Acesso, Administração Financeira Essencial e Simulador Essencial, conforme especificado em `/docs/03-requisitos/requisitos.md`). Copie cada bloco para "New Issue" no GitHub, ou use os comandos `gh issue create` no fim do arquivo se preferir criar tudo pelo terminal.
 
 Labels sugeridas por módulo: `modulo:conta-acesso`, `modulo:adm-financeira`, `modulo:simulador`, mais `prioridade:must-have`.

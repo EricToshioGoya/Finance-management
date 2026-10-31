@@ -12,25 +12,37 @@ Foram preservados SPEC-001 a SPEC-017. Specs amplas foram delimitadas e o restan
 - RNFs são associados às Specs, incluindo recuperação operacional e compatibilidade; não foram criadas Specs de backend, banco ou RNF isolado.
 - Lacunas/inconsistências: OPEN-19 a OPEN-33 complementam as anteriores. Cache vencido, patrimônio simulado, aliases, métricas/calendários, retenção/auditoria e prazo normativo versus proposta exigem decisão explícita. Revisões históricas não provam conformidade atual.
 
-## Situação de implementação — 2026-10-31
+## Situação de implementação — 2026-10-31 (atualizada após a integração do código)
 
-Fonte: campo **Estado** de cada Spec em `docs/08-specs/` e registros em `docs/09-qualidade/`, conforme cópia do repositório do grupo em 2026-10-31. Este repositório ainda não contém código em `src/` nem testes em `tests/`; a implementação existe apenas no repositório do grupo. Nenhuma Spec possui aprovação formal do grupo.
+Fonte: código em `backend/` e `frontend/` na `main`, testes executados na CI (GitHub Actions: backend com PostgreSQL, frontend e verificador documental) e campo **Estado** de cada Spec. Nenhuma Spec possui aprovação formal do grupo; "implementada" significa comportamento entregue e testado tecnicamente.
 
 ### Resumo
 
 | Situação | Qtd. | Specs |
 |---|---|---|
-| Implementada tecnicamente, aguardando revisão humana e/ou CI | 21 | 001, 002, 003, 011, 012, 014, 015, 016, 017, 018, 023, 025, 026, 027, 028, 034, 039, 053, 054, 055, 060 |
-| Implementada, com validação automatizada registrada no PR | 2 | 042, 043 |
-| Implementação em andamento ou em validação em branch/PR, sem merge confirmado | 7 | 019, 029, 030, 031, 032, 033, 035 |
-| Implementação provisória ou recorte técnico, com decisões OPEN pendentes | 4 | 036, 037, 038, 041 |
-| Rascunho, sem implementação | 28 | 004, 005, 006, 007, 008, 009, 010, 013, 020, 021, 022, 024, 040, 044, 045, 046, 047, 048, 049, 050, 051, 052, 056, 057, 058, 059, 061, 062 |
+| Implementada pelo grupo (registro próprio em `docs/09-qualidade/`) | 26 | 001, 002, 003, 011, 012, 018, 019, 023, 025, 026, 027, 028, 030, 031, 032, 033, 034, 035, 036, 037, 038, 039, 041, 053, 054, 060 |
+| Implementada pelo grupo; registro factual criado em 2026-10-31 | 8 | 014, 015, 016, 017, 029, 042, 043, 055 |
+| Implementada pelo grupo, marcada antes como rascunho (testes agrupados) | 16 | 004, 005, 006, 007, 008, 009, 010, 013, 020, 021, 022, 024, 056, 057, 058, 059 |
+| Implementada em 2026-10-31 com política de recorte aprovada pelo responsável (PRs #46 a #50) | 12 | 040, 044, 045, 046, 047, 048, 049, 050, 051, 052, 061, 062 |
 
-Total: 62 Specs; 34 com implementação (completa, em andamento ou provisória) e 28 pendentes.
+Total: 62 de 62 Specs com implementação técnica. Correção em relação à versão anterior desta seção: as 16 Specs da terceira linha já tinham código e testes no repositório do grupo; o campo **Estado** delas estava desatualizado.
 
-### Specs com implementação sem registro em `docs/09-qualidade/`
+### Pendências transversais
 
-SPEC-014, SPEC-015, SPEC-016, SPEC-017, SPEC-029, SPEC-042, SPEC-043 e SPEC-055.
+- Cobertura por cláusula (C-02) das Specs com testes agrupados (`test_spec004_007_008_010_013_020_024.py`, `test_spec057_058_variable_income.py`, `test_spec059_006_expenses_and_editing.py`).
+- Registros de SPEC-014, 015, 016, 017, 029, 042, 043 e 055 foram criados em 2026-10-31 a partir do código e dos testes; falta a validação do grupo.
+- Operação: provedor de e-mail/push (OPEN-17), sincronização agendada de fontes externas, backup/monitoramento (RNF-08/12/14) e aplicativo mobile Expo (RNF-05, OPEN-08).
+- Revisão e aceite formal do grupo para todas as decisões de recorte registradas na seção 13 de cada Spec.
+
+### Specs implementadas em 2026-10-31 (recorte aprovado)
+
+| PR | Specs | Registro |
+|---|---|---|
+| #46 | SPEC-062 | [implementacao-SPEC-062](../09-qualidade/implementacao-SPEC-062.md) |
+| #47 | SPEC-044, SPEC-045 | [044](../09-qualidade/implementacao-SPEC-044.md), [045](../09-qualidade/implementacao-SPEC-045.md) |
+| #48 | SPEC-046 a SPEC-049 | [046](../09-qualidade/implementacao-SPEC-046.md), [047](../09-qualidade/implementacao-SPEC-047.md), [048](../09-qualidade/implementacao-SPEC-048.md), [049](../09-qualidade/implementacao-SPEC-049.md) |
+| #49 | SPEC-050 a SPEC-052 | [050](../09-qualidade/implementacao-SPEC-050.md), [051](../09-qualidade/implementacao-SPEC-051.md), [052](../09-qualidade/implementacao-SPEC-052.md) |
+| #50 | SPEC-061, SPEC-040 | [061](../09-qualidade/implementacao-SPEC-061.md), [040](../09-qualidade/implementacao-SPEC-040.md) |
 
 ### Detalhamento das Specs incluídas após 2026-10-23
 

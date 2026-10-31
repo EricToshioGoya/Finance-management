@@ -1,6 +1,6 @@
 # SPEC-035: Buscar conteúdo educativo e ajuda contextual
 
-**Estado:** implementação técnica em validação na branch `feature/35-education-help` (PR a abrir). Conteúdo editorial definitivo e revisão humana ainda sujeitos a OPEN-30; não há aprovação formal presumida.
+**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação técnica em validação na branch `feature/35-education-help` (PR a abrir). Conteúdo editorial definitivo e revisão humana ainda sujeitos a OPEN-30; não há aprovação formal presumida.
 
 ## 1. Identificação
 

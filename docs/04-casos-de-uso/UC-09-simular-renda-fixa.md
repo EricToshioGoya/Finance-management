@@ -2,7 +2,7 @@
 
 **Ator principal:** usuário autenticado. **Objetivo:** obter projeção bruta e, quando a regra tributária estiver definida, líquida para o produto escolhido.
 **Origem:** RF-20, RF-22, RF-23; RB-07, RB-10, RB-11, RB-28, RB-29; RNF-01, RNF-04, RNF-07, RNF-09; DA-02, DA-03; ADR-002, ADR-003.
-**Pré-condições:** sessão válida; produto e regra de cálculo aprovados. IR depende de OPEN-07/SPEC-004; esta documentação não declara a capacidade líquida já implementada.
+**Pré-condições:** sessão válida; produto e regra de cálculo aprovados. O resultado líquido usa a tabela regressiva interna da SPEC-004 (CDB e Tesouro; poupança isenta), implementada em `backend/app/domain/financeiro.py`; demais produtos seguem OPEN-07.
 
 ## Fluxo principal
 

@@ -1,6 +1,6 @@
 # SPEC-036: Simular compra financiada e amortização
 
-**Estado:** implementação técnica provisória na branch `feature/36-financing-amortization`. Motor puro, API, interface e testes aplicados; a decisão formal OPEN-12/22 e revisão do grupo permanecem pendentes.
+**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação técnica provisória na branch `feature/36-financing-amortization`. Motor puro, API, interface e testes aplicados; a decisão formal OPEN-12/22 e revisão do grupo permanecem pendentes.
 
 ## 1. Identificação
 

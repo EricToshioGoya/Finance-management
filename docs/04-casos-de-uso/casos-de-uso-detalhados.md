@@ -1,9 +1,9 @@
 # FinNova — Casos de Uso Detalhados (Fluxo Principal do MVP)
 
-- **Status:** rascunho
-- **Última atualização:** 2026-10-18
+- **Status:** revisado para o catálogo vigente
+- **Última atualização:** 2026-10-31
 
-Descrição textual, com fluxos e exceções, dos casos de uso que compõem o fluxo principal do MVP: o usuário se cadastra, entra na plataforma, registra uma despesa e simula um investimento em renda fixa. Os identificadores seguem as tabelas de `casos-de-uso-usuario.md`.
+Descrição textual, com fluxos e exceções, dos casos de uso que compõem o fluxo principal do MVP: o usuário se cadastra, entra na plataforma, registra uma despesa e simula um investimento em renda fixa. Os identificadores seguem o catálogo vigente de `casos-de-uso-usuario.md` (UC-06 despesa, UC-08 juros compostos, UC-09 renda fixa, UC-16 despesa compartilhada).
 
 ---
 
@@ -62,13 +62,13 @@ Descrição textual, com fluxos e exceções, dos casos de uso que compõem o fl
 
 ---
 
-## UC-11 — Registrar despesa por categoria
+## UC-06 — Registrar despesa por categoria
 
 | Item | Descrição |
 |---|---|
 | Ator principal | Usuário autenticado |
 | Requisitos | RF-09, RF-10, RF-11, RF-12, RB-01, RB-02, RNF-03 |
-| Spec | a definir |
+| Spec | SPEC-059 (registro) e SPEC-006 (edição/saldo) |
 | Pré-condições | Usuário autenticado (UC-02). |
 | Gatilho | O usuário escolhe registrar uma nova despesa. |
 
@@ -84,7 +84,7 @@ Descrição textual, com fluxos e exceções, dos casos de uso que compõem o fl
 
 - **3a. Valor menor ou igual a zero:** o sistema rejeita o registro e indica o campo.
 - **3b. Categoria ou data ausente:** o sistema rejeita o registro e indica o campo obrigatório.
-- **Ponto de extensão — despesa compartilhada:** se houver conta compartilhada ativa, o usuário pode dividir a despesa (UC-10).
+- **Ponto de extensão — despesa compartilhada:** se houver conta compartilhada ativa, o usuário pode dividir a despesa (UC-16, SPEC-045).
 
 **Restrição de usabilidade:** o registro deve ser concluído em, no máximo, 3 passos na web e no mobile (RNF-03).
 
@@ -92,30 +92,30 @@ Descrição textual, com fluxos e exceções, dos casos de uso que compõem o fl
 
 ---
 
-## UC-13 — Simular investimento em renda fixa
+## UC-09 — Simular investimento em renda fixa
 
 | Item | Descrição |
 |---|---|
 | Ator principal | Usuário autenticado |
 | Atores secundários | API Banco Central (SGS) e Tesouro Transparente, de forma indireta, via cache |
 | Requisitos | RF-20, RF-22, RF-23, RB-07, RB-10, RNF-04, RNF-09 |
-| Specs | SPEC-002 (motor de cálculo); tributação na SPEC-004 (futura) |
-| Inclui | UC-16 (Obter indicador oficial) e UC-17 (Calcular juros compostos) |
-| Estendido por | UC-18 (Usar último valor em cache) |
+| Specs | SPEC-008 (simulação), SPEC-002 (motor), SPEC-004 (tributação) e SPEC-007 (indicador em cache) |
+| Inclui | consulta de indicador em cache (SPEC-007) e UC-08 (Calcular juros compostos) |
+| Estendido por | extensão E2 do [UC-09](UC-09-simular-renda-fixa.md) (cache vencido ou ausente) |
 | Pré-condições | Usuário autenticado (UC-02). |
 | Gatilho | O usuário abre o simulador de renda fixa. |
 
 **Fluxo principal**
 
 1. O usuário escolhe o produto (CDB, Tesouro ou poupança) e informa valor inicial, aporte mensal e prazo.
-2. O sistema obtém, no cache local, a taxa do indicador oficial do produto (UC-16) e a pré-preenche, com a data de referência.
+2. O sistema obtém, no cache local, a taxa do indicador oficial do produto (SPEC-007) e a pré-preenche, com a data de referência.
 3. O usuário mantém a taxa sugerida ou informa uma taxa manual.
-4. O sistema executa o motor de juros compostos (UC-17), com conversão de taxa por equivalência composta (RB-10).
+4. O sistema executa o motor de juros compostos (UC-08), com conversão de taxa por equivalência composta (RB-10).
 5. O sistema exibe a evolução mês a mês, o valor bruto e, quando aplicável, o valor líquido de IR, junto com a data de referência do indicador.
 
 **Fluxos alternativos e exceções**
 
-- **2a. Cache desatualizado por falha da fonte oficial:** o sistema usa o último valor conhecido e exibe aviso de defasagem, nunca um valor zerado (UC-18, RF-23).
+- **2a. Cache desatualizado por falha da fonte oficial:** o sistema usa o último valor conhecido e exibe aviso de defasagem, nunca um valor zerado (extensão E2 do UC-09, RF-23).
 - **2b. Nenhum valor do indicador no cache:** cenário não coberto pelos requisitos atuais; registrado como questão em aberto abaixo.
 - **4a. Entrada inválida** (valor negativo ou prazo igual a zero): o sistema rejeita a simulação e indica o campo (SPEC-002, R06).
 
