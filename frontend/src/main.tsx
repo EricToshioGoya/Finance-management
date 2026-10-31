@@ -18,6 +18,7 @@ import { CardInvoice, Planning } from './Planning';
 import { Investments } from './Investments';
 import { Sharing } from './Sharing';
 import { PensionComparison, RetirementPlanner, Taxes } from './PlanningTax';
+import { Achievements, OnboardingTour, ReopenTour, ScoreBenchmark } from './Engagement';
 import { AdminEngagement, AdminProfileDistribution, NetWorthItems, Notifications, Watchlist } from './Extras';
 import { money } from './api';
 import './style.css';
@@ -97,6 +98,7 @@ function App() {
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
   const [tab, setTab] = useState<Tab>('overview');
   const [watchVersion, setWatchVersion] = useState(0);
+  const [tourVersion, setTourVersion] = useState(0);
   const [adminUsers, setAdminUsers] = useState<AdminUsersPage | null>(null);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [companies, setCompanies] = useState<PublicCompany[]>([]);
@@ -572,7 +574,7 @@ function App() {
       </form>
     </section>;
     const content: Record<Tab, ReactNode> = {
-      overview: <>{verification}{financial && token ? <><Overview token={token} lang={lang} /><div className="grid-2"><HealthScore token={token} lang={lang} /><Notifications token={token} lang={lang} /></div></> : !user.email_verified ? null : <p className="hint">{t.previewMode}</p>}</>,
+      overview: <>{verification}{financial && token ? <><OnboardingTour token={token} lang={lang} version={tourVersion} onNavigate={next => setTab(next as Tab)} /><Overview token={token} lang={lang} /><div className="grid-2"><HealthScore token={token} lang={lang} /><div className="stack"><ScoreBenchmark token={token} lang={lang} /><Notifications token={token} lang={lang} /></div></div></> : !user.email_verified ? null : <p className="hint">{t.previewMode}</p>}</>,
       transactions: financial && token ? <>
         <Transactions token={token} lang={lang} />
         <div className="grid-2">
@@ -633,7 +635,7 @@ function App() {
         </div>
       </> : needsVerification,
       sharing: financial && token ? <Sharing token={token} lang={lang} /> : needsVerification,
-      planning: financial && token ? <><Planning token={token} lang={lang} /><RetirementPlanner token={token} lang={lang} /><NamedAssetGoals token={token} lang={lang} /><FinancialStress token={token} lang={lang} /></> : needsVerification,
+      planning: financial && token ? <><Planning token={token} lang={lang} /><Achievements token={token} lang={lang} /><RetirementPlanner token={token} lang={lang} /><NamedAssetGoals token={token} lang={lang} /><FinancialStress token={token} lang={lang} /></> : needsVerification,
       taxes: financial && token ? <Taxes token={token} lang={lang} /> : needsVerification,
       investments: financial && token ? <><Investments token={token} lang={lang} /><PensionComparison token={token} lang={lang} /><div className="grid-2"><InvestmentAllocation token={token} lang={lang} />
         <section className="profile" aria-labelledby="market-title">
@@ -700,7 +702,7 @@ function App() {
         </section>
         <Watchlist token={token} lang={lang} version={watchVersion} />
       </> : needsVerification,
-      learn: live && token ? <EducationCenter token={token} lang={lang} /> : null,
+      learn: live && token ? <><ReopenTour token={token} lang={lang} onReopen={() => { setTourVersion(version => version + 1); setTab('overview'); }} /><EducationCenter token={token} lang={lang} /></> : null,
       account: <>
         {verification}
         <div className="grid-2">

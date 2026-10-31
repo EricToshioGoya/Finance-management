@@ -1071,7 +1071,12 @@ class WatchlistMutationOutput(BaseModel):
 
 
 NotificationKind = Literal[
-    "invoice_due", "budget_goal_exceeded", "watchlist_document", "recurring_expense_due"
+    "invoice_due",
+    "budget_goal_exceeded",
+    "watchlist_document",
+    "recurring_expense_due",
+    "achievement_unlocked",
+    "monthly_summary",
 ]
 
 
@@ -1079,7 +1084,10 @@ class NotificationEventInput(BaseModel):
     """Stable, payload-minimal hand-off from an owned producer to the in-app centre."""
 
     model_config = ConfigDict(extra="forbid")
-    kind: NotificationKind
+    # Conquistas e resumo mensal são gerados só pelo servidor (SPEC-051/040).
+    kind: Literal[
+        "invoice_due", "budget_goal_exceeded", "watchlist_document", "recurring_expense_due"
+    ]
     source_key: str = Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9:_-]+$")
 
 
@@ -1435,3 +1443,58 @@ class AnnualSummaryOutput(BaseModel):
     estimated_tax_total: Decimal
     simulations: list[AnnualSimulationOutput]
     notice: str
+
+
+# ---------- SPEC-050/051/052 ----------
+class PrivacySettingsInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    score_benchmark_enabled: bool
+
+
+class PrivacySettingsOutput(PrivacySettingsInput):
+    pass
+
+
+class ScoreBenchmarkOutput(BaseModel):
+    enabled: bool
+    available: bool
+    reason: Literal["opted_out", "no_profile", "no_score", "insufficient_group"] | None
+    profile: str | None
+    competence: str | None
+    minimum_group_size: int
+    my_score: Decimal | None
+    group_average_score: Decimal | None
+    group_median_score: Decimal | None
+    my_savings_rate: Decimal | None
+    group_average_savings_rate: Decimal | None
+    group_median_savings_rate: Decimal | None
+
+
+class AchievementOutput(BaseModel):
+    code: str
+    title: str
+    description: str
+    unlocked: bool
+    unlocked_at: datetime | None
+    progress_percent: Decimal
+
+
+class TourStepOutput(BaseModel):
+    key: Literal["first_income", "first_expense", "investor_quiz", "simulator"]
+    tab: str
+    done: bool
+
+
+class TourOutput(BaseModel):
+    status: Literal["not_started", "in_progress", "completed", "skipped"]
+    show: bool
+    step: int
+    variant: Literal["didactic", "concise"]
+    profile: str | None
+    steps: list[TourStepOutput]
+
+
+class TourActionInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    action: Literal["start", "advance", "complete", "skip", "reopen"]
+    step: int | None = Field(default=None, ge=0, le=3)

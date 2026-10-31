@@ -578,7 +578,7 @@ class NotificationPreferenceRecord(Base):
     __table_args__ = (
         CheckConstraint(
             "kind IN ('invoice_due', 'budget_goal_exceeded', 'watchlist_document', "
-            "'recurring_expense_due')",
+            "'recurring_expense_due', 'achievement_unlocked', 'monthly_summary')",
             name="valid_notification_preference_kind",
         ),
     )
@@ -597,7 +597,7 @@ class NotificationRecord(Base):
     __table_args__ = (
         CheckConstraint(
             "kind IN ('invoice_due', 'budget_goal_exceeded', 'watchlist_document', "
-            "'recurring_expense_due')",
+            "'recurring_expense_due', 'achievement_unlocked', 'monthly_summary')",
             name="valid_notification_kind",
         ),
         UniqueConstraint("user_id", "kind", "source_key", name="uq_notification_event"),
@@ -934,3 +934,48 @@ class TaxEstimateRecord(Base):
     darf_due_on: Mapped[date | None] = mapped_column(Date)
     rule_version: Mapped[str] = mapped_column(String(20))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class PrivacySettingsRecord(Base):
+    """SPEC-050: opção de privacidade da comparação anônima do score."""
+
+    __tablename__ = "privacy_settings"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    score_benchmark_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class AchievementRecord(Base):
+    """SPEC-051: conquista cosmética concedida uma única vez por titular."""
+
+    __tablename__ = "achievements"
+    __table_args__ = (UniqueConstraint("user_id", "code", name="uq_achievement_user_code"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    code: Mapped[str] = mapped_column(String(40))
+    unlocked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class OnboardingTourRecord(Base):
+    """SPEC-052: estado do tour de primeiro acesso por titular."""
+
+    __tablename__ = "onboarding_tours"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('not_started', 'in_progress', 'completed', 'skipped')",
+            name="valid_tour_status",
+        ),
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    status: Mapped[str] = mapped_column(String(12))
+    step: Mapped[int] = mapped_column(default=0)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

@@ -34,6 +34,7 @@ from app.application.engagement import EngagementService
 from app.application.profile_distribution import ProfileDistributionService
 from app.application.sharing import SharingService
 from app.application.planning_tax import PlanningTaxService
+from app.application.engagement_features import EngagementFeaturesService
 from app.application.webhooks import HttpWebhookDelivery, WebhookService
 from app.application.market_quotes import MarketQuoteService
 from app.config import Settings, get_settings
@@ -95,6 +96,12 @@ from app.presentation.schemas import (
     EngagementOutput,
     ProfileDistributionOutput,
     AnnualSummaryOutput,
+    AchievementOutput,
+    PrivacySettingsInput,
+    PrivacySettingsOutput,
+    ScoreBenchmarkOutput,
+    TourActionInput,
+    TourOutput,
     PensionInput,
     PensionOutput,
     RetirementInput,
@@ -2254,6 +2261,49 @@ def create_app(
             content=pdf_document(lines),
             media_type="application/pdf",
             headers={"Content-Disposition": f"attachment; filename=resumo-anual-{year}.pdf"},
+        )
+
+    # ---------- SPEC-050/051/052 ----------
+    @app.get(f"{PROFILE_PREFIX}/privacy", response_model=PrivacySettingsOutput, tags=["profile"])
+    def get_privacy(auth: Service, credentials: Credentials):
+        return EngagementFeaturesService(auth.db, auth).privacy(owner_id(auth, credentials))
+
+    @app.put(f"{PROFILE_PREFIX}/privacy", response_model=PrivacySettingsOutput, tags=["profile"])
+    def put_privacy(data: PrivacySettingsInput, auth: Service, credentials: Credentials):
+        """SPEC-050: desativar a comparação não remove o acesso ao score (R05)."""
+        return EngagementFeaturesService(auth.db, auth).set_privacy(
+            owner_id(auth, credentials), data.score_benchmark_enabled
+        )
+
+    @app.get(
+        f"{FINANCIAL_PREFIX}/health-score/benchmark",
+        response_model=ScoreBenchmarkOutput,
+        tags=["financial"],
+    )
+    def score_benchmark(auth: Service, credentials: Credentials, competence: date | None = None):
+        """SPEC-050: média/mediana agregadas do grupo do mesmo perfil (mínimo de 30)."""
+        return EngagementFeaturesService(auth.db, auth).benchmark(
+            owner_id(auth, credentials), competence
+        )
+
+    @app.get(
+        f"{FINANCIAL_PREFIX}/achievements",
+        response_model=list[AchievementOutput],
+        tags=["financial"],
+    )
+    def achievements(auth: Service, credentials: Credentials):
+        """SPEC-051: conquistas cosméticas obtidas e progresso das próximas."""
+        return EngagementFeaturesService(auth.db, auth).achievements(owner_id(auth, credentials))
+
+    @app.get(f"{PROFILE_PREFIX}/tour", response_model=TourOutput, tags=["profile"])
+    def get_tour(auth: Service, credentials: Credentials):
+        """SPEC-052: estado do tour de primeiro acesso e roteiro adaptado ao perfil."""
+        return EngagementFeaturesService(auth.db, auth).tour(owner_id(auth, credentials))
+
+    @app.put(f"{PROFILE_PREFIX}/tour", response_model=TourOutput, tags=["profile"])
+    def put_tour(data: TourActionInput, auth: Service, credentials: Credentials):
+        return EngagementFeaturesService(auth.db, auth).update_tour(
+            owner_id(auth, credentials), data.action, data.step
         )
 
     @app.get(f"{FINANCIAL_PREFIX}/exports/csv", tags=["financial"])
