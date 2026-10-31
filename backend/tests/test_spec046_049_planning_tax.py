@@ -1,4 +1,4 @@
-"""SPEC-046 (aposentadoria), SPEC-047 (previdência), SPEC-048 (IR/DARF) e SPEC-049 (resumo anual)."""
+"""SPEC-046 a SPEC-049: aposentadoria, previdência, IR/DARF e resumo anual."""
 
 import uuid
 from datetime import UTC, date, datetime
