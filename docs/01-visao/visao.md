@@ -27,7 +27,9 @@ Detalhamento completo dos requisitos em `/docs/03-requisitos/requisitos.md`, das
 
 > **Recorte de entrega da disciplina:** para a apresentação do projeto (26/11/2026), o compromisso de entrega é o conjunto **Must have** do backlog priorizado (seção 4): RF-01, RF-02, RF-06 a RF-12, RF-20 a RF-23 e RF-25. Os demais módulos permanecem no backlog e só entram após a conclusão desse recorte.
 
-**Dentro do escopo (MVP)**
+**Catálogo do produto e backlog candidato ao MVP**
+
+O núcleo Must have está na tabela priorizada; os itens Should/Could abaixo representam evolução e não promessa de implementar todas as abas no semestre. OPEN-08 registra a aprovação do recorte final. As prioridades existentes foram preservadas.
 
 - Módulo de **Conta e Acesso** (cadastro, login, quiz de perfil de investidor).
 - Módulo de **Administração Financeira** (renda, gastos, categorias, contas/cartões, metas, dashboards).
@@ -117,3 +119,23 @@ Ordem sugerida: núcleo funcional primeiro (conta + lançamentos + simulações 
 | Could have | Impostos | RF-64, RF-65 |
 | Could have | Score de Saúde Financeira — benchmark anônimo | RF-66 |
 | Could have | Gamificação | RF-67 |
+
+
+## 4. Situação das decisões
+
+ADRs existentes registram monólito em camadas, motor isolado, cache de indicadores e indexação CVM. [Arquitetura](../07-arquitetura/arquitetura.md) organiza drivers e responsabilidades. Parâmetros ainda não decididos permanecem em [OPEN](../08-specs/questoes-abertas.md).
+
+Framework e bibliotecas listados são escolhas documentadas, não dependências instaladas. Serviço de deploy, notificações e provedor de cotações mantêm alternativas explícitas. Sem aplicação implementada, não há resultado validado de desempenho, segurança ou disponibilidade.
+
+Benchmark de produtos existentes está pendente (OPEN-14). Não foi substituído por RF-66, que compara usuários da própria plataforma.
+
+
+## Ciclo de vida da conta e recorte atualizado
+
+O produto deve permitir manter identidade e preferências, confirmar a posse do e-mail, recuperar/alterar senha e encerrar sessões (RF-68 a RF-74). Esses recursos completam Conta e Acesso e antecedem a liberação de dados financeiros para contas não verificadas. O usuário pode acessar a manutenção da conta pendente para concluir a confirmação.
+
+A main consolidada possui somente a implementação inicial de autenticação; funcionalidades financeiras, perfil/quiz e administração seguem planejadas. Exclusão/exportação (RF-05/RF-50), backups/restauração (RNF-14), observabilidade e permissões continuam critérios de entrega próprios, sem alegação de produção pronta.
+
+## Ciclo de vida da conta
+
+O produto inclui cadastro, confirmação e troca de e-mail, login, logout/expiração, recuperação e alteração de senha, edição de nome e preferências de idioma/tema/notificações (RF-68 a RF-73), além de exclusão e exportação (RF-05 e RF-50). As funções financeiras permanecem o núcleo de negócio e dependem de persistência e isolamento por titular. Implementação disponível e pendências estão na [matriz de cobertura](../09-qualidade/cobertura-funcional.md); esta ampliação documental não implementa essas capacidades.
