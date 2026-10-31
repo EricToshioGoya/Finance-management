@@ -792,6 +792,20 @@ class MarketIndicatorRecord(Base):
     source: Mapped[str] = mapped_column(String(120), default="BCB_SGS")
 
 
+class TreasuryBondRateRecord(Base):
+    """Taxa de compra do Tesouro Direto na data-base mais recente (SPEC-007-R04, ADR-009)."""
+
+    __tablename__ = "treasury_bond_rates"
+    __table_args__ = (CheckConstraint("buy_rate > 0", name="positive_treasury_rate"),)
+
+    bond_type: Mapped[str] = mapped_column(String(80), primary_key=True)
+    maturity: Mapped[date] = mapped_column(Date, primary_key=True)
+    buy_rate: Mapped[Decimal] = mapped_column(Numeric(10, 4))
+    reference_date: Mapped[date] = mapped_column(Date)
+    checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    source: Mapped[str] = mapped_column(String(120), default="Tesouro Transparente")
+
+
 class SimulationRecord(Base):
     __tablename__ = "simulations"
     __table_args__ = (
