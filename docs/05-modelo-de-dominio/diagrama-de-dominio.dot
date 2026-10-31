@@ -1,0 +1,31 @@
+digraph dominio {
+graph [fontname="Arial", bgcolor="white", pad="0.3", nodesep="0.5", ranksep="0.6"]; node [fontname="Arial", fontsize=14, style="filled", fillcolor="#eef3ff", color="#526b9c", margin="0.16"]; edge [fontname="Arial", fontsize=11, color="#526b9c"];
+rankdir=LR;
+node [shape=record];
+Usuario [label="{Usuario|id\lnome\lemail\lpapel\l}"];
+Conta [label="{Conta|id\lnome\lsaldoInicial\l}"];
+Cartao [label="{Cartao|id\llimite\ldiaFechamento\l}"];
+Categoria [label="{Categoria|id\lnome\ltipo\l}"];
+Renda [label="{Renda|id\lvalor\l}"];
+ReceitaRecorrente [label="{ReceitaRecorrente|descricao\lativaDesde\l}"];
+ReceitaPontual [label="{ReceitaPontual|descricao\ldata\l}"];
+BonusPLR [label="{BonusPLR|periodicidade\lmesReferencia\l}"];
+Despesa [label="{Despesa|id\lvalor\ldata\l}"];
+Simulacao [label="{Simulacao|id\ltipo\lparametros\lresultado\l}"];
+MetaNomeada [label="{MetaNomeada|id\lvalorAlvo\lprazo\l}"];
+Ativo [label="{Ativo|id\lvalor\lorigem\l}"];
+Usuario -> Conta [dir=none, taillabel="1", headlabel="0..N", label="titular"];
+Usuario -> Cartao [dir=none, taillabel="1", headlabel="0..N", label="titular"];
+Usuario -> Renda [dir=none, taillabel="1", headlabel="0..N", label="registra"];
+Usuario -> Despesa [dir=none, taillabel="1", headlabel="0..N", label="registra"];
+Usuario -> Simulacao [dir=none, taillabel="1", headlabel="0..N", label="executa"];
+Categoria -> Despesa [dir=none, taillabel="1", headlabel="0..N", label="classifica"];
+Conta -> Despesa [dir=none, taillabel="0..1", headlabel="0..N", label="vincula"];
+Cartao -> Despesa [dir=none, taillabel="0..1", headlabel="0..N", label="vincula"];
+Ativo -> MetaNomeada [dir=none, taillabel="1", headlabel="0..N", label="apoia"];
+ReceitaRecorrente -> Renda [arrowhead=empty];
+ReceitaPontual -> Renda [arrowhead=empty];
+BonusPLR -> Renda [arrowhead=empty];
+label="FinNova — nucleo financeiro
+Conta e cartao: exatamente uma origem por despesa"; labelloc=t; fontsize=20;
+}

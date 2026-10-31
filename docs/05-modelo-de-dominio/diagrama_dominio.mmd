@@ -1,0 +1,72 @@
+classDiagram
+    class Usuario {
+        +id
+        +nome
+        +email
+        +papel
+    }
+    class Conta {
+        +id
+        +nome
+        +saldoInicial
+    }
+    class Cartao {
+        +id
+        +limite
+        +diaFechamento
+    }
+    class Categoria {
+        +id
+        +nome
+        +tipo
+    }
+    class Renda {
+        +id
+        +valor
+    }
+    class ReceitaRecorrente {
+        +descricao
+        +ativaDesde
+    }
+    class ReceitaPontual {
+        +descricao
+        +data
+    }
+    class BonusPLR {
+        +periodicidade
+        +mesReferencia
+    }
+    class Despesa {
+        +id
+        +valor
+        +data
+    }
+    class Simulacao {
+        +id
+        +tipo
+        +parametros
+        +resultado
+    }
+    class MetaNomeada {
+        +id
+        +valorAlvo
+        +prazo
+    }
+    class Ativo {
+        +id
+        +valor
+        +origem
+    }
+    Usuario "1" -- "0..N" Conta : titular
+    Usuario "1" -- "0..N" Cartao : titular
+    Usuario "1" -- "0..N" Renda : registra
+    Usuario "1" -- "0..N" Despesa : registra
+    Usuario "1" -- "0..N" Simulacao : executa
+    Categoria "1" -- "0..N" Despesa : classifica
+    Conta "0..1" -- "0..N" Despesa : vincula
+    Cartao "0..1" -- "0..N" Despesa : vincula
+    Ativo "1" -- "0..N" MetaNomeada : apoia
+    Renda <|-- ReceitaRecorrente
+    Renda <|-- ReceitaPontual
+    Renda <|-- BonusPLR
+    note for Despesa "Exatamente uma origem: Conta ou Cartao"
