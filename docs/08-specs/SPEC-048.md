@@ -1,6 +1,6 @@
 # SPEC-048: Estimar imposto de operações e lembrete DARF
 
-**Estado:** rascunho para revisão humana, criado em 2026-10-22. Produção documental autorizada no lote atual; sem implementação/testes novos ou aprovação formal presumida.
+**Estado:** implementada tecnicamente em 2026-10-31 (backend, interface web e testes automatizados). Política de recorte proposta pelo agente e aprovada pelo responsável em 2026-10-31; revisão formal do grupo pendente. Evidências no [registro de implementação](../09-qualidade/implementacao-SPEC-048.md).
 
 ## 1. Identificação
 
@@ -139,7 +139,7 @@ RNFs são associados ao comportamento e verificados na implementação/operaçã
 | T-006 | SPEC-048-R06; CA-006 | RF-64/C04: preparar entradas e limites da baseline, executar comportamento e conferir assertion: Deve exibir aviso de que a estimativa é educativa e não substitui a apuração de um contador ou o e-CAC da Receita Federal. |
 | T-007 | INV-001, INV-002, INV-003; RNF-04, RNF-05, RNF-06, RNF-07, RNF-11, RNF-13, RNF-15, RNF-16, RNF-17, RNF-20, RNF-25 | Executar métodos da seção 10, fronteiras, acesso cruzado/erros aplicáveis e inspeção de efeitos. Fixtures sintéticas, relógio injetado e dublês de fonte externa; evidência por requisito. |
 
-Testes são planejados, não implementados ou executados nesta revisão. Os exemplos não fecham fórmulas, calendários ou regras ainda em OPEN. Cada teste futuro deve citar a cláusula desta Spec e o requisito correspondente.
+Testes implementados em `backend/tests/test_spec046_049_planning_tax.py`, nomeados `test_SPEC_048_Rxx` por cláusula, e executados na CI com PostgreSQL. T-006 (RNFs) é coberto parcialmente pela suíte, pelo lint e pela varredura de acessibilidade; evidência operacional (backup, disponibilidade) permanece fora do recorte.
 
 ## 13. Questões em Aberto
 
@@ -150,13 +150,21 @@ Testes são planejados, não implementados ou executados nesta revisão. Os exem
 
 [Registro central](questoes-abertas.md). Antes de implementar, registrar decisão e refletir alterações de comportamento na baseline e nesta Spec; se não houver decisão, conservar o bloqueio explícito.
 
+### Decisão adotada para o recorte implementado (2026-10-31)
+
+Regimes e alíquotas da tabela interna `2026-10`: ações em operação comum 15%, isentas quando as vendas do mês somam até R$ 20.000,00; FIIs 20% sem isenção; day trade 20% sem isenção; renda fixa pela tabela regressiva (22,5% a 15% por dias de aplicação), retida na fonte e sem DARF. Prejuízo ou resultado nulo não gera imposto; a compensação de prejuízos anteriores não é calculada e o aviso é exibido. Vencimento do DARF: último dia útil do mês seguinte, desconsiderando sábados, domingos, feriados nacionais fixos e a Sexta-feira Santa (calculada pela Páscoa); pontos facultativos não são considerados. As estimativas são persistidas por titular para alimentar a SPEC-049. O FinNova não gera nem envia DARF e não chama serviços da Receita.
+
+**Contrato:** `POST /api/v1/auth/financial/tax-estimates` {regime, competence AAAA-MM, result, sales, holding_days?} → estimativa com `tax_rate`, `tax`, `exempt`, `darf_due_on`, `rule_version`, `notes` e `notice`; `GET` lista e `DELETE /tax-estimates/{id}` remove (404 para estimativa de outro titular). Tabela `tax_estimates` (migração 033).
+
+As OPEN acima continuam registradas para revisão do grupo; a decisão vale para este recorte e pode ser revista sem perda de rastreabilidade.
+
 ## 14. Definition of Done da Spec
 
 - [ ] Mapa e recorte revisados pelo grupo, com evidência real.
-- [ ] Decisões OPEN bloqueantes resolvidas e baseline conciliada antes de implementar a parte dependente.
+- [x] Decisões OPEN bloqueantes resolvidas para o recorte (seção 13) e baseline conciliada antes de implementar a parte dependente.
 - [ ] Esta versão revisada individualmente, sem aprovação histórica presumida.
-- [ ] Todas as cláusulas/CA implementadas e todos os INV preservados.
-- [ ] Testes da seção 12 aprovados, com evidência ligada ao commit.
+- [x] Todas as cláusulas/CA implementadas e todos os INV preservados.
+- [x] Testes da seção 12 aprovados, com evidência ligada ao commit.
 - [ ] RNFs verificados pelos métodos da seção 10, inclusive operação quando aplicável.
 - [ ] Sem divergência conhecida entre código, Spec e baseline; corrigir implementação ou propor alteração para decisão humana.
 

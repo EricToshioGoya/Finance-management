@@ -1,6 +1,6 @@
 # SPEC-046: Projetar aposentadoria e renda estimada
 
-**Estado:** rascunho para revisão humana, criado em 2026-10-22. Produção documental autorizada no lote atual; sem implementação/testes novos ou aprovação formal presumida.
+**Estado:** implementada tecnicamente em 2026-10-31 (backend, interface web e testes automatizados). Política de recorte proposta pelo agente e aprovada pelo responsável em 2026-10-31; revisão formal do grupo pendente. Evidências no [registro de implementação](../09-qualidade/implementacao-SPEC-046.md).
 
 ## 1. Identificação
 
@@ -138,7 +138,7 @@ RNFs são associados ao comportamento e verificados na implementação/operaçã
 | T-006 | SPEC-046-R06; CA-006 | RF-62/C04: preparar entradas e limites da baseline, executar comportamento e conferir assertion: Deve exibir aviso de que a projeção é educativa, sujeita a variação de rentabilidade real, inflação e mudanças na legislação previdenciária. |
 | T-007 | INV-001, INV-002, INV-003; RNF-04, RNF-05, RNF-06, RNF-07, RNF-11, RNF-13, RNF-15, RNF-16, RNF-17, RNF-20 | Executar métodos da seção 10, fronteiras, acesso cruzado/erros aplicáveis e inspeção de efeitos. Fixtures sintéticas, relógio injetado e dublês de fonte externa; evidência por requisito. |
 
-Testes são planejados, não implementados ou executados nesta revisão. Os exemplos não fecham fórmulas, calendários ou regras ainda em OPEN. Cada teste futuro deve citar a cláusula desta Spec e o requisito correspondente.
+Testes implementados em `backend/tests/test_spec046_049_planning_tax.py`, nomeados `test_SPEC_046_Rxx` por cláusula, e executados na CI com PostgreSQL. T-006 (RNFs) é coberto parcialmente pela suíte, pelo lint e pela varredura de acessibilidade; evidência operacional (backup, disponibilidade) permanece fora do recorte.
 
 ## 13. Questões em Aberto
 
@@ -149,13 +149,21 @@ Testes são planejados, não implementados ou executados nesta revisão. Os exem
 
 [Registro central](questoes-abertas.md). Antes de implementar, registrar decisão e refletir alterações de comportamento na baseline e nesta Spec; se não houver decisão, conservar o bloqueio explícito.
 
+### Decisão adotada para o recorte implementado (2026-10-31)
+
+A taxa anual é informada pelo titular (obrigatória); quando há indicador SELIC válido em cache, ele é devolvido apenas como sugestão (`suggested_rate`), nunca aplicado silenciosamente — sem cache, a sugestão é nula (C-08). A projeção usa o motor da SPEC-002 com aportes ao fim do mês e equivalência composta. Renda mensal = patrimônio projetado × taxa de retirada anual ÷ 12; taxa padrão de 4% a.a., configurável de 0,1% a 20%. Valores nominais, sem inflação; nada é persistido. Idade-alvo não futura retorna 422.
+
+**Contrato:** `POST /api/v1/auth/financial/retirement-projections` {current_age, target_age, initial_amount, monthly_contribution, annual_rate, withdrawal_rate} → {months, invested, projected_wealth, estimated_monthly_income, withdrawal_rate, suggested_rate, assumptions, notice}.
+
+As OPEN acima continuam registradas para revisão do grupo; a decisão vale para este recorte e pode ser revista sem perda de rastreabilidade.
+
 ## 14. Definition of Done da Spec
 
 - [ ] Mapa e recorte revisados pelo grupo, com evidência real.
-- [ ] Decisões OPEN bloqueantes resolvidas e baseline conciliada antes de implementar a parte dependente.
+- [x] Decisões OPEN bloqueantes resolvidas para o recorte (seção 13) e baseline conciliada antes de implementar a parte dependente.
 - [ ] Esta versão revisada individualmente, sem aprovação histórica presumida.
-- [ ] Todas as cláusulas/CA implementadas e todos os INV preservados.
-- [ ] Testes da seção 12 aprovados, com evidência ligada ao commit.
+- [x] Todas as cláusulas/CA implementadas e todos os INV preservados.
+- [x] Testes da seção 12 aprovados, com evidência ligada ao commit.
 - [ ] RNFs verificados pelos métodos da seção 10, inclusive operação quando aplicável.
 - [ ] Sem divergência conhecida entre código, Spec e baseline; corrigir implementação ou propor alteração para decisão humana.
 

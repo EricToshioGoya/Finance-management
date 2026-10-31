@@ -33,6 +33,7 @@ from app.application.external_api import ExternalApiService
 from app.application.engagement import EngagementService
 from app.application.profile_distribution import ProfileDistributionService
 from app.application.sharing import SharingService
+from app.application.planning_tax import PlanningTaxService
 from app.application.webhooks import HttpWebhookDelivery, WebhookService
 from app.application.market_quotes import MarketQuoteService
 from app.config import Settings, get_settings
@@ -93,6 +94,13 @@ from app.presentation.schemas import (
     ExternalNetWorthOutput,
     EngagementOutput,
     ProfileDistributionOutput,
+    AnnualSummaryOutput,
+    PensionInput,
+    PensionOutput,
+    RetirementInput,
+    RetirementOutput,
+    TaxEstimateInput,
+    TaxEstimateOutput,
     SettlementInput,
     ShareExpenseInput,
     SharedBalanceOutput,
@@ -2136,6 +2144,117 @@ def create_app(
             f"trailer\n<< /Size {len(offsets)} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n".encode()
         )
         return bytes(body)
+
+    # ---------- SPEC-046 a SPEC-049 ----------
+    def owner_id(auth: AuthService, credentials) -> uuid.UUID:
+        if not credentials:
+            raise AuthError("invalid_session")
+        user, _ = auth.authenticate(credentials.credentials)
+        return user.id
+
+    @app.post(
+        f"{FINANCIAL_PREFIX}/retirement-projections",
+        response_model=RetirementOutput,
+        tags=["planning"],
+    )
+    def retirement_projection(data: RetirementInput, auth: Service, credentials: Credentials):
+        """SPEC-046: patrimônio na idade-alvo e renda mensal estimada (projeção educativa)."""
+        return PlanningTaxService(auth.db, auth).retirement(owner_id(auth, credentials), data)
+
+    @app.post(
+        f"{FINANCIAL_PREFIX}/pension-comparisons", response_model=PensionOutput, tags=["planning"]
+    )
+    def pension_comparison(data: PensionInput, auth: Service, credentials: Credentials):
+        """SPEC-047: PGBL, VGBL e carteira própria com os mesmos parâmetros."""
+        return PlanningTaxService(auth.db, auth).pension(owner_id(auth, credentials), data)
+
+    @app.post(
+        f"{FINANCIAL_PREFIX}/tax-estimates",
+        response_model=TaxEstimateOutput,
+        status_code=201,
+        tags=["taxes"],
+    )
+    def create_tax_estimate(data: TaxEstimateInput, auth: Service, credentials: Credentials):
+        """SPEC-048: IR estimado por regime e data-limite do DARF (sem gerar DARF)."""
+        return PlanningTaxService(auth.db, auth).create_tax_estimate(
+            owner_id(auth, credentials), data
+        )
+
+    @app.get(
+        f"{FINANCIAL_PREFIX}/tax-estimates",
+        response_model=list[TaxEstimateOutput],
+        tags=["taxes"],
+    )
+    def list_tax_estimates(auth: Service, credentials: Credentials):
+        return PlanningTaxService(auth.db, auth).list_tax_estimates(owner_id(auth, credentials))
+
+    @app.delete(
+        f"{FINANCIAL_PREFIX}/tax-estimates/{{estimate_id}}", status_code=204, tags=["taxes"]
+    )
+    def delete_tax_estimate(estimate_id: uuid.UUID, auth: Service, credentials: Credentials):
+        PlanningTaxService(auth.db, auth).delete_tax_estimate(
+            owner_id(auth, credentials), estimate_id
+        )
+        return Response(status_code=204)
+
+    def annual_summary_data(auth: AuthService, credentials, year: int) -> dict[str, object]:
+        if not 2000 <= year <= 2100:
+            raise AuthError("invalid_year", 422)
+        return PlanningTaxService(auth.db, auth).annual_summary(owner_id(auth, credentials), year)
+
+    @app.get(
+        f"{FINANCIAL_PREFIX}/annual-summary", response_model=AnnualSummaryOutput, tags=["taxes"]
+    )
+    def annual_summary(year: int, auth: Service, credentials: Credentials):
+        """SPEC-049: resumo anual auxiliar (não é informe oficial)."""
+        return annual_summary_data(auth, credentials, year)
+
+    def annual_lines(data: dict[str, object]) -> list[list[str]]:
+        income = data["registered_income"]
+        rows = [["seção", "item", "origem", "valor"]]
+        rows += [
+            ["rendimentos registrados", key, "registrado", str(income[key])]
+            for key in ("recurring_income", "one_time_income", "bonus", "total")
+        ]
+        rows += [
+            [
+                "IR estimado",
+                f"{item['regime']} {item['competence']}",
+                "registrado",
+                str(item["tax"]),
+            ]
+            for item in data["tax_estimates"]
+        ]
+        rows += [
+            ["simulações", csv_cell(item["label"]), "simulado", str(item["final_amount"])]
+            for item in data["simulations"]
+        ]
+        return rows
+
+    @app.get(f"{FINANCIAL_PREFIX}/annual-summary/csv", tags=["taxes"])
+    def annual_summary_csv(year: int, auth: Service, credentials: Credentials):
+        data = annual_summary_data(auth, credentials, year)
+        buffer = StringIO()
+        output = writer(buffer)
+        output.writerow([f"# {data['notice']}"])
+        output.writerows(annual_lines(data))
+        return StreamingResponse(
+            iter([buffer.getvalue()]),
+            media_type="text/csv; charset=utf-8",
+            headers={"Content-Disposition": f"attachment; filename=resumo-anual-{year}.csv"},
+        )
+
+    @app.get(f"{FINANCIAL_PREFIX}/annual-summary/pdf", tags=["taxes"])
+    def annual_summary_pdf(year: int, auth: Service, credentials: Credentials):
+        data = annual_summary_data(auth, credentials, year)
+        lines = [f"FinNova - Resumo anual auxiliar {year}", str(data["notice"]), ""]
+        lines += [" | ".join(row) for row in annual_lines(data)[1:]]
+        lines += ["", f"IR estimado total: {data['estimated_tax_total']}"]
+        return Response(
+            content=pdf_document(lines),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=resumo-anual-{year}.pdf"},
+        )
 
     @app.get(f"{FINANCIAL_PREFIX}/exports/csv", tags=["financial"])
     def export_csv(

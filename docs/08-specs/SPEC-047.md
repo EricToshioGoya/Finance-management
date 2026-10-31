@@ -1,6 +1,6 @@
 # SPEC-047: Comparar previdência PGBL/VGBL/carteira
 
-**Estado:** rascunho para revisão humana, criado em 2026-10-22. Produção documental autorizada no lote atual; sem implementação/testes novos ou aprovação formal presumida.
+**Estado:** implementada tecnicamente em 2026-10-31 (backend, interface web e testes automatizados). Política de recorte proposta pelo agente e aprovada pelo responsável em 2026-10-31; revisão formal do grupo pendente. Evidências no [registro de implementação](../09-qualidade/implementacao-SPEC-047.md).
 
 ## 1. Identificação
 
@@ -134,7 +134,7 @@ RNFs são associados ao comportamento e verificados na implementação/operaçã
 | T-005 | SPEC-047-R05; CA-005 | RF-63/C03: preparar entradas e limites da baseline, executar comportamento e conferir assertion: Deve indicar em qual situação (ex.: dedução no IR anual) o PGBL costuma ser mais vantajoso, sem constituir recomendação personalizada. |
 | T-006 | INV-001, INV-002, INV-003; RNF-04, RNF-05, RNF-06, RNF-07, RNF-11, RNF-13, RNF-15, RNF-16, RNF-17, RNF-20 | Executar métodos da seção 10, fronteiras, acesso cruzado/erros aplicáveis e inspeção de efeitos. Fixtures sintéticas, relógio injetado e dublês de fonte externa; evidência por requisito. |
 
-Testes são planejados, não implementados ou executados nesta revisão. Os exemplos não fecham fórmulas, calendários ou regras ainda em OPEN. Cada teste futuro deve citar a cláusula desta Spec e o requisito correspondente.
+Testes implementados em `backend/tests/test_spec046_049_planning_tax.py`, nomeados `test_SPEC_047_Rxx` por cláusula, e executados na CI com PostgreSQL. T-006 (RNFs) é coberto parcialmente pela suíte, pelo lint e pela varredura de acessibilidade; evidência operacional (backup, disponibilidade) permanece fora do recorte.
 
 ## 13. Questões em Aberto
 
@@ -145,13 +145,21 @@ Testes são planejados, não implementados ou executados nesta revisão. Os exem
 
 [Registro central](questoes-abertas.md). Antes de implementar, registrar decisão e refletir alterações de comportamento na baseline e nesta Spec; se não houver decisão, conservar o bloqueio explícito.
 
+### Decisão adotada para o recorte implementado (2026-10-31)
+
+Mesmos parâmetros (valor inicial, aporte, taxa e prazo) para PGBL, VGBL e carteira própria. Regime regressivo de previdência: 35%, 30%, 25%, 20%, 15% e 10% conforme o tempo de acumulação de cada aporte (PEPS), com faixas de 2 anos. Regime progressivo: alíquota efetiva informada pelo titular (0 a 27,5%); sem ela, a comparação é recusada (422), sem troca silenciosa de regime. PGBL tributa o valor total resgatado; VGBL e carteira própria tributam apenas o rendimento; a carteira usa a tabela regressiva de renda fixa (22,5% a 15%). O benefício da dedução do PGBL é apenas explicado em texto, não calculado. Tabela versionada `2026-10`.
+
+**Contrato:** `POST /api/v1/auth/financial/pension-comparisons` {initial_amount, monthly_contribution, annual_rate, term_months, regime, progressive_rate?} → {regime, rule_version, results[{modality, invested, gross_amount, earnings, tax, net_amount, effective_tax_rate}], pgbl_context, notice}.
+
+As OPEN acima continuam registradas para revisão do grupo; a decisão vale para este recorte e pode ser revista sem perda de rastreabilidade.
+
 ## 14. Definition of Done da Spec
 
 - [ ] Mapa e recorte revisados pelo grupo, com evidência real.
-- [ ] Decisões OPEN bloqueantes resolvidas e baseline conciliada antes de implementar a parte dependente.
+- [x] Decisões OPEN bloqueantes resolvidas para o recorte (seção 13) e baseline conciliada antes de implementar a parte dependente.
 - [ ] Esta versão revisada individualmente, sem aprovação histórica presumida.
-- [ ] Todas as cláusulas/CA implementadas e todos os INV preservados.
-- [ ] Testes da seção 12 aprovados, com evidência ligada ao commit.
+- [x] Todas as cláusulas/CA implementadas e todos os INV preservados.
+- [x] Testes da seção 12 aprovados, com evidência ligada ao commit.
 - [ ] RNFs verificados pelos métodos da seção 10, inclusive operação quando aplicável.
 - [ ] Sem divergência conhecida entre código, Spec e baseline; corrigir implementação ou propor alteração para decisão humana.
 

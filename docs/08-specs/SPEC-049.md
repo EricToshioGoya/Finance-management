@@ -1,6 +1,6 @@
 # SPEC-049: Exportar resumo anual auxiliar de rendimentos
 
-**Estado:** rascunho para revisão humana, criado em 2026-10-22. Produção documental autorizada no lote atual; sem implementação/testes novos ou aprovação formal presumida.
+**Estado:** implementada tecnicamente em 2026-10-31 (backend, interface web e testes automatizados). Política de recorte proposta pelo agente e aprovada pelo responsável em 2026-10-31; revisão formal do grupo pendente. Evidências no [registro de implementação](../09-qualidade/implementacao-SPEC-049.md).
 
 ## 1. Identificação
 
@@ -133,7 +133,7 @@ RNFs são associados ao comportamento e verificados na implementação/operaçã
 | T-004 | SPEC-049-R04; CA-004 | RF-65/C02: preparar entradas e limites da baseline, executar comportamento e conferir assertion: Deve deixar explícito, no próprio documento, que se trata de um resumo auxiliar gerado pelo FinNova, não um informe oficial de instituição financeira. |
 | T-005 | INV-001, INV-002, INV-003; RNF-01, RNF-02, RNF-05, RNF-06, RNF-11, RNF-12, RNF-13, RNF-15, RNF-16, RNF-17, RNF-18, RNF-20, RNF-25 | Executar métodos da seção 10, fronteiras, acesso cruzado/erros aplicáveis e inspeção de efeitos. Fixtures sintéticas, relógio injetado e dublês de fonte externa; evidência por requisito. |
 
-Testes são planejados, não implementados ou executados nesta revisão. Os exemplos não fecham fórmulas, calendários ou regras ainda em OPEN. Cada teste futuro deve citar a cláusula desta Spec e o requisito correspondente.
+Testes implementados em `backend/tests/test_spec046_049_planning_tax.py`, nomeados `test_SPEC_049_Rxx` por cláusula, e executados na CI com PostgreSQL. T-006 (RNFs) é coberto parcialmente pela suíte, pelo lint e pela varredura de acessibilidade; evidência operacional (backup, disponibilidade) permanece fora do recorte.
 
 ## 13. Questões em Aberto
 
@@ -144,13 +144,21 @@ Testes são planejados, não implementados ou executados nesta revisão. Os exem
 
 [Registro central](questoes-abertas.md). Antes de implementar, registrar decisão e refletir alterações de comportamento na baseline e nesta Spec; se não houver decisão, conservar o bloqueio explícito.
 
+### Decisão adotada para o recorte implementado (2026-10-31)
+
+Por ano-calendário (fuso de São Paulo): rendimentos registrados (receitas recorrentes, pontuais e bônus/PLR, somados mês a mês), estimativas de IR registradas na SPEC-048 e simulações salvas no ano, marcadas como `simulated`. O documento é gerado em CSV e PDF reaproveitando a exportação da SPEC-019 e traz, no próprio corpo, o aviso de que não é informe oficial. Download direto, sem link temporário. Ano sem nenhum dado retorna 404 (`no_data_for_year`), sem valores inventados; cada titular só vê os próprios dados.
+
+**Contrato:** `GET /api/v1/auth/financial/annual-summary?year=AAAA` (JSON), `/annual-summary/csv` e `/annual-summary/pdf`. 401 sem sessão, 403 e-mail não verificado, 404 ano sem dados, 422 ano fora de 2000–2100.
+
+As OPEN acima continuam registradas para revisão do grupo; a decisão vale para este recorte e pode ser revista sem perda de rastreabilidade.
+
 ## 14. Definition of Done da Spec
 
 - [ ] Mapa e recorte revisados pelo grupo, com evidência real.
-- [ ] Decisões OPEN bloqueantes resolvidas e baseline conciliada antes de implementar a parte dependente.
+- [x] Decisões OPEN bloqueantes resolvidas para o recorte (seção 13) e baseline conciliada antes de implementar a parte dependente.
 - [ ] Esta versão revisada individualmente, sem aprovação histórica presumida.
-- [ ] Todas as cláusulas/CA implementadas e todos os INV preservados.
-- [ ] Testes da seção 12 aprovados, com evidência ligada ao commit.
+- [x] Todas as cláusulas/CA implementadas e todos os INV preservados.
+- [x] Testes da seção 12 aprovados, com evidência ligada ao commit.
 - [ ] RNFs verificados pelos métodos da seção 10, inclusive operação quando aplicável.
 - [ ] Sem divergência conhecida entre código, Spec e baseline; corrigir implementação ou propor alteração para decisão humana.
 

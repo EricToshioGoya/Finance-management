@@ -1328,3 +1328,110 @@ class SharedBalanceOutput(BaseModel):
     settlements: list[SettlementOutput]
     direction: Literal["settled", "partner_owes_me", "i_owe_partner"]
     amount: Decimal
+
+
+# ---------- SPEC-046 a SPEC-049: aposentadoria, previdência, IR e resumo anual ----------
+class RetirementInput(BaseModel):
+    current_age: int = Field(ge=14, le=100)
+    target_age: int = Field(ge=15, le=110)
+    initial_amount: Decimal = Field(default=Decimal("0"), ge=0, max_digits=14, decimal_places=2)
+    monthly_contribution: Decimal = Field(ge=0, max_digits=14, decimal_places=2)
+    annual_rate: Decimal = Field(ge=0, le=100, max_digits=10, decimal_places=6)
+    withdrawal_rate: Decimal = Field(default=Decimal("4"), gt=0, le=20, decimal_places=4)
+
+
+class SuggestedRateOutput(BaseModel):
+    code: str
+    value: Decimal
+    stale: bool
+
+
+class RetirementOutput(BaseModel):
+    months: int
+    invested: Decimal
+    projected_wealth: Decimal
+    estimated_monthly_income: Decimal
+    withdrawal_rate: Decimal
+    suggested_rate: SuggestedRateOutput | None
+    assumptions: list[str]
+    notice: str
+
+
+class PensionInput(BaseModel):
+    initial_amount: Decimal = Field(default=Decimal("0"), ge=0, max_digits=14, decimal_places=2)
+    monthly_contribution: Decimal = Field(ge=0, max_digits=14, decimal_places=2)
+    annual_rate: Decimal = Field(ge=0, le=100, max_digits=10, decimal_places=6)
+    term_months: int = Field(ge=1, le=720)
+    regime: Literal["regressive", "progressive"]
+    progressive_rate: Decimal | None = Field(default=None, ge=0, le=Decimal("27.5"))
+
+
+class PensionModalityOutput(BaseModel):
+    modality: Literal["pgbl", "vgbl", "own_portfolio"]
+    invested: Decimal
+    gross_amount: Decimal
+    earnings: Decimal
+    tax: Decimal
+    net_amount: Decimal
+    effective_tax_rate: Decimal
+
+
+class PensionOutput(BaseModel):
+    regime: str
+    rule_version: str
+    results: list[PensionModalityOutput]
+    pgbl_context: str
+    notice: str
+
+
+class TaxEstimateInput(BaseModel):
+    regime: Literal["fixed_income", "stock", "fii", "day_trade"]
+    competence: str = Field(pattern=r"^\d{4}-(0[1-9]|1[0-2])$")
+    result: Decimal = Field(max_digits=14, decimal_places=2)
+    sales: Decimal = Field(default=Decimal("0"), ge=0, max_digits=14, decimal_places=2)
+    holding_days: int | None = Field(default=None, ge=1, le=36500)
+
+
+class TaxEstimateOutput(BaseModel):
+    id: UUID
+    regime: str
+    competence: str
+    sales: Decimal
+    result: Decimal
+    tax_rate: Decimal
+    tax: Decimal
+    exempt: bool
+    darf_due_on: date | None
+    rule_version: str
+    notes: list[str]
+    notice: str
+
+
+class AnnualMonthOutput(BaseModel):
+    competence: str
+    total: Decimal
+
+
+class AnnualIncomeOutput(BaseModel):
+    monthly: list[AnnualMonthOutput]
+    recurring_income: Decimal
+    one_time_income: Decimal
+    bonus: Decimal
+    total: Decimal
+
+
+class AnnualSimulationOutput(BaseModel):
+    label: str
+    kind: str
+    final_amount: Decimal
+    estimated_tax: Decimal
+    origin: Literal["simulated"]
+
+
+class AnnualSummaryOutput(BaseModel):
+    year: int
+    registered_income: AnnualIncomeOutput
+    tax_estimates: list[TaxEstimateOutput]
+    estimated_tax_total: Decimal
+    simulations: list[AnnualSimulationOutput]
+    notice: str
