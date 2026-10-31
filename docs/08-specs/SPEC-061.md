@@ -1,6 +1,6 @@
 # SPEC-061: Entregar notificação em canal opcional
 
-**Estado:** rascunho para revisão humana, criado em 2026-10-22. Produção documental autorizada no lote atual; sem implementação/testes novos ou aprovação formal presumida.
+**Estado:** implementada tecnicamente em 2026-10-31 (backend, interface web e testes automatizados). Política de recorte proposta pelo agente e aprovada pelo responsável em 2026-10-31; revisão formal do grupo pendente. Evidências no [registro de implementação](../09-qualidade/implementacao-SPEC-061.md).
 
 ## 1. Identificação
 
@@ -132,7 +132,7 @@ RNFs são associados ao comportamento e verificados na implementação/operaçã
 | T-004 | SPEC-061-R04; CA-004 | RF-49/C02: preparar entradas e limites da baseline, executar comportamento e conferir assertion: O envio por push deve usar um serviço de terceiros (ex.: Firebase Cloud Messaging — ver seção 5). |
 | T-005 | INV-001, INV-002, INV-003; RNF-01, RNF-05, RNF-06, RNF-08, RNF-11, RNF-12, RNF-13, RNF-15, RNF-16, RNF-17, RNF-20 | Executar métodos da seção 10, fronteiras, acesso cruzado/erros aplicáveis e inspeção de efeitos. Fixtures sintéticas, relógio injetado e dublês de fonte externa; evidência por requisito. |
 
-Testes são planejados, não implementados ou executados nesta revisão. Os exemplos não fecham fórmulas, calendários ou regras ainda em OPEN. Cada teste futuro deve citar a cláusula desta Spec e o requisito correspondente.
+Testes implementados em `backend/tests/test_spec040_061_channels_summary.py`, nomeados `test_SPEC_061_Rxx` por cláusula, e executados na CI com PostgreSQL. T-006 (RNFs) é coberto parcialmente pela suíte, pelo lint e pela varredura de acessibilidade; evidência operacional (backup, disponibilidade) permanece fora do recorte.
 
 ## 13. Questões em Aberto
 
@@ -142,13 +142,21 @@ Testes são planejados, não implementados ou executados nesta revisão. Os exem
 
 [Registro central](questoes-abertas.md). Antes de implementar, registrar decisão e refletir alterações de comportamento na baseline e nesta Spec; se não houver decisão, conservar o bloqueio explícito.
 
+### Decisão adotada para o recorte implementado (2026-10-31)
+
+In-app é obrigatório e continua sendo a base; e-mail e push são opt-in por canal (preferências `email_notifications` e `push_notifications`, desativadas por padrão). O e-mail usa o despachante HTTPS da SPEC-015 (`FINNOVA_EMAIL_WEBHOOK_URL`); o push usa um despachante HTTPS configurável (`FINNOVA_PUSH_WEBHOOK_URL`, ex.: gateway para FCM), sem provedor real fixado (OPEN-17). Destino push = token de dispositivo registrado pelo titular, cifrado em repouso. Cada tentativa registra apenas canal, status (`sent`, `failed`, `provider_unavailable`, `no_destination`) e instante — sem conteúdo nem destino. Sem configuração, a tentativa fica como `provider_unavailable`, nunca como enviada. Envio síncrono no momento da notificação, sem retentativa; falha externa nunca desfaz a notificação in-app.
+
+**Contrato:** `POST /api/v1/notifications/push-devices` {token} (201), `DELETE /api/v1/notifications/push-devices` (204), `GET /api/v1/notifications/deliveries`. Ativação pelos campos de `PATCH /api/v1/auth/profile/preferences`. Adaptador em `backend/app/infrastructure/channel_delivery.py`; tabelas `push_devices` e `notification_deliveries` (migração 035).
+
+As OPEN acima continuam registradas para revisão do grupo; a decisão vale para este recorte e pode ser revista sem perda de rastreabilidade.
+
 ## 14. Definition of Done da Spec
 
 - [ ] Mapa e recorte revisados pelo grupo, com evidência real.
-- [ ] Decisões OPEN bloqueantes resolvidas e baseline conciliada antes de implementar a parte dependente.
+- [x] Decisões OPEN bloqueantes resolvidas para o recorte (seção 13) e baseline conciliada antes de implementar a parte dependente.
 - [ ] Esta versão revisada individualmente, sem aprovação histórica presumida.
-- [ ] Todas as cláusulas/CA implementadas e todos os INV preservados.
-- [ ] Testes da seção 12 aprovados, com evidência ligada ao commit.
+- [x] Todas as cláusulas/CA implementadas e todos os INV preservados.
+- [x] Testes da seção 12 aprovados, com evidência ligada ao commit.
 - [ ] RNFs verificados pelos métodos da seção 10, inclusive operação quando aplicável.
 - [ ] Sem divergência conhecida entre código, Spec e baseline; corrigir implementação ou propor alteração para decisão humana.
 

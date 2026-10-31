@@ -102,3 +102,41 @@ export function ReopenTour({ token, lang, onReopen }: { token: string; lang: Lan
     <button type="button" onClick={() => void api(token, '/profile/tour', { method: 'PUT', body: JSON.stringify({ action: 'reopen' }) }).then(onReopen)}>{pt ? 'Reabrir tour guiado' : 'Reopen guided tour'}</button>
   </section>;
 }
+
+type Delivery = { notification_id: string | null; source: string; channel: 'email' | 'push'; status: string; attempted_at: string };
+type Summary = { competence: string; status: string; generated_at: string };
+
+/** Canais opcionais (SPEC-061) e resumo mensal automático (SPEC-040). */
+export function ReportsAndChannels({ token, lang }: { token: string; lang: Lang }) {
+  const pt = lang === 'pt';
+  const [enabled, setEnabled] = useState(false);
+  const [history, setHistory] = useState<Summary[]>([]);
+  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const load = useCallback(async () => {
+    const [settings, summaries, attempts] = await Promise.all([
+      api<{ monthly_summary_enabled: boolean }>(token, '/profile/reports').catch(() => ({ monthly_summary_enabled: false })),
+      api<Summary[]>(token, '/financial/monthly-summaries').catch(() => []),
+      api<Delivery[]>(token, '/api/v1/notifications/deliveries').catch(() => []),
+    ]);
+    setEnabled(settings.monthly_summary_enabled); setHistory(summaries); setDeliveries(attempts);
+  }, [token]);
+  useEffect(() => { void load(); }, [load]);
+  const toggle = async () => { await api(token, '/profile/reports', { method: 'PUT', body: JSON.stringify({ monthly_summary_enabled: !enabled }) }).catch(() => undefined); await load(); };
+  async function download(competence: string) {
+    const response = await fetch(`/api/v1/auth/financial/monthly-summaries/${competence}/pdf`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!response.ok) return;
+    const url = URL.createObjectURL(await response.blob());
+    const anchor = document.createElement('a'); anchor.href = url; anchor.download = `resumo-${competence}.pdf`; anchor.click(); URL.revokeObjectURL(url);
+  }
+  const statusName = (value: string) => ({ sent: pt ? 'enviado' : 'sent', failed: pt ? 'falhou' : 'failed', provider_unavailable: pt ? 'provedor não configurado' : 'provider not configured', no_destination: pt ? 'sem destino' : 'no destination' }[value] ?? value);
+  const lastMonth = (() => { const now = new Date(); const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1)); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; })();
+  return <section className="profile" aria-labelledby="reports-title">
+    <h3 id="reports-title">{pt ? 'Relatórios e canais' : 'Reports and channels'}</h3>
+    <label className="check"><input type="checkbox" checked={enabled} onChange={() => void toggle()} />{pt ? 'Receber resumo mensal automático por e-mail (PDF do mês anterior)' : 'Receive an automatic monthly summary by email (PDF of the previous month)'}</label>
+    <p className="hint">{pt ? 'O envio usa o canal de e-mail habilitado em Preferências. Notificações push exigem o aplicativo móvel registrado; o histórico no aplicativo web continua sempre disponível.' : 'Delivery uses the email channel enabled in Preferences. Push requires a registered mobile app; the in-app history is always kept.'}</p>
+    <button type="button" className="secondary" onClick={() => void download(lastMonth)}>{pt ? 'Baixar resumo do mês anterior' : 'Download last month’s summary'}</button>
+    {history.length > 0 && <ul className="source-list">{history.map(item => <li key={item.competence}><strong>{item.competence}</strong><span>{statusName(item.status)} · {shortDate(item.generated_at, lang)}</span></li>)}</ul>}
+    {deliveries.length > 0 && <details><summary>{pt ? 'Tentativas de entrega externa' : 'External delivery attempts'}</summary>
+      <ul className="source-list">{deliveries.map((item, index) => <li key={index}><strong>{item.channel}</strong><span>{statusName(item.status)} · {shortDate(item.attempted_at, lang)}</span></li>)}</ul></details>}
+  </section>;
+}

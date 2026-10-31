@@ -18,7 +18,7 @@ import { CardInvoice, Planning } from './Planning';
 import { Investments } from './Investments';
 import { Sharing } from './Sharing';
 import { PensionComparison, RetirementPlanner, Taxes } from './PlanningTax';
-import { Achievements, OnboardingTour, ReopenTour, ScoreBenchmark } from './Engagement';
+import { Achievements, OnboardingTour, ReopenTour, ReportsAndChannels, ScoreBenchmark } from './Engagement';
 import { AdminEngagement, AdminProfileDistribution, NetWorthItems, Notifications, Watchlist } from './Extras';
 import { money } from './api';
 import './style.css';
@@ -774,6 +774,7 @@ function App() {
                 </li>)}
               </ul>
             </section>
+            {financial && token && <ReportsAndChannels token={token} lang={lang} />}
             {financial && token && <ExternalIntegrations token={token} lang={lang} />}
             {live && <section className="profile danger-zone" aria-labelledby="delete-title">
               <h3 id="delete-title">{t.deleteAccount}</h3>
