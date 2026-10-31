@@ -33,7 +33,7 @@ type Preferences = { language: Language; theme: 'light' | 'dark'; in_app_notific
 type Profile = { user: User; pending_email: string | null; preferences: Preferences };
 type Category = { key: string; name: string; color: string; kind: 'standard' | 'personal'; active: boolean };
 type Account = { id: string; name: string; account_type: string; initial_balance: string };
-type CreditCard = { id: string; name: string; credit_limit: string; closing_day: number; due_day: number };
+type CreditCard = { id: string; name: string; credit_limit: string; closing_day: number; due_day: number; alert_threshold: string };
 type FinancialSources = { accounts: Account[]; credit_cards: CreditCard[] };
 type AdminUser = { id: string; name: string; email: string; created_at: string; investor_profile: InvestorProfile | null; status: 'active' };
 type AdminUsersPage = { items: AdminUser[]; page: number; page_size: number; total: number };
@@ -299,7 +299,7 @@ function App() {
     try {
       const created = await request<CreditCard>('/financial/credit-cards', {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + access.current },
-        body: JSON.stringify({ name: data.get('card-name'), credit_limit: data.get('card-limit'), closing_day: Number(data.get('closing-day')), due_day: Number(data.get('due-day')) }),
+        body: JSON.stringify({ name: data.get('card-name'), credit_limit: data.get('card-limit'), closing_day: Number(data.get('closing-day')), due_day: Number(data.get('due-day')), alert_threshold: data.get('card-alert') }),
       });
       setCreditCards(current => [...current, created]); event.currentTarget.reset(); setMessage('cardCreated');
     } catch (cause) { notify(cause); }
@@ -582,7 +582,7 @@ function App() {
             <h3 id="financial-sources-title">{t.financialSourcesTitle}</h3>
             <ul className="source-list">
               {accounts.map(account => <li key={account.id}><strong>{account.name}</strong><span>{t[account.account_type as 'checking' | 'savings' | 'cash' | 'investment']} · {money(account.initial_balance, lang)}</span></li>)}
-              {creditCards.map(card => <li key={card.id}><strong>{card.name}</strong><span>{t.creditLimit}: {money(card.credit_limit, lang)} · {t.closes}: {card.closing_day} · {t.due}: {card.due_day}</span></li>)}
+              {creditCards.map(card => <li key={card.id}><strong>{card.name}</strong><span>{t.creditLimit}: {money(card.credit_limit, lang)} · {t.closes}: {card.closing_day} · {t.due}: {card.due_day} · {lang === 'pt' ? 'alerta' : 'alert'} {Number(card.alert_threshold)}%</span></li>)}
             </ul>
             <form onSubmit={submitAccount} aria-busy={busy}>
               <div className="field"><label htmlFor="account-name">{t.accountName}</label><input id="account-name" name="account-name" maxLength={60} required disabled={busy}/></div>
@@ -596,6 +596,7 @@ function App() {
               <div className="inline-fields">
                 <div className="field"><label htmlFor="closing-day">{t.closes}</label><input id="closing-day" name="closing-day" type="number" min="1" max="31" required disabled={busy}/></div>
                 <div className="field"><label htmlFor="due-day">{t.due}</label><input id="due-day" name="due-day" type="number" min="1" max="31" required disabled={busy}/></div>
+                <div className="field"><label htmlFor="card-alert">{lang === 'pt' ? 'Alerta do limite (%)' : 'Limit alert (%)'}</label><input id="card-alert" name="card-alert" type="number" min="70" max="100" step="1" defaultValue="80" required disabled={busy}/></div>
               </div>
               <button type="submit" disabled={busy}>{busy ? t.waiting : t.createCard}</button>
             </form>

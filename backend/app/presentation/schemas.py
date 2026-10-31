@@ -243,6 +243,7 @@ class CreditCardCreateInput(BaseModel):
     credit_limit: Decimal = Field(gt=0, max_digits=14, decimal_places=2)
     closing_day: int = Field(ge=1, le=31)
     due_day: int = Field(ge=1, le=31)
+    alert_threshold: Decimal = Field(default=Decimal("80"), ge=70, le=100, decimal_places=2)
 
     @field_validator("name")
     @classmethod
@@ -252,12 +253,20 @@ class CreditCardCreateInput(BaseModel):
         return name.strip()
 
 
+class CreditCardUpdateInput(BaseModel):
+    """OPEN-12: o percentual de alerta do limite é configurável por cartão (70% a 100%)."""
+
+    model_config = ConfigDict(extra="forbid")
+    alert_threshold: Decimal = Field(ge=70, le=100, decimal_places=2)
+
+
 class CreditCardOutput(BaseModel):
     id: UUID
     name: str
     credit_limit: Decimal
     closing_day: int
     due_day: int
+    alert_threshold: Decimal
 
 
 class FinancialSourcesOutput(BaseModel):
@@ -801,11 +810,17 @@ class ExpenseCreateInput(BaseModel):
     recurring: bool = False
     account_id: UUID | None = None
     credit_card_id: UUID | None = None
+    # OPEN-12: compra parcelada no cartão gera N parcelas mensais.
+    installments: int = Field(default=1, ge=1, le=48)
 
     @model_validator(mode="after")
     def exactly_one_source(self):
         if (self.account_id is None) == (self.credit_card_id is None):
             raise ValueError("Exactly one source is required")
+        if self.installments > 1 and (self.credit_card_id is None or self.recurring):
+            raise ValueError("Installments require a credit card and a one-time expense")
+        if self.installments > 1 and self.amount < Decimal("0.01") * self.installments:
+            raise ValueError("Each installment must be at least one cent")
         return self
 
 
@@ -834,6 +849,9 @@ class ExpenseOutput(BaseModel):
     recurring: bool
     account_id: UUID | None
     credit_card_id: UUID | None
+    installment_group: UUID | None = None
+    installment_number: int | None = None
+    installment_count: int | None = None
 
 
 class BalanceSummaryOutput(IncomeSummaryOutput):
@@ -1049,7 +1067,10 @@ class CardInvoiceOutput(BaseModel):
     invoice_total: Decimal
     credit_limit: Decimal
     available_limit: Decimal
+    future_installments: Decimal
     near_limit: bool
+    alert_threshold: Decimal
+    closing_day: int
     due_day: int
 
 

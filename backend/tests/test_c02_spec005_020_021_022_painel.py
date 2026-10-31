@@ -66,9 +66,10 @@ def test_SPEC_005_R05_each_entry_links_to_one_account_or_card(client, app):
 def test_SPEC_020_R01_R03_invoice_sums_card_entries_of_the_cycle(client, app):
     headers = verified_user(client, app)
     card_id = card(client, headers, "1000")
-    expense(client, headers, "100", "2026-03-05", credit_card_id=card_id)
-    expense(client, headers, "200", "2026-03-20", credit_card_id=card_id)
-    expense(client, headers, "999", "2026-04-02", credit_card_id=card_id)
+    # Fechamento no dia 10 (OPEN-12): até o dia 10 entra na fatura de março; depois, abril.
+    expense(client, headers, "100", "2026-02-11", credit_card_id=card_id)
+    expense(client, headers, "200", "2026-03-10", credit_card_id=card_id)
+    expense(client, headers, "999", "2026-03-11", credit_card_id=card_id)
     data = invoice(client, headers, card_id).json()
     assert Decimal(data["invoice_total"]) == Decimal("300")
     assert data["competence"] == "2026-03" and data["due_day"] == 20
