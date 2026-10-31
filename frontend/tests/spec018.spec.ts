@@ -15,6 +15,7 @@ test('SPEC-018: revisar, cancelar, validar senha e excluir conta', async ({ page
   await page.getByLabel('E-mail', { exact: true }).fill(email);
   await page.getByLabel('Senha', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Entrar na conta' }).click();
+  await page.getByRole('button', { name: 'Minha conta' }).click();
   await page.getByRole('button', { name: 'Revisar exclusão' }).click();
   await expect(page.getByText(/não pode ser desfeita/)).toBeVisible();
   const section = page.locator('section[aria-labelledby="delete-title"]');

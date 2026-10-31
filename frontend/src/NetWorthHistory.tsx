@@ -97,7 +97,7 @@ export function NetWorthHistory({ token, lang }: { token: string; lang: 'pt' | '
         </g>)}
         {points.map((point, index) => <text key={point.competence} x={x(index)} y="231" textAnchor="middle" fill="currentColor" fontSize="11">{point.competence.slice(0, 7)}</text>)}
       </svg>
-      <div className="indicator-table-wrap"><table>
+      <div className="indicator-table-wrap" tabIndex={0}><table>
         <caption>{pt ? 'Valores exatos das posições registradas (BRL)' : 'Exact saved positions (BRL)'}</caption>
         <thead><tr><th>{pt ? 'Mês' : 'Month'}</th>{series.map(item => <th key={item.key}>{pt ? item.pt : item.en}</th>)}</tr></thead>
         <tbody>{points.map(point => <tr key={point.competence}><th scope="row">{point.competence.slice(0, 7)}</th>{series.map(item => <td key={item.key}>{money(point[item.key], lang)}</td>)}</tr>)}</tbody>

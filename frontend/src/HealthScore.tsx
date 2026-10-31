@@ -173,7 +173,7 @@ export function HealthScore({ token, lang }: { token: string; lang: 'pt' | 'en' 
               cx={point.x} cy={95 - point.value * .9} r="1.5"
               fill="#16806c" vectorEffect="non-scaling-stroke" />)}
           </svg>
-          <div className="indicator-table-wrap">
+          <div className="indicator-table-wrap" tabIndex={0}>
             <table><caption>{pt ? 'Histórico do score por competência' : 'Health score history by month'}</caption>
               <thead><tr><th>{pt ? 'Mês' : 'Month'}</th><th>{pt ? 'Nota' : 'Score'}</th></tr></thead>
               <tbody>{history.map(item => <tr key={item.competence}>
