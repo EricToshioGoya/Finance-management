@@ -1,0 +1,44 @@
+{
+  "commit": "305ff211a8c751e8d4401dc061bbb5d81c398866",
+  "workflow_run": "https://github.com/ArthurAlencarDeOliveiraSa/Projeto-Modelagem-de-Sistemas/actions/runs/39894164761",
+  "job_id": 120220590400,
+  "medicao": {
+    "perfil": "SPEC-002: sequencial, 5 aquecimentos; inicial=1000, aporte=100, taxa anual=12%",
+    "quantil": "posto mais proximo: ceil(p*n), sem interpolacao",
+    "ambiente": {
+      "python": "3.12.15",
+      "plataforma": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+      "arquitetura": "x86_64",
+      "cpus_logicas": 2
+    },
+    "orcamento_motor_p95_ns": 3000000000,
+    "resultados": [
+      {
+        "meses": 12,
+        "amostras": 100,
+        "p50_ns": 91068,
+        "p95_ns": 102545
+      },
+      {
+        "meses": 120,
+        "amostras": 100,
+        "p50_ns": 207603,
+        "p95_ns": 221264
+      },
+      {
+        "meses": 360,
+        "amostras": 100,
+        "p50_ns": 470460,
+        "p95_ns": 480876
+      },
+      {
+        "meses": 600,
+        "amostras": 100,
+        "p50_ns": 735611,
+        "p95_ns": 1423169
+      }
+    ],
+    "dentro_orcamento": true,
+    "limite": "Nao mede API, banco, concorrencia, dashboards ou disponibilidade."
+  }
+}
