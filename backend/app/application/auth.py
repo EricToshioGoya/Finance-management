@@ -98,6 +98,8 @@ NOTIFICATION_KINDS = (
     "budget_goal_exceeded",
     "watchlist_document",
     "recurring_expense_due",
+    "achievement_unlocked",
+    "monthly_summary",
 )
 NOTIFICATION_CONTENT = {
     "invoice_due": (
@@ -112,6 +114,14 @@ NOTIFICATION_CONTENT = {
     "recurring_expense_due": (
         "Despesa recorrente próxima do vencimento",
         "Uma despesa recorrente está próxima da data de vencimento.",
+    ),
+    "achievement_unlocked": (
+        "Nova conquista desbloqueada",
+        "Parabéns! Você desbloqueou uma conquista. Veja seu progresso na tela de conquistas.",
+    ),
+    "monthly_summary": (
+        "Resumo mensal disponível",
+        "O resumo financeiro do mês anterior foi gerado.",
     ),
 }
 QUIZ_QUESTIONS = (
