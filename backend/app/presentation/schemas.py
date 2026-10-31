@@ -849,6 +849,23 @@ class CalculatorInput(BaseModel):
     monthly_contribution: Decimal = Field(ge=0, max_digits=14, decimal_places=2)
     annual_rate: Decimal = Field(ge=0, max_digits=10, decimal_places=6)
     term_months: int = Field(ge=1, le=720)
+    # SPEC-013-R03/R04: seletores de periodicidade da taxa e unidade do prazo.
+    # `annual_rate` guarda o percentual informado; `rate_period` diz se ele é anual ou mensal.
+    rate_period: Literal["annual", "monthly"] = "annual"
+    term_unit: Literal["months", "years"] = "months"
+    # SPEC-013-R06/SPEC-008-R04: taxa sugerida pelo indicador oficial em cache (sobrepõe a manual).
+    indicator_code: Literal["selic", "cdi", "ipca"] | None = None
+
+    @model_validator(mode="after")
+    def bounded_term(self):
+        if self.months > 720:
+            raise ValueError("term_too_long")
+        return self
+
+    @property
+    def months(self) -> int:
+        """Prazo normalizado em meses (o motor converte anos com a mesma regra)."""
+        return self.term_months * 12 if self.term_unit == "years" else self.term_months
 
 
 class CalculatorOutput(BaseModel):
@@ -858,6 +875,8 @@ class CalculatorOutput(BaseModel):
     monthly_series: list[dict[str, Decimal | int]]
     rate_explanation: str
     investor_guidance: str | None = None
+    # Origem da taxa e data de referência do indicador (SPEC-007-R08, SPEC-008-R07).
+    rate_source: dict[str, object] | None = None
 
 
 class TaxProjectionInput(CalculatorInput):
@@ -1000,6 +1019,14 @@ class SimulationComparisonInput(BaseModel):
 class SimulationComparisonOutput(BaseModel):
     simulations: list[SimulationOutput]
     difference_from_first: list[Decimal]
+    difference_percent_from_first: list[Decimal | None]
+    best_simulation_id: UUID
+
+
+class CategorySpendingOutput(BaseModel):
+    category_key: str
+    total: Decimal
+    percentage: Decimal
 
 
 class CardInvoiceOutput(BaseModel):

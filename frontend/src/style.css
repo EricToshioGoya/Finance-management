@@ -127,7 +127,7 @@ form > button { width: 100%; margin-top: .5rem; }
 .progress-list li > div { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: space-between; font-size: .9rem; }
 .progress-list progress { width: 100%; height: .8rem; accent-color: #2f8f6b; }
 .progress-list progress.alert, .progress-list progress.attention { accent-color: #c27c0e; }
-.progress-list progress.exceeded { accent-color: #a02220; }
+.progress-list progress.exceeded, .progress-list progress.below_target { accent-color: #a02220; }
 .table-wrap, .indicator-table-wrap { max-width: 100%; overflow-x: auto; }
 .table-wrap table { border-collapse: collapse; font-size: .85rem; margin: .75rem 0; width: 100%; }
 .table-wrap caption { caption-side: bottom; color: #4f655a; font-size: .75rem; padding-top: .4rem; text-align: left; }
@@ -190,3 +190,6 @@ details summary { cursor: pointer; font-weight: 600; margin: .5rem 0; }
 .tour-steps .current { font-weight: 700; }
 .tour-steps .done { color: #1d6b4a; }
 :root[data-theme="dark"] .achievement-list li { background: #20352d; border-color: #3b5a4c; }
+tr.best td { background: color-mix(in srgb, #1f7a4d 10%, transparent); }
+.badge-best { background: #1f6b44; border-radius: 1rem; color: #fff; font-size: .75rem; margin-left: .4rem; padding: .1rem .5rem; }
+.negative-month th, .negative-month td { color: #a02220; font-weight: 600; }

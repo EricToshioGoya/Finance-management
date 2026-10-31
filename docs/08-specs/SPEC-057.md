@@ -1,6 +1,6 @@
 # SPEC-057: Registrar receita pontual por competência
 
-**Estado:** implementada tecnicamente no código do grupo, incorporado à `main` em 2026-10-31 (PR #43); testes automatizados em `backend/tests/test_spec057_058_variable_income.py` e interface web na navegação por abas (PR #45). A cobertura por cláusula (C-02) usa testes agrupados e deve ser detalhada na revisão; aprovação formal do grupo pendente.
+**Estado:** implementada tecnicamente no código do grupo, incorporado à `main` em 2026-10-31 (PR #43); testes automatizados em `backend/tests/test_spec057_058_variable_income.py` e interface web na navegação por abas (PR #45). Cobertura por cláusula (C-02) concluída em 2026-10-31: cada cláusula `SHALL` tem teste `test_SPEC_057_Rxx` em `backend/tests/test_spec057_058_variable_income.py`; aprovação formal do grupo pendente.
 
 ## 1. Identificação
 
@@ -143,7 +143,7 @@ RNFs são associados ao comportamento e verificados na implementação/operaçã
 | T-006 | SPEC-057-R06; CA-006 | RF-07/C04: preparar entradas e limites da baseline, executar comportamento e conferir assertion: Deve validar que o valor é maior que zero. |
 | T-007 | INV-001, INV-002, INV-003; RNF-01, RNF-03, RNF-05, RNF-06, RNF-11, RNF-12, RNF-13, RNF-14, RNF-15, RNF-16, RNF-17, RNF-18, RNF-20, RNF-22, RNF-24, RNF-25 | Executar métodos da seção 10, fronteiras, acesso cruzado/erros aplicáveis e inspeção de efeitos. Fixtures sintéticas, relógio injetado e dublês de fonte externa; evidência por requisito. |
 
-Testes automatizados em `backend/tests/test_spec057_058_variable_income.py`, executados na CI com PostgreSQL. A correspondência um-para-um entre cláusulas e testes (C-02) ainda precisa ser detalhada.
+Testes automatizados em `backend/tests/test_spec057_058_variable_income.py`, executados na CI com PostgreSQL. A correspondência um-para-um entre cláusulas e testes (C-02) está nos testes `test_SPEC_NNN_Rxx` indicados no Estado desta spec.
 
 ## 13. Questões em Aberto
 

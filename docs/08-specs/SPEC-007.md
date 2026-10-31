@@ -1,6 +1,6 @@
 # SPEC-007: Consultar indicador oficial válido em cache
 
-**Estado:** implementada tecnicamente no código do grupo, incorporado à `main` em 2026-10-31 (PR #43); testes automatizados em `backend/tests/test_spec004_007_008_010_013_020_024.py` e interface web na navegação por abas (PR #45). A cobertura por cláusula (C-02) usa testes agrupados e deve ser detalhada na revisão; aprovação formal do grupo pendente.
+**Estado:** implementada tecnicamente no código do grupo, incorporado à `main` em 2026-10-31 (PR #43); testes automatizados em `backend/tests/test_spec004_007_008_010_013_020_024.py` e interface web na navegação por abas (PR #45). Cobertura por cláusula (C-02) concluída em 2026-10-31: cada cláusula `SHALL` tem teste `test_SPEC_007_Rxx` em `backend/tests/test_c02_spec007_010_simulacoes.py`; R03, R04 e R06 (sincronização com a fonte oficial) estão marcadas como `xfail` estrito até a decisão de OPEN-04/OPEN-10; aprovação formal do grupo pendente.
 
 ## 1. Identificação
 
@@ -149,7 +149,7 @@ RNFs são associados ao comportamento e verificados na implementação/operaçã
 | T-008 | SPEC-007-R08; CA-008 | RF-23/C06: preparar entradas e limites da baseline, executar comportamento e conferir assertion: A data de referência do indicador deve ser exibida sempre que ele for usado em uma simulação (RF-20, RF-22). |
 | T-009 | INV-001, INV-002, INV-003; RNF-01, RNF-05, RNF-06, RNF-08, RNF-09, RNF-11, RNF-12, RNF-13, RNF-15, RNF-16, RNF-17, RNF-20, RNF-25 | Executar métodos da seção 10, fronteiras, acesso cruzado/erros aplicáveis e inspeção de efeitos. Fixtures sintéticas, relógio injetado e dublês de fonte externa; evidência por requisito. |
 
-Testes automatizados em `backend/tests/test_spec004_007_008_010_013_020_024.py`, executados na CI com PostgreSQL. A correspondência um-para-um entre cláusulas e testes (C-02) ainda precisa ser detalhada.
+Testes automatizados em `backend/tests/test_spec004_007_008_010_013_020_024.py`, executados na CI com PostgreSQL. A correspondência um-para-um entre cláusulas e testes (C-02) está nos testes `test_SPEC_NNN_Rxx` indicados no Estado desta spec.
 
 ## 13. Questões em Aberto
 
