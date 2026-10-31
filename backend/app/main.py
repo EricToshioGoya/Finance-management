@@ -28,6 +28,7 @@ from sqlalchemy.orm import sessionmaker
 from app.application.auth import PROFILE_GUIDANCE, QUIZ_QUESTIONS, AuthError, AuthService
 from app.application.companies import CompanyService
 from app.application.cvm_cache import CvmCacheService
+from app.application.cvm_sync import CVM_ITEMS, CvmSyncService
 from app.application.exchange_rates import ExchangeRateService
 from app.application.indicator_sync import IndicatorSyncService
 from app.application.indicator_sync import run_with_retries as run_indicator_sync_with_retries
@@ -63,7 +64,7 @@ from app.infrastructure.models import (
     PushDeviceRecord,
     RateBucket,
 )
-from app.infrastructure.official_sources import OfficialSources
+from app.infrastructure.official_sources import CvmSources, OfficialSources
 from app.infrastructure.pdf import pdf_document
 from app.infrastructure.channel_delivery import HttpsChannelDelivery, UnconfiguredChannelDelivery
 from app.infrastructure.security import Security
@@ -249,6 +250,7 @@ def create_app(
         background = [task, summary_task]
         if settings.official_sources_sync:
             background.append(asyncio.create_task(run_daily_indicator_sync(app)))
+            background.append(asyncio.create_task(run_weekly_cvm_sync(app)))
         try:
             yield
         finally:
@@ -347,6 +349,34 @@ def create_app(
             try:
                 await run_indicator_sync_with_retries(
                     lambda items: asyncio.to_thread(run_once, items)
+                )
+            except (OSError, SQLAlchemyError):
+                continue
+
+    async def run_weekly_cvm_sync(application: FastAPI) -> None:
+        """ADR-009/OPEN-27: domingo às 03h de São Paulo sincroniza cadastro e índices CVM."""
+        sao_paulo = ZoneInfo("America/Sao_Paulo")
+        sources = CvmSources()
+
+        def run_once(items: tuple[str, ...]) -> dict[str, str]:
+            with sessions() as db:
+                auth = AuthService(db, settings, security, clock=application.state.clock)
+                return CvmSyncService(
+                    db, application.state.clock, sources, auth.notify_watchlist_document
+                ).run(items)
+
+        while True:
+            now = application.state.clock().astimezone(sao_paulo)
+            days_ahead = (6 - now.weekday()) % 7
+            scheduled = datetime.combine(
+                now.date() + timedelta(days=days_ahead), clock_time(hour=3), tzinfo=sao_paulo
+            )
+            if now >= scheduled:
+                scheduled += timedelta(days=7)
+            await asyncio.sleep((scheduled - now).total_seconds())
+            try:
+                await run_indicator_sync_with_retries(
+                    lambda items: asyncio.to_thread(run_once, items), items=CVM_ITEMS
                 )
             except (OSError, SQLAlchemyError):
                 continue

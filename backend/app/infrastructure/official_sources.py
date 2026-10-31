@@ -7,6 +7,7 @@ usem dublês e nunca chamem a fonte real (C-17).
 import csv
 import io
 import json
+import zipfile
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -150,3 +151,105 @@ class OfficialSources:
         latest = max(row.reference_date for row in rows)
         # Taxa zero indica título fora de venda; nunca é publicada como taxa (C-08).
         return [row for row in rows if row.reference_date == latest and row.buy_rate > 0]
+
+
+# OPEN-27 (2026-10-31): CVM Dados Abertos — cadastro e índices DFP/ITR/IPE.
+CVM_REGISTER_URL = "https://dados.cvm.gov.br/dados/CIA_ABERTA/CAD/DADOS/cad_cia_aberta.csv"
+CVM_INDEX_URL = {
+    "DFP": "https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_{year}.zip",
+    "ITR": "https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/ITR/DADOS/itr_cia_aberta_{year}.zip",
+    "IPE": "https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/IPE/DADOS/ipe_cia_aberta_{year}.zip",
+}
+
+
+@dataclass(frozen=True)
+class CvmCompany:
+    cnpj: str
+    legal_name: str
+    sector: str
+    active: bool
+
+
+@dataclass(frozen=True)
+class CvmDocument:
+    cnpj: str
+    document_type: str
+    reference_date: date
+    version: int
+    delivered_on: date
+    link: str
+    subject: str
+
+
+def digits(value: str) -> str:
+    return "".join(char for char in value if char.isdigit())
+
+
+def _iso_date(raw: str) -> date:
+    try:
+        return date.fromisoformat(raw.strip()[:10])
+    except (ValueError, AttributeError) as exc:
+        raise SourceError("invalid_date") from exc
+
+
+def _csv_rows(raw: bytes) -> list[dict[str, str]]:
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = raw.decode("latin-1")
+    return list(csv.DictReader(io.StringIO(text), delimiter=";"))
+
+
+def cvm_document_from_row(document_type: str, row: dict[str, str]) -> CvmDocument:
+    """Converte uma linha do índice DFP/ITR (`CNPJ_CIA`...) ou IPE (`CNPJ_Companhia`...)."""
+    if document_type == "IPE":
+        return CvmDocument(
+            cnpj=digits(row["CNPJ_Companhia"]),
+            document_type="IPE",
+            reference_date=_iso_date(row["Data_Referencia"]),
+            version=int(row["Versao"]),
+            delivered_on=_iso_date(row["Data_Entrega"]),
+            link=row["Link_Download"].strip(),
+            subject=(row.get("Assunto") or row.get("Categoria") or "Documento IPE").strip(),
+        )
+    return CvmDocument(
+        cnpj=digits(row["CNPJ_CIA"]),
+        document_type=document_type,
+        reference_date=_iso_date(row["DT_REFER"]),
+        version=int(row["VERSAO"]),
+        delivered_on=_iso_date(row["DT_RECEB"]),
+        link=row["LINK_DOC"].strip(),
+        subject="Demonstrações Financeiras Padronizadas"
+        if document_type == "DFP"
+        else "Informações Trimestrais",
+    )
+
+
+class CvmSources:
+    def __init__(self, transport: Transport = https_get):
+        self.transport = transport
+
+    def company_register(self) -> list[CvmCompany]:
+        try:
+            return [
+                CvmCompany(
+                    cnpj=digits(row["CNPJ_CIA"]),
+                    legal_name=row["DENOM_SOCIAL"].strip(),
+                    sector=(row.get("SETOR_ATIV") or "").strip(),
+                    active=row["SIT"].strip().upper() == "ATIVO",
+                )
+                for row in _csv_rows(self.transport(CVM_REGISTER_URL))
+            ]
+        except (KeyError, AttributeError) as exc:
+            raise SourceError("unexpected_format") from exc
+
+    def document_index(self, document_type: str, year: int) -> list[CvmDocument]:
+        """Lê só o CSV de índice dentro do ZIP anual; demonstrações e PDFs não são lidos (C-09)."""
+        raw = self.transport(CVM_INDEX_URL[document_type].format(year=year))
+        expected = f"{document_type.lower()}_cia_aberta_{year}.csv"
+        try:
+            with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+                index = archive.read(expected)
+            return [cvm_document_from_row(document_type, row) for row in _csv_rows(index)]
+        except (zipfile.BadZipFile, KeyError, ValueError, AttributeError) as exc:
+            raise SourceError("unexpected_format") from exc

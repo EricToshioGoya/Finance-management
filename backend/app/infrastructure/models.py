@@ -136,6 +136,13 @@ class OfficialDocumentRecord(Base):
         CheckConstraint(
             "link_status IN ('unchecked', 'available', 'broken')", name="valid_official_link_status"
         ),
+        UniqueConstraint(
+            "company_id",
+            "document_type",
+            "cvm_reference_date",
+            "cvm_version",
+            name="uq_official_document_identity",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
@@ -151,6 +158,9 @@ class OfficialDocumentRecord(Base):
     link_status: Mapped[str] = mapped_column(String(12), default="unchecked")
     last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     synced_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # OPEN-27: identidade CNPJ (via empresa) + tipo + data de referência + versão.
+    cvm_reference_date: Mapped[date | None] = mapped_column(Date)
+    cvm_version: Mapped[int | None] = mapped_column(Integer)
 
 
 class FinancialIndicatorRecord(Base):
