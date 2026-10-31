@@ -1,0 +1,17 @@
+digraph estados_UC09 {
+  rankdir=LR;
+  node [shape=box, style="rounded", fontname="Helvetica"];
+  inicio [shape=circle, label="", width=0.2, style=filled, fillcolor=black];
+  fim [shape=doublecircle, label="", width=0.15, style=filled, fillcolor=black];
+  inicio -> Validando;
+  Validando -> Rejeitada [label="parâmetros inválidos"];
+  Validando -> ObtendoTaxa [label="parâmetros válidos"];
+  ObtendoTaxa -> AguardandoTaxaManual [label="cache ausente\nou vencido"];
+  AguardandoTaxaManual -> Validando [label="taxa manual"];
+  AguardandoTaxaManual -> Cancelada [label="cancelar"];
+  ObtendoTaxa -> Calculando [label="taxa disponível"];
+  Calculando -> Rejeitada [label="erro do motor"];
+  Calculando -> Persistindo [label="resultado"];
+  Persistindo -> Concluida [label="registrada"];
+  Rejeitada -> fim; Cancelada -> fim; Concluida -> fim;
+}

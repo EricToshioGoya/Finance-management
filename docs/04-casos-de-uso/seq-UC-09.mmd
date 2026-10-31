@@ -1,0 +1,26 @@
+sequenceDiagram
+    autonumber
+    actor U as Usuário
+    participant W as Cliente web
+    participant A as API /api/v1 (aplicação)
+    participant C as Cache de indicadores
+    participant M as Motor de juros (domínio puro)
+    participant T as Regra tributária (SPEC-004)
+    participant R as Repositório de simulações
+    U->>W: Produto, valor inicial, aporte, prazo e origem da taxa
+    W->>A: POST /auth/financial/simulations/fixed-income
+    A->>A: Valida sessão, titularidade e parâmetros (RB-28)
+    alt Taxa oficial
+        A->>C: Lê indicador válido (24h)
+        C-->>A: Valor, coleta e referência
+        opt Cache ausente ou vencido
+            A-->>W: Indisponível, oferecer taxa manual explícita
+        end
+    end
+    A->>M: Calcula bruto, juros e série mensal
+    M-->>A: Resultado ou erro
+    A->>T: Aplica alíquota versionada do produto
+    T-->>A: Imposto e valor líquido
+    A->>R: Persiste parâmetros, fonte e resultado do titular
+    A-->>W: Resultado, série, origem da taxa e avisos
+    W-->>U: Exibe projeção (saldo real não é alterado)
