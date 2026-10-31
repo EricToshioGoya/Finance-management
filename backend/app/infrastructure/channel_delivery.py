@@ -71,7 +71,7 @@ class HttpsChannelDelivery:
             method="POST",
         )
         try:
-            with urlopen(request, timeout=5) as response:  # noqa: S310 -- HTTPS validado na config
+            with urlopen(request, timeout=5) as response:  # noqa: S310  # nosec B310 - HTTPS validado
                 if not 200 <= response.status < 300:
                     raise ChannelDeliveryError("delivery rejected")
         except (OSError, URLError) as exc:

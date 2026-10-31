@@ -30,7 +30,7 @@ class HttpWebhookDelivery:
     def deliver(self, url: str, payload: bytes, headers: dict[str, str]) -> int:
         _validate_public_https_destination(url, resolve=True)
         try:
-            with urllib.request.urlopen(
+            with urllib.request.urlopen(  # nosec B310 - destino HTTPS público validado (SSRF)
                 urllib.request.Request(url, data=payload, headers=headers, method="POST"), timeout=5
             ) as response:
                 return int(response.status)

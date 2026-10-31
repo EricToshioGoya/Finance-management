@@ -48,7 +48,7 @@ class WebhookEmailConfirmationDelivery:
             method="POST",
         )
         try:
-            with urlopen(request, timeout=5) as response:  # noqa: S310 -- endpoint is HTTPS-validated config
+            with urlopen(request, timeout=5) as response:  # noqa: S310  # nosec B310 - HTTPS validado
                 if not 200 <= response.status < 300:
                     raise EmailDeliveryError("confirmation delivery was rejected")
         except (OSError, URLError) as exc:
@@ -69,7 +69,7 @@ class WebhookEmailConfirmationDelivery:
             method="POST",
         )
         try:
-            with urlopen(request, timeout=5) as response:  # noqa: S310 -- endpoint is HTTPS-validated config
+            with urlopen(request, timeout=5) as response:  # noqa: S310  # nosec B310 - HTTPS validado
                 if not 200 <= response.status < 300:
                     raise EmailDeliveryError("password reset delivery was rejected")
         except (OSError, URLError) as exc:

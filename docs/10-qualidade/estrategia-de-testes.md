@@ -108,5 +108,6 @@ O código gerado por agente segue as mesmas regras, com atenção redobrada a:
 
 - Backend: `pytest` com PostgreSQL temporário por sessão de teste; cobertura mínima de 90% exigida na CI (atual: 92%). Testes das Specs implementadas em 2026-10-31 seguem o padrão `test_SPEC_NNN_Rxx_...`.
 - Dublês: canais externos (SPEC-061), entrega de e-mail (SPEC-015) e fontes de mercado usam dublês em memória; nenhum teste chama serviço externo real (C-17).
-- CI: `.github/workflows/ci.yml` executa backend, frontend e verificador documental em cada PR.
-- Pendente: testes E2E do frontend na CI (exigem API HTTPS e navegador), teste de carga (RNF-04) e restauração de backup (RNF-14).
+- CI: `.github/workflows/ci.yml` executa backend, frontend, mobile, segurança (Bandit, `pip-audit`, `npm audit`), E2E Playwright com API HTTPS e PostgreSQL, e verificador documental em cada PR.
+- Carga (RNF-04): `scripts/carga.py` mede o P95 de simulação e dashboard; evidência em [`docs/09-qualidade/evidencias/rnf04-carga-2026-10-31.md`](../09-qualidade/evidencias/rnf04-carga-2026-10-31.md) (P95 ≤ 0,57 s).
+- Pendente: restauração de backup (RNF-14) e medição em ambiente de produção (OPEN-32).

@@ -4,7 +4,7 @@
 - **Última atualização:** 2026-10-18
 - **Drivers arquiteturais:** DA-05 e DA-06 (`docs/07-arquitetura/arquitetura.md`); decisão registrada no ADR-005
 
-Descreve como a segurança é tratada em cada etapa do ciclo de vida (Secure Software Development Life Cycle). Ferramentas em uso desde 2026-10-31: CI com testes de autenticação/RBAC, `ruff` e ESLint; as demais citadas como proposta (Bandit, `pip-audit`, `npm audit`) ainda não estão no pipeline.
+Descreve como a segurança é tratada em cada etapa do ciclo de vida (Secure Software Development Life Cycle). Ferramentas em uso desde 2026-10-31: CI com testes de autenticação/RBAC, `ruff`, ESLint, Bandit (bloqueia severidade média ou maior; exceções com `# nosec` justificado), `pip-audit` e `npm audit` (bloqueante para dependências de runtime do web; relatório não bloqueante no mobile, cujas vulnerabilidades atuais estão no ferramental do Expo SDK). A `cryptography` foi atualizada para 50.0.2 para eliminar vulnerabilidades conhecidas.
 
 ---
 
