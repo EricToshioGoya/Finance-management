@@ -6,7 +6,9 @@
 |---|---|
 | Usuário iniciante | Pouco ou nenhum conhecimento de investimentos; busca organização e primeiros passos |
 | Usuário avançado | Já investe; busca centralização, comparação de cenários e planejamento de metas |
-| Sistema | Executa cálculos financeiros, classificações de perfil e geração de dashboards |
+| Administrador | Papel autorizado a administrar metadados e métricas, sem acesso a finanças pessoais individuais |
+
+Cálculos e rotinas internas são responsabilidades do sistema, não atores externos. Iniciante/avançado são perfis de experiência; administrador é papel de acesso.
 
 ## Personas
 
@@ -73,3 +75,12 @@ Profissional técnico/operacional responsável pelo gerenciamento, manutenção 
 - Supervisionar a execução automatizada dos motores de cálculo, classificação de perfis e geração de dashboards.
 - Monitorar a saúde da aplicação, acessos, logs de auditoria e a segurança dos dados dos usuários.
 - Garantir a alta disponibilidade, conformidade com a LGPD e o funcionamento contínuo do sistema.
+
+
+## Necessidades comuns de conta
+
+Ambos os perfis precisam recuperar acesso sem suporte, confirmar seu e-mail, corrigir nome/endereço, alterar senha, escolher tema/idioma/canais e encerrar sessões em outro dispositivo. RF-68 a RF-74 atendem essas jornadas sem depender do resultado do quiz. O usuário com e-mail pendente deve receber instruções claras de confirmação e reenvio.
+
+## Necessidades comuns de conta
+
+Ambos os perfis precisam confirmar o e-mail, recuperar acesso, editar nome/endereço, trocar senha e salvar idioma/tema/notificações (RF-68 a RF-73). Devem compreender expiração/logout e poder solicitar exportação/exclusão dos próprios dados (RF-50 e RF-05). Fluxos e limites de implementação constam na matriz de cobertura da qualidade.
