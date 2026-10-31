@@ -1,6 +1,6 @@
 # ADR-005: Autenticação por JWT, Autorização por Papel e Posse dos Dados por Usuário
 
-* **Status:** Aceito
+* **Status:** parcialmente substituído na integração de 2026-10-22 pelo ADR-007-autenticacao-spec001.md (sessão, renovação e logout); autorização por papel e titularidade permanecem requisitos
 * **Data:** 2026-10-18
 * **Decisores:** Equipe de Arquitetura FinNova
 * **Drivers atendidos:** DA-05, DA-06
@@ -28,3 +28,12 @@ O FinNova guarda dados financeiros pessoais e atende clientes web e mobile pela 
 ### Negativas:
 * Revogar um token antes da expiração exige expiração curta ou refresh token, ainda em aberto (SPEC-001, OPEN-01 e OPEN-03).
 * Todo repositório de dados financeiros precisa receber o usuário autenticado como parâmetro obrigatório.
+
+
+## Reconciliação
+
+JWT sem estado e refresh pendente descrevem a proposta anterior. A implementação usa sessão persistida e revogável conforme `ADR-007-autenticacao-spec001.md`. O bloqueio por conta após cinco falhas foi implementado no complemento de 2026-10-23 do ADR-007, além do rate limit já entregue.
+
+## Reconciliação em 2026-10-22
+
+A alternativa de JWT sem estado está **substituída pelo ADR-007** para a sessão implementada. Este arquivo preserva a decisão histórica; autorização e isolamento por titular continuam requisitos. Bloqueio por conta de 5 falhas/15 minutos permanece pendente de implementação conforme RF-02. Não interpretar o estado histórico “Aceito” como comprovação de código ou testes dessas capacidades.
