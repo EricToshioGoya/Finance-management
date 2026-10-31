@@ -2,9 +2,10 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { api, errorText, money, percent, shortDate, type Lang } from './api';
 
 type SeriesRow = { month: number; opening_balance: string; contribution: string; interest: string; closing_balance: string };
-type Projection = { invested: string; interest: string; gross_amount: string; monthly_series: SeriesRow[]; rate_explanation: string; investor_guidance: string | null; tax_rate?: string; estimated_tax?: string; net_amount?: string };
+type RateSource = { origin: string; value?: string; reference_date?: string; stale?: boolean; notice?: string | null };
+type Projection = { rate_source?: RateSource | null; invested: string; interest: string; gross_amount: string; monthly_series: SeriesRow[]; rate_explanation: string; investor_guidance: string | null; tax_rate?: string; estimated_tax?: string; net_amount?: string };
 type Simulation = { id: string; kind: string; label: string; final_amount: string; created_at: string; payload: Record<string, unknown> };
-type Comparison = { simulations: Simulation[]; difference_from_first: string[] };
+type Comparison = { simulations: Simulation[]; difference_from_first: string[]; difference_percent_from_first: (string | null)[]; best_simulation_id: string };
 type Indicator = { code: string; value: string; unit: string; reference_date: string; checked_at: string; source: string; stale: boolean };
 type SimKind = 'fixed' | 'variable' | 'foreign';
 
@@ -37,7 +38,12 @@ export function Investments({ token, lang }: { token: string; lang: Lang }) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const product = String(data.get('calc-product'));
-    const body = { initial_amount: data.get('calc-initial'), monthly_contribution: data.get('calc-monthly'), annual_rate: data.get('calc-rate'), term_months: Number(data.get('calc-term')) };
+    const origin = String(data.get('calc-origin'));
+    const body = {
+      initial_amount: data.get('calc-initial'), monthly_contribution: data.get('calc-monthly'), annual_rate: data.get('calc-rate'),
+      rate_period: data.get('calc-period'), term_months: Number(data.get('calc-term')), term_unit: data.get('calc-unit'),
+      indicator_code: origin === 'manual' ? null : origin,
+    };
     setError('');
     try {
       setProjection(await api<Projection>(token, product === 'none' ? '/financial/calculator' : '/financial/fixed-income-projections', {
@@ -51,7 +57,7 @@ export function Investments({ token, lang }: { token: string; lang: Lang }) {
     const form = event.currentTarget; const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
     const common = { label: data.label, initial_amount: data.initial, monthly_contribution: data.monthly, term_months: Number(data.term) };
     const [path, body] = simKind === 'fixed'
-      ? ['/financial/simulations/fixed-income', { ...common, annual_rate: data.rate, product: data.product }]
+      ? ['/financial/simulations/fixed-income', { ...common, annual_rate: data.rate, product: data.product, indicator_code: data.origin === 'manual' ? null : data.origin }]
       : simKind === 'variable'
         ? ['/financial/simulations/variable-income', { ...common, expected_annual_return: data.rate, ticker: data.ticker || null }]
         : ['/financial/simulations/foreign-currency', { ...common, asset_annual_return: data.rate, currency: data.currency, expected_exchange_annual_change: data.exchange }];
@@ -91,8 +97,15 @@ export function Investments({ token, lang }: { token: string; lang: Lang }) {
         <form onSubmit={calculate}>
           <div className="field"><label htmlFor="calc-initial">{pt ? 'Valor inicial (R$)' : 'Initial amount (BRL)'}</label><input id="calc-initial" name="calc-initial" type="number" min="0" step="0.01" defaultValue="1000" required /></div>
           <div className="field"><label htmlFor="calc-monthly">{pt ? 'Aporte mensal (R$)' : 'Monthly contribution (BRL)'}</label><input id="calc-monthly" name="calc-monthly" type="number" min="0" step="0.01" defaultValue="200" required /></div>
-          <div className="field"><label htmlFor="calc-rate">{pt ? 'Taxa anual (%)' : 'Annual rate (%)'}</label><input id="calc-rate" name="calc-rate" type="number" min="0" step="0.01" defaultValue="10" required /></div>
-          <div className="field"><label htmlFor="calc-term">{pt ? 'Prazo (meses)' : 'Term (months)'}</label><input id="calc-term" name="calc-term" type="number" min="1" max="720" defaultValue="24" required /></div>
+          <div className="field"><label htmlFor="calc-origin">{pt ? 'Origem da taxa' : 'Rate source'}</label>
+            <select id="calc-origin" name="calc-origin" defaultValue="manual"><option value="manual">{pt ? 'Manual' : 'Manual'}</option><option value="selic">SELIC</option><option value="cdi">CDI</option><option value="ipca">IPCA</option></select></div>
+          <div className="field"><label htmlFor="calc-rate">{pt ? 'Taxa (%)' : 'Rate (%)'}</label><input id="calc-rate" name="calc-rate" type="number" min="0" step="0.01" defaultValue="10" required /></div>
+          <div className="field"><label htmlFor="calc-period">{pt ? 'Período da taxa' : 'Rate period'}</label>
+            <select id="calc-period" name="calc-period" defaultValue="annual"><option value="annual">{pt ? 'Ao ano' : 'Per year'}</option><option value="monthly">{pt ? 'Ao mês' : 'Per month'}</option></select></div>
+          <div className="field"><label htmlFor="calc-term">{pt ? 'Prazo' : 'Term'}</label><input id="calc-term" name="calc-term" type="number" min="1" max="720" defaultValue="24" required /></div>
+          <div className="field"><label htmlFor="calc-unit">{pt ? 'Unidade do prazo' : 'Term unit'}</label>
+            <select id="calc-unit" name="calc-unit" defaultValue="months"><option value="months">{pt ? 'Meses' : 'Months'}</option><option value="years">{pt ? 'Anos' : 'Years'}</option></select></div>
+          <p className="hint">{pt ? 'Com SELIC, CDI ou IPCA, a taxa vem do cache local de indicadores e o campo Taxa é ignorado.' : 'With SELIC, CDI or IPCA, the rate comes from the local indicator cache and the Rate field is ignored.'}</p>
           <div className="field"><label htmlFor="calc-product">{pt ? 'Imposto de renda' : 'Income tax'}</label>
             <select id="calc-product" name="calc-product" defaultValue="none"><option value="none">{pt ? 'Sem IR (valor bruto)' : 'No tax (gross)'}</option><option value="cdb">CDB</option><option value="tesouro">Tesouro Direto</option><option value="poupanca">{pt ? 'Poupança (isenta)' : 'Savings (exempt)'}</option></select></div>
           <button type="submit">{pt ? 'Calcular' : 'Calculate'}</button>
@@ -113,6 +126,7 @@ export function Investments({ token, lang }: { token: string; lang: Lang }) {
               return <rect key={row.month} x={10 + index * width} y={130 - height} width={Math.max(2, width - 3)} height={height} rx="2" className="bar-income"><title>{pt ? 'Mês' : 'Month'} {row.month}: {money(row.closing_balance, lang)}</title></rect>;
             })}
           </svg>
+          {projection.rate_source && projection.rate_source.origin !== 'manual' && <p className="hint">{pt ? 'Taxa' : 'Rate'} {projection.rate_source.origin.toUpperCase()}: {percent(projection.rate_source.value ?? 0, lang)} · {pt ? 'Ref.' : 'Ref.'} {shortDate(projection.rate_source.reference_date ?? '', lang)}{projection.rate_source.stale ? ` · ${projection.rate_source.notice ?? (pt ? 'valor desatualizado' : 'stale value')}` : ''}</p>}
           <p className="hint">{projection.rate_explanation}</p>
           {projection.investor_guidance && <p className="hint">{projection.investor_guidance}</p>}
         </>}
@@ -131,6 +145,7 @@ export function Investments({ token, lang }: { token: string; lang: Lang }) {
         <div className="field"><label htmlFor="sim-monthly">{pt ? 'Aporte mensal (R$)' : 'Monthly contribution (BRL)'}</label><input id="sim-monthly" name="monthly" type="number" min="0" step="0.01" defaultValue="200" required /></div>
         <div className="field"><label htmlFor="sim-rate">{simKind === 'fixed' ? (pt ? 'Taxa anual (%)' : 'Annual rate (%)') : (pt ? 'Retorno anual esperado (%)' : 'Expected annual return (%)')}</label><input id="sim-rate" name="rate" type="number" min="0" step="0.01" defaultValue="10" required /></div>
         <div className="field"><label htmlFor="sim-term">{pt ? 'Prazo (meses)' : 'Term (months)'}</label><input id="sim-term" name="term" type="number" min="1" max="720" defaultValue="24" required /></div>
+        {simKind === 'fixed' && <div className="field"><label htmlFor="sim-origin">{pt ? 'Origem da taxa' : 'Rate source'}</label><select id="sim-origin" name="origin" defaultValue="manual"><option value="manual">{pt ? 'Manual' : 'Manual'}</option><option value="selic">SELIC</option><option value="cdi">CDI</option><option value="ipca">IPCA</option></select></div>}
         {simKind === 'fixed' && <div className="field"><label htmlFor="sim-product">{pt ? 'Produto' : 'Product'}</label><select id="sim-product" name="product"><option value="cdb">CDB</option><option value="tesouro">Tesouro Direto</option><option value="poupanca">{pt ? 'Poupança' : 'Savings'}</option></select></div>}
         {simKind === 'variable' && <div className="field"><label htmlFor="sim-ticker">{pt ? 'Ticker de referência (opcional)' : 'Reference ticker (optional)'}</label><input id="sim-ticker" name="ticker" pattern="[A-Za-z]{4,5}[0-9]{1,2}" placeholder="PETR4" /></div>}
         {simKind === 'foreign' && <div className="field"><label htmlFor="sim-currency">{pt ? 'Moeda' : 'Currency'}</label><select id="sim-currency" name="currency"><option value="USD">USD</option><option value="EUR">EUR</option></select></div>}
@@ -156,8 +171,16 @@ export function Investments({ token, lang }: { token: string; lang: Lang }) {
       </>}
       {comparison && <div className="table-wrap" tabIndex={0}><table>
         <caption>{pt ? 'Comparação: diferença em relação à primeira simulação' : 'Comparison: difference from the first simulation'}</caption>
-        <thead><tr><th>{pt ? 'Simulação' : 'Simulation'}</th><th className="num">{pt ? 'Valor final' : 'Final amount'}</th><th className="num">{pt ? 'Diferença' : 'Difference'}</th></tr></thead>
-        <tbody>{comparison.simulations.map((item, index) => <tr key={item.id}><td>{item.label}</td><td className="num">{money(item.final_amount, lang)}</td><td className="num">{money(comparison.difference_from_first[index], lang)}</td></tr>)}</tbody>
+        <thead><tr><th>{pt ? 'Simulação' : 'Simulation'}</th><th className="num">{pt ? 'Valor final' : 'Final amount'}</th><th className="num">{pt ? 'Diferença' : 'Difference'}</th><th className="num">{pt ? 'Diferença (%)' : 'Difference (%)'}</th></tr></thead>
+        <tbody>{comparison.simulations.map((item, index) => {
+          const best = item.id === comparison.best_simulation_id;
+          const pct = comparison.difference_percent_from_first[index];
+          return <tr key={item.id} className={best ? 'best' : undefined}>
+            <td>{item.label}{best && <strong className="badge-best">{pt ? ' Melhor cenário' : ' Best scenario'}</strong>}</td>
+            <td className="num">{money(item.final_amount, lang)}</td><td className="num">{money(comparison.difference_from_first[index], lang)}</td>
+            <td className="num">{pct === null ? '—' : percent(pct, lang, 2)}</td>
+          </tr>;
+        })}</tbody>
       </table></div>}
     </section>
   </div>;

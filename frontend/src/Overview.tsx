@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, currentCompetence, errorText, money, percent, shiftCompetence, type Lang } from './api';
 
 type Summary = { competence: string; recurring_income: string; one_time_income: string; bonus: string; total: string; expenses: string; balance_variation: string };
-type Expense = { id: string; amount: string; category_key: string; occurred_on: string; recurring: boolean };
+type CategorySpending = { category_key: string; total: string; percentage: string };
 type Category = { key: string; name: string; color: string };
 type Budget = { id: string; kind: string; category_key: string | null; target: string; actual: string; percentage: string; status: string };
 
@@ -19,7 +19,7 @@ export function Overview({ token, lang }: { token: string; lang: Lang }) {
   const [competence, setCompetence] = useState(currentCompetence);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [months, setMonths] = useState<Summary[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [spending, setSpending] = useState<CategorySpending[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [error, setError] = useState('');
@@ -31,11 +31,11 @@ export function Overview({ token, lang }: { token: string; lang: Lang }) {
       const [current, series, items, cats, progress] = await Promise.all([
         api<Summary>(token, `/financial/balance-summary?competence=${competence}`),
         api<Summary[]>(token, `/financial/dashboard?start=${start}&end=${competence}`),
-        api<Expense[]>(token, '/financial/expenses'),
+        api<CategorySpending[]>(token, `/financial/spending-by-category?start=${competence}&end=${competence}`),
         api<Category[]>(token, '/categories'),
         api<Budget[]>(token, `/financial/budget-progress?competence=${competence}`),
       ]);
-      setSummary(current); setMonths(series); setExpenses(items); setCategories(cats); setBudgets(progress);
+      setSummary(current); setMonths(series); setSpending(items); setCategories(cats); setBudgets(progress);
     } catch (cause) { setError(errorText(cause, lang)); }
   }, [token, competence, lang]);
 
@@ -46,23 +46,17 @@ export function Overview({ token, lang }: { token: string; lang: Lang }) {
     return () => window.removeEventListener('finnova-financial-changed', refresh);
   }, [load]);
 
-  // Gastos do mês agrupados por categoria (pizza de RF-16), apenas lançamentos pontuais do mês.
-  const byCategory = new Map<string, number>();
-  for (const item of expenses) {
-    if (item.recurring ? item.occurred_on.slice(0, 7) <= competence : item.occurred_on.startsWith(competence)) {
-      byCategory.set(item.category_key, (byCategory.get(item.category_key) ?? 0) + Number(item.amount));
-    }
-  }
-  const slices = [...byCategory.entries()].sort((a, b) => b[1] - a[1]);
+  // Gastos do mês por categoria (pizza de RF-16), agregados no backend (SPEC-022).
+  const slices = spending.map(item => [item.category_key, Number(item.total), item.percentage] as const);
   const totalSlices = slices.reduce((sum, [, value]) => sum + value, 0);
   const category = (key: string) => categories.find(item => item.key === key);
   let angle = 0;
-  const arcs = slices.map(([key, value]) => {
+  const arcs = slices.map(([key, value, share]) => {
     const start = angle; angle += value / (totalSlices || 1) * Math.PI * 2;
     const large = angle - start > Math.PI ? 1 : 0;
     const point = (a: number) => `${80 + 70 * Math.sin(a)},${80 - 70 * Math.cos(a)}`;
     const d = slices.length === 1 ? 'M80,10 A70,70 0 1 1 79.99,10 Z' : `M80,80 L${point(start)} A70,70 0 ${large} 1 ${point(angle)} Z`;
-    return { key, value, d, color: category(key)?.color ?? '#8a9a90' };
+    return { key, value, share, d, color: category(key)?.color ?? '#8a9a90' };
   });
   const peak = Math.max(1, ...months.flatMap(item => [Number(item.total), Number(item.expenses)]));
 
@@ -94,7 +88,7 @@ export function Overview({ token, lang }: { token: string; lang: Lang }) {
               return <g key={item.competence}>
                 <rect x={x} y={170 - h1} width="20" height={h1} rx="3" className="bar-income"><title>{money(item.total, lang)}</title></rect>
                 <rect x={x + 22} y={170 - h2} width="20" height={h2} rx="3" className="bar-expense"><title>{money(item.expenses, lang)}</title></rect>
-                <text x={x + 21} y="188" textAnchor="middle" fontSize="10" fill="currentColor">{monthLabel(item.competence, lang)}</text>
+                <text x={x + 21} y="188" textAnchor="middle" fontSize="10" fill={Number(item.expenses) > Number(item.total) ? '#a02220' : 'currentColor'} fontWeight={Number(item.expenses) > Number(item.total) ? 700 : 400}>{monthLabel(item.competence, lang)}</text>
               </g>;
             })}
           </svg>
@@ -102,8 +96,12 @@ export function Overview({ token, lang }: { token: string; lang: Lang }) {
           <div className="table-wrap" tabIndex={0}><table>
             <caption>{pt ? 'Valores por mês' : 'Values per month'}</caption>
             <thead><tr><th>{pt ? 'Mês' : 'Month'}</th><th>{pt ? 'Receitas' : 'Income'}</th><th>{pt ? 'Despesas' : 'Expenses'}</th><th>{pt ? 'Saldo' : 'Net'}</th></tr></thead>
-            <tbody>{months.map(item => <tr key={item.competence}><th scope="row">{monthLabel(item.competence, lang)}</th><td>{money(item.total, lang)}</td><td>{money(item.expenses, lang)}</td><td>{money(item.balance_variation, lang)}</td></tr>)}</tbody>
+            <tbody>{months.map(item => {
+              const negative = Number(item.expenses) > Number(item.total);
+              return <tr key={item.competence} className={negative ? 'negative-month' : undefined}><th scope="row">{monthLabel(item.competence, lang)}</th><td>{money(item.total, lang)}</td><td>{money(item.expenses, lang)}</td><td>{money(item.balance_variation, lang)}{negative && <span className="sr-only">{pt ? ' (despesas acima das receitas)' : ' (expenses above income)'}</span>}</td></tr>;
+            })}</tbody>
           </table></div>
+          {months.some(item => Number(item.expenses) > Number(item.total)) && <p className="hint">{pt ? 'Meses em vermelho tiveram despesas acima das receitas.' : 'Months in red had expenses above income.'}</p>}
         </>}
       </section>
 
@@ -113,7 +111,7 @@ export function Overview({ token, lang }: { token: string; lang: Lang }) {
           <svg viewBox="0 0 160 160" role="img" aria-label={pt ? 'Gráfico de pizza dos gastos por categoria' : 'Pie chart of spending by category'}>
             {arcs.map(arc => <path key={arc.key} d={arc.d} fill={arc.color} stroke="#fff" strokeWidth="1"><title>{category(arc.key)?.name ?? arc.key}: {money(arc.value, lang)}</title></path>)}
           </svg>
-          <ul className="legend-list">{arcs.map(arc => <li key={arc.key}><span className="dot" style={{ background: arc.color }} />{category(arc.key)?.name ?? arc.key}<b>{money(arc.value, lang)}</b><small>{percent(arc.value / totalSlices * 100, lang, 1)}</small></li>)}</ul>
+          <ul className="legend-list">{arcs.map(arc => <li key={arc.key}><span className="dot" style={{ background: arc.color }} />{category(arc.key)?.name ?? arc.key}<b>{money(arc.value, lang)}</b><small>{percent(arc.share, lang, 1)}</small></li>)}</ul>
         </div>}
       </section>
     </div>
@@ -125,7 +123,7 @@ export function Overview({ token, lang }: { token: string; lang: Lang }) {
           <div><strong>{goal.kind === 'expense_total' ? (pt ? 'Gasto total' : 'Total spending') : goal.kind === 'income_total' ? (pt ? 'Renda total' : 'Total income') : category(goal.category_key ?? '')?.name ?? goal.category_key}</strong>
             <span>{money(goal.actual, lang)} / {money(goal.target, lang)}</span></div>
           <progress max={100} value={Math.min(100, Number(goal.percentage))} aria-label={percent(goal.percentage, lang, 0)} className={goal.status} />
-          <small>{percent(goal.percentage, lang, 0)} · {goal.status === 'exceeded' ? (pt ? 'excedida' : 'exceeded') : goal.status === 'alert' ? (pt ? 'perto do limite' : 'near the limit') : goal.status === 'attention' ? (pt ? 'atenção' : 'attention') : (pt ? 'dentro da meta' : 'on track')}</small>
+          <small>{percent(goal.percentage, lang, 0)} · {goal.status === 'exceeded' ? (pt ? 'excedida' : 'exceeded') : goal.status === 'reached' ? (pt ? 'meta de renda atingida' : 'income goal reached') : goal.status === 'below_target' ? (pt ? 'renda abaixo da meta' : 'income below target') : goal.status === 'alert' ? (pt ? 'perto do limite' : 'near the limit') : goal.status === 'attention' ? (pt ? 'atenção' : 'attention') : (pt ? 'dentro da meta' : 'on track')}</small>
         </li>)}</ul>}
     </section>
   </div>;

@@ -49,7 +49,7 @@ from app.domain.financeiro import (
 from app.domain.financing import simulate_financing
 from app.domain.financing_comparison import compare_financing_and_investing
 from app.domain.foreign_currency import calcular_projecao_moeda_estrangeira
-from app.domain.juros_compostos import ErroCalculo, arredondar_moeda
+from app.domain.juros_compostos import ErroCalculo, MotorJurosCompostos, arredondar_moeda
 from app.infrastructure.account_deletion import DeletionJournal
 from app.infrastructure.email_delivery import (
     EmailConfirmationDelivery,
@@ -103,6 +103,7 @@ from app.presentation.schemas import (
     EngagementOutput,
     ProfileDistributionOutput,
     AnnualSummaryOutput,
+    CategorySpendingOutput,
     DeliveryOutput,
     MonthlySummaryOutput,
     PushDeviceInput,
@@ -1308,14 +1309,37 @@ def create_app(
         auth.delete_net_worth_item(user.id, item_id)
         return Response(status_code=204)
 
+    def with_rate_source(data, auth: AuthService):
+        """Resolve a origem da taxa: indicador oficial em cache ou valor manual informado."""
+        if data.indicator_code is None:
+            return data, {"origin": "manual"}
+        indicator = auth.indicator(data.indicator_code)  # 503 se ausente: nunca zero (C-08)
+        source = {
+            "origin": data.indicator_code,
+            "value": str(indicator["value"]),
+            "reference_date": indicator["reference_date"].isoformat(),
+            "stale": indicator["stale"],
+            "notice": "Último valor disponível; a fonte oficial não foi atualizada no prazo."
+            if indicator["stale"]
+            else None,
+        }
+        return (
+            data.model_copy(update={"annual_rate": indicator["value"], "rate_period": "annual"}),
+            source,
+        )
+
     def calculator_result(
-        data: CalculatorInput, investor_profile: str | None = None
+        data: CalculatorInput,
+        investor_profile: str | None = None,
+        rate_source: dict[str, object] | None = None,
     ) -> CalculatorOutput:
-        result = projetar(
-            inicial=data.initial_amount,
-            aporte=data.monthly_contribution,
-            taxa=data.annual_rate,
+        result = MotorJurosCompostos.calcular(
+            valor_inicial=data.initial_amount,
+            aporte_mensal=data.monthly_contribution,
+            taxa_percentual=data.annual_rate,
+            periodicidade_taxa="mensal" if data.rate_period == "monthly" else "anual",
             prazo=data.term_months,
+            unidade_prazo="anos" if data.term_unit == "years" else "meses",
         )
         return CalculatorOutput(
             invested=arredondar_moeda(result.total_investido),
@@ -1332,10 +1356,14 @@ def create_app(
                 for row in result.serie
             ],
             rate_explanation=(
-                "A taxa anual é convertida para taxa mensal equivalente e os aportes entram "
-                "ao fim de cada mês."
+                "A taxa anual é convertida para a taxa mensal equivalente por juros compostos; "
+                "os aportes entram ao fim de cada mês."
+                if data.rate_period == "annual"
+                else "A taxa informada já é mensal e é aplicada diretamente a cada mês; "
+                "os aportes entram ao fim de cada mês."
             ),
             investor_guidance=PROFILE_GUIDANCE.get(investor_profile),
+            rate_source=rate_source,
         )
 
     # SPEC-041: only the owner uses the ordinary access session to grant/revoke.
@@ -1491,7 +1519,8 @@ def create_app(
             raise AuthError("invalid_session")
         user, _ = auth.authenticate(credentials.credentials)
         auth.require_category_owner(user.id)
-        return calculator_result(data, user.investor_profile)
+        data, source = with_rate_source(data, auth)
+        return calculator_result(data, user.investor_profile, source)
 
     @app.post(
         f"{FINANCIAL_PREFIX}/fixed-income-projections",
@@ -1503,13 +1532,14 @@ def create_app(
             raise AuthError("invalid_session")
         user, _ = auth.authenticate(credentials.credentials)
         auth.require_category_owner(user.id)
-        calculation = calculator_result(data, user.investor_profile)
+        data, source = with_rate_source(data, auth)
+        calculation = calculator_result(data, user.investor_profile, source)
         tax, net = resultado_liquido(
-            calculation.gross_amount, calculation.invested, data.term_months, data.product
+            calculation.gross_amount, calculation.invested, data.months, data.product
         )
         return TaxProjectionOutput(
             **calculation.model_dump(),
-            tax_rate=aliquota_ir_renda_fixa(data.term_months, data.product),
+            tax_rate=aliquota_ir_renda_fixa(data.months, data.product),
             estimated_tax=arredondar_moeda(tax),
             net_amount=arredondar_moeda(net),
         )
@@ -1526,9 +1556,11 @@ def create_app(
         if not credentials:
             raise AuthError("invalid_session")
         user, _ = auth.authenticate(credentials.credentials)
-        calculation = calculator_result(data, user.investor_profile)
+        auth.require_category_owner(user.id)
+        data, source = with_rate_source(data, auth)
+        calculation = calculator_result(data, user.investor_profile, source)
         tax, net = resultado_liquido(
-            calculation.gross_amount, calculation.invested, data.term_months, data.product
+            calculation.gross_amount, calculation.invested, data.months, data.product
         )
         return SimulationOutput.model_validate(
             auth.save_simulation(
@@ -1540,11 +1572,12 @@ def create_app(
                     "initial_amount": str(data.initial_amount),
                     "monthly_contribution": str(data.monthly_contribution),
                     "annual_rate": str(data.annual_rate),
-                    "term_months": data.term_months,
+                    "term_months": data.months,
                     "gross_amount": str(calculation.gross_amount),
                     "estimated_tax": str(tax),
                     "net_amount": str(net),
-                    "tax_rate": str(aliquota_ir_renda_fixa(data.term_months, data.product)),
+                    "tax_rate": str(aliquota_ir_renda_fixa(data.months, data.product)),
+                    "rate_source": source,
                 },
                 net,
             )
@@ -1642,6 +1675,25 @@ def create_app(
             taxa=data.expected_annual_return,
             prazo=data.term_months,
         )
+        quote_snapshot = None
+        if data.ticker:
+            # SPEC-009-R04: preço atual e histórico pré-preenchidos quando há referência válida.
+            try:
+                found = quotes.quote(data.ticker)
+                quote_snapshot = {
+                    "price": str(found["price"]),
+                    "referenced_at": found["referenced_at"].isoformat(),
+                    "source_name": found["source_name"],
+                    "history": [
+                        {
+                            "quoted_on": row["quoted_on"].isoformat(),
+                            "close": str(row["close_price"]),
+                        }
+                        for row in found["history"]
+                    ],
+                }
+            except AuthError:
+                quote_snapshot = None
         risk_metrics = None
         if data.ticker and auth.advanced_metrics_preference(user.id)["enabled"]:
             risk_metrics = RiskMetricsOutput.model_validate(
@@ -1659,12 +1711,21 @@ def create_app(
                     "term_months": data.term_months,
                     "ticker": data.ticker.upper() if data.ticker else None,
                     "risk_metrics": risk_metrics,
+                    "quote": quote_snapshot,
+                    # SPEC-009-R06: evolução estimada mês a mês (saldo ao fim de cada mês).
+                    "monthly_series": [
+                        {
+                            "month": row.mes,
+                            "closing_balance": str(arredondar_moeda(row.saldo_final)),
+                        }
+                        for row in result.serie
+                    ],
                     "disclaimer": (
                         "Projeção educacional com retorno informado manualmente; "
                         "não é cotação nem garantia."
                     ),
                 },
-                result.montante,
+                arredondar_moeda(result.montante),
             )
         )
 
@@ -1883,6 +1944,22 @@ def create_app(
             BudgetProgressOutput.model_validate(item)
             for item in auth.budget_progress(user.id, selected)
         ]
+
+    @app.get(
+        f"{FINANCIAL_PREFIX}/spending-by-category",
+        response_model=list[CategorySpendingOutput],
+        tags=["financial"],
+    )
+    def spending_by_category(start: str, end: str, auth: Service, credentials: Credentials):
+        if not credentials:
+            raise AuthError("invalid_session")
+        user, _ = auth.authenticate(credentials.credentials)
+        try:
+            start_month = date.fromisoformat(f"{start}-01")
+            end_month = date.fromisoformat(f"{end}-01")
+        except ValueError as exc:
+            raise AuthError("invalid_period", 400) from exc
+        return auth.spending_by_category(user.id, start_month, end_month)
 
     @app.get(
         f"{FINANCIAL_PREFIX}/dashboard",

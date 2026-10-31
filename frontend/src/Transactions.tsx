@@ -81,7 +81,11 @@ export function Transactions({ token, lang }: { token: string; lang: Lang }) {
     }
   }
 
-  const remove = (path: string) => run(() => api(token, path, { method: 'DELETE' }), pt ? 'Lançamento excluído.' : 'Entry deleted.');
+  // SPEC-006-R04: exclusão só após confirmação explícita do usuário.
+  const remove = (path: string, label: string) => {
+    if (!window.confirm(pt ? `Excluir "${label}"? Esta ação não pode ser desfeita.` : `Delete "${label}"? This cannot be undone.`)) return;
+    void run(() => api(token, path, { method: 'DELETE' }), pt ? 'Lançamento excluído.' : 'Entry deleted.');
+  };
   const categoryName = (key: string) => categories.find(item => item.key === key)?.name ?? key;
   const tabs: [Kind, string][] = [['expense', pt ? 'Despesa' : 'Expense'], ['one-time', pt ? 'Receita pontual' : 'One-time income'], ['recurring', pt ? 'Receita recorrente' : 'Recurring income'], ['bonus', pt ? 'Bônus/PLR' : 'Bonus']];
   const rows = [
@@ -133,7 +137,7 @@ export function Transactions({ token, lang }: { token: string; lang: Lang }) {
           <td className={`num ${row.amount < 0 ? 'negative' : 'positive'}`}>{money(row.amount, lang)}</td>
           <td className="row-actions">
             {row.expense && <button type="button" className="secondary" onClick={() => { setKind('expense'); setEditing(row.expense); }} aria-label={`${pt ? 'Editar' : 'Edit'} ${row.label}`}>{pt ? 'Editar' : 'Edit'}</button>}
-            <button type="button" className="secondary danger" disabled={busy} onClick={() => void remove(row.path)} aria-label={`${pt ? 'Excluir' : 'Delete'} ${row.label}`}>{pt ? 'Excluir' : 'Delete'}</button>
+            <button type="button" className="secondary danger" disabled={busy} onClick={() => remove(row.path, row.label)} aria-label={`${pt ? 'Excluir' : 'Delete'} ${row.label}`}>{pt ? 'Excluir' : 'Delete'}</button>
           </td>
         </tr>)}</tbody>
       </table></div>}

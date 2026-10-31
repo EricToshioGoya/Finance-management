@@ -80,7 +80,7 @@ export function Planning({ token, lang }: { token: string; lang: Lang }) {
         <ul className="progress-list">{goals.map(goal => <li key={goal.id}>
           <div><strong>{goalName(goal)}</strong><span>{money(goal.actual, lang)} / {money(goal.target, lang)}</span></div>
           <progress max={100} value={Math.min(100, Number(goal.percentage))} className={goal.status} aria-label={percent(goal.percentage, lang, 0)} />
-          <small>{percent(goal.percentage, lang, 0)}</small>
+          <small>{percent(goal.percentage, lang, 0)} · {({ exceeded: pt ? 'excedida' : 'exceeded', alert: pt ? 'perto do limite' : 'near the limit', attention: pt ? 'atenção' : 'attention', reached: pt ? 'meta de renda atingida' : 'income goal reached', below_target: pt ? 'renda abaixo da meta' : 'income below target' } as Record<string, string>)[goal.status] ?? (pt ? 'dentro da meta' : 'on track')}</small>
         </li>)}</ul>
       </section>
 

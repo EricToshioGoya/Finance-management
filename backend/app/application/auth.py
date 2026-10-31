@@ -1550,9 +1550,20 @@ class AuthService:
             raise AuthError("simulation_not_found", 404)
         ordered = [by_id[item] for item in ids]
         baseline = ordered[0].final_amount
+        best = max(ordered, key=lambda record: record.final_amount)  # empate: o primeiro
         return {
             "simulations": [self.simulation_output(record) for record in ordered],
             "difference_from_first": [record.final_amount - baseline for record in ordered],
+            # SPEC-010-R04/R05: diferença percentual e cenário de maior resultado final.
+            "difference_percent_from_first": [
+                ((record.final_amount - baseline) / baseline * Decimal("100")).quantize(
+                    Decimal("0.01")
+                )
+                if baseline
+                else None
+                for record in ordered
+            ],
+            "best_simulation_id": best.id,
         }
 
     def card_invoice(
@@ -2301,7 +2312,10 @@ class AuthService:
             )
             percentage = actual / goal.target * Decimal("100")
             level = "on_track"
-            if percentage >= Decimal("100"):
+            if goal.kind == "income_total":
+                # SPEC-021-R06: meta de renda é piso; sinaliza quando não foi atingida.
+                level = "reached" if percentage >= Decimal("100") else "below_target"
+            elif percentage >= Decimal("100"):
                 level = "exceeded"
             elif percentage >= goal.alert_threshold:
                 level = "alert"
@@ -2449,6 +2463,38 @@ class AuthService:
             "rule_version": rule.version,
             "educational": True,
         }
+
+    def spending_by_category(
+        self, user_id: uuid.UUID, start: date, end: date
+    ) -> list[dict[str, object]]:
+        """SPEC-022-R03/R05: total por categoria no intervalo; categorias sem gasto não aparecem."""
+        if start > end:
+            raise AuthError("invalid_period", 400)
+        self.require_category_owner(user_id)
+        totals: dict[str, Decimal] = {}
+        current = start.replace(day=1)
+        while current <= end.replace(day=1):
+            month_start, month_end = self.month_bounds(current)
+            for record in self.db.scalars(
+                select(ExpenseRecord).where(ExpenseRecord.user_id == user_id)
+            ):
+                if (record.recurring and record.occurred_on < month_end) or (
+                    not record.recurring and month_start <= record.occurred_on < month_end
+                ):
+                    totals[record.category_key] = (
+                        totals.get(record.category_key, Decimal("0")) + record.amount
+                    )
+            current = month_end
+        grand = sum(totals.values(), Decimal("0"))
+        return [
+            {
+                "category_key": key,
+                "total": value,
+                "percentage": (value / grand * Decimal("100")).quantize(Decimal("0.01")),
+            }
+            for key, value in sorted(totals.items(), key=lambda item: (-item[1], item[0]))
+            if value > 0
+        ]
 
     def dashboard(self, user_id: uuid.UUID, start: date, end: date) -> list[dict[str, object]]:
         if start > end:

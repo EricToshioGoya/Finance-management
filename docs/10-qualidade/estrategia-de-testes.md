@@ -38,6 +38,8 @@ def test_spec002_r02_converte_taxa_anual_por_equivalencia_composta():
 
 - A coluna "Teste previsto" da seção 5 de cada spec indica o nível de teste esperado.
 - No PR, a pergunta de revisão é: "cada cláusula alterada tem teste e o teste passa?".
+- `python scripts/verificar-c02.py` lista as cláusulas `SHALL` sem teste que cite o ID (nome `test_SPEC_NNN_Rxx` ou texto `SPEC-NNN-Rxx`). Executado como relatório na CI (job `documentacao`); com `--estrito`, falha se houver pendência.
+- Situação em 2026-10-31: 201 de 398 cláusulas citadas. As 16 specs que usavam testes agrupados (SPEC-004 a 010, 013, 020 a 022, 024 e 056 a 059) estão completas. As demais têm testes por comportamento em `backend/tests/test_specNNN_*.py`, mas ainda sem citação nominal da cláusula; a renomeação/anotação é a próxima etapa da rastreabilidade.
 
 ## 4. Suítes obrigatórias de risco
 
