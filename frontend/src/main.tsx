@@ -16,6 +16,7 @@ import { Overview } from './Overview';
 import { Transactions } from './Transactions';
 import { CardInvoice, Planning } from './Planning';
 import { Investments } from './Investments';
+import { Sharing } from './Sharing';
 import { AdminEngagement, AdminProfileDistribution, NetWorthItems, Notifications, Watchlist } from './Extras';
 import { money } from './api';
 import './style.css';
@@ -38,7 +39,7 @@ type PublicCompany = { id: string; ticker: string; cnpj: string; legal_name: str
 type OfficialDocument = { id: string; company_id: string; document_type: 'DFP' | 'ITR' | 'FRE' | 'IPE'; subject: string; reference_period: string; delivered_at: string; status: 'active' | 'restated' | 'replaced'; official_url: string; link_status: 'unchecked' | 'available' | 'broken'; last_checked_at: string | null };
 type FinancialIndicator = { id: string; company_id: string; metric: 'net_revenue' | 'net_income' | 'equity'; period_kind: 'annual' | 'quarterly'; reference_period: string; reference_date: string; value: string; unit: 'BRL_THOUSANDS'; source_name: string; source_url: string; status: 'active' | 'restated'; published_at: string; synced_at: string; effective: boolean };
 type MarketQuote = { ticker: string; asset_kind: 'stock' | 'fii'; price: string; daily_change_percent: string; referenced_at: string; fresh_until: string; source_name: string; catalogue_type: 'local_reference'; history: { quoted_on: string; close_price: string }[] };
-type Tab = 'overview' | 'transactions' | 'planning' | 'investments' | 'patrimony' | 'financing' | 'companies' | 'learn' | 'account' | 'admin';
+type Tab = 'overview' | 'transactions' | 'sharing' | 'planning' | 'investments' | 'patrimony' | 'financing' | 'companies' | 'learn' | 'account' | 'admin';
 const prefix = '/api/v1/auth';
 const visualPreview = document.documentElement.dataset.preview === 'visual';
 const interactivePreview = document.documentElement.dataset.preview === 'interactive';
@@ -551,6 +552,7 @@ function App() {
     const pt = lang === 'pt';
     const tabs: [Tab, string][] = [
       ['overview', pt ? 'Visão geral' : 'Overview'], ['transactions', pt ? 'Lançamentos' : 'Transactions'],
+      ['sharing', pt ? 'Compartilhado' : 'Shared'],
       ['planning', pt ? 'Planejamento' : 'Planning'], ['investments', pt ? 'Investimentos' : 'Investments'],
       ['patrimony', pt ? 'Patrimônio' : 'Net worth'], ['financing', pt ? 'Financiamentos' : 'Financing'],
       ['companies', pt ? 'Empresas' : 'Companies'], ['learn', pt ? 'Aprender' : 'Learn'],
@@ -628,6 +630,7 @@ function App() {
           </div>
         </div>
       </> : needsVerification,
+      sharing: financial && token ? <Sharing token={token} lang={lang} /> : needsVerification,
       planning: financial && token ? <><Planning token={token} lang={lang} /><NamedAssetGoals token={token} lang={lang} /><FinancialStress token={token} lang={lang} /></> : needsVerification,
       investments: financial && token ? <><Investments token={token} lang={lang} /><div className="grid-2"><InvestmentAllocation token={token} lang={lang} />
         <section className="profile" aria-labelledby="market-title">

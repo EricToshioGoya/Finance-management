@@ -838,3 +838,73 @@ class BudgetGoalRecord(Base):
     category_key: Mapped[str | None] = mapped_column(String(80))
     target: Mapped[Decimal] = mapped_column(Numeric(14, 2))
     alert_threshold: Mapped[Decimal] = mapped_column(Numeric(5, 2), default=Decimal("90"))
+
+
+class SharedLinkRecord(Base):
+    """SPEC-044: convite e vínculo entre dois titulares (conta compartilhada)."""
+
+    __tablename__ = "shared_links"
+    __table_args__ = (
+        CheckConstraint("inviter_id <> invitee_id", name="distinct_shared_members"),
+        CheckConstraint(
+            "status IN ('pending', 'active', 'declined', 'cancelled', 'expired', 'ended')",
+            name="valid_shared_link_status",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    inviter_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    invitee_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    status: Mapped[str] = mapped_column(String(12))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    responded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class SharedExpenseRecord(Base):
+    """SPEC-045: despesa do pagador marcada como compartilhada dentro de um vínculo."""
+
+    __tablename__ = "shared_expenses"
+    __table_args__ = (
+        CheckConstraint(
+            "payer_percent > 0 AND payer_percent < 100", name="valid_shared_payer_percent"
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    link_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("shared_links.id", ondelete="CASCADE"), index=True
+    )
+    expense_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("expenses.id", ondelete="CASCADE"), unique=True
+    )
+    payer_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    payer_percent: Mapped[Decimal] = mapped_column(Numeric(5, 2))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class SettlementRecord(Base):
+    """SPEC-045: acerto de contas registrado entre os membros (sem transferência bancária)."""
+
+    __tablename__ = "shared_settlements"
+    __table_args__ = (
+        CheckConstraint("amount > 0", name="positive_settlement"),
+        UniqueConstraint(
+            "link_id", "payer_id", "idempotency_key", name="uq_settlement_idempotency"
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    link_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("shared_links.id", ondelete="CASCADE"), index=True
+    )
+    payer_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    receiver_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    amount: Mapped[Decimal] = mapped_column(Numeric(14, 2))
+    idempotency_key: Mapped[str] = mapped_column(String(128))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

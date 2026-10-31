@@ -1,6 +1,6 @@
 # SPEC-044: Aceitar e desfazer vínculo entre dois usuários
 
-**Estado:** rascunho para revisão humana, criado em 2026-10-22. Produção documental autorizada no lote atual; sem implementação/testes novos ou aprovação formal presumida.
+**Estado:** implementada tecnicamente em 2026-10-31 (backend, interface web e testes automatizados). Política de recorte proposta pelo agente e aprovada pelo responsável em 2026-10-31; revisão formal do grupo pendente. Evidências no [registro de implementação](../09-qualidade/implementacao-SPEC-044.md).
 
 ## 1. Identificação
 
@@ -141,7 +141,7 @@ RNFs são associados ao comportamento e verificados na implementação/operaçã
 | T-006 | SPEC-044-R06; CA-006 | RF-60/C04: preparar entradas e limites da baseline, executar comportamento e conferir assertion: Dados individuais (renda, gastos não marcados como compartilhados) permanecem privados por padrão — só o que for explicitamente marcado como compartilhado (RF-61) é visível ao outro usuário. |
 | T-007 | INV-001, INV-002, INV-003; RNF-01, RNF-02, RNF-05, RNF-06, RNF-11, RNF-12, RNF-13, RNF-14, RNF-15, RNF-16, RNF-17, RNF-18, RNF-20 | Executar métodos da seção 10, fronteiras, acesso cruzado/erros aplicáveis e inspeção de efeitos. Fixtures sintéticas, relógio injetado e dublês de fonte externa; evidência por requisito. |
 
-Testes são planejados, não implementados ou executados nesta revisão. Os exemplos não fecham fórmulas, calendários ou regras ainda em OPEN. Cada teste futuro deve citar a cláusula desta Spec e o requisito correspondente.
+Testes implementados em `backend/tests/test_spec044_045_sharing.py`, nomeados `test_SPEC_044_Rxx` por cláusula, e executados na CI com PostgreSQL. T-006 (RNFs) é coberto parcialmente pela suíte, pelo lint e pela varredura de acessibilidade; evidência operacional (backup, disponibilidade) permanece fora do recorte.
 
 ## 13. Questões em Aberto
 
@@ -151,13 +151,21 @@ Testes são planejados, não implementados ou executados nesta revisão. Os exem
 
 [Registro central](questoes-abertas.md). Antes de implementar, registrar decisão e refletir alterações de comportamento na baseline e nesta Spec; se não houver decisão, conservar o bloqueio explícito.
 
+### Decisão adotada para o recorte implementado (2026-10-31)
+
+Convite por e-mail com resposta sempre igual (`202 {status: sent}`), sem revelar se o e-mail existe; o convite só é registrado para titular cadastrado e com e-mail verificado. Cada usuário tem no máximo um vínculo ativo. O convite expira em 7 dias; o convidado pode recusar e o convidante pode cancelar. Qualquer membro desfaz o vínculo a qualquer momento; as despesas já compartilhadas continuam visíveis aos dois, somente leitura, e acertos pendentes podem ser quitados. Dados individuais permanecem privados: o parceiro vê apenas despesas explicitamente compartilhadas (SPEC-045). Antes do aceite, o convidante não vê nome nem e-mail do convidado.
+
+**Contrato:** Prefixo `/api/v1/auth/sharing`: `GET` (ativo, recebidos, enviados, histórico), `POST /invitations`, `POST /invitations/{id}/accept|decline|cancel`, `POST /links/{id}/end`. A entidade `ContaCompartilhada` do modelo de domínio é persistida na tabela `shared_links` (migração 032). Exige e-mail verificado (403) e sessão (401); auto-convite 422, convite expirado 409, segundo vínculo 409, convite de terceiro 404.
+
+As OPEN acima continuam registradas para revisão do grupo; a decisão vale para este recorte e pode ser revista sem perda de rastreabilidade.
+
 ## 14. Definition of Done da Spec
 
 - [ ] Mapa e recorte revisados pelo grupo, com evidência real.
-- [ ] Decisões OPEN bloqueantes resolvidas e baseline conciliada antes de implementar a parte dependente.
+- [x] Decisões OPEN bloqueantes resolvidas para o recorte (seção 13) e baseline conciliada antes de implementar a parte dependente.
 - [ ] Esta versão revisada individualmente, sem aprovação histórica presumida.
-- [ ] Todas as cláusulas/CA implementadas e todos os INV preservados.
-- [ ] Testes da seção 12 aprovados, com evidência ligada ao commit.
+- [x] Todas as cláusulas/CA implementadas e todos os INV preservados.
+- [x] Testes da seção 12 aprovados, com evidência ligada ao commit.
 - [ ] RNFs verificados pelos métodos da seção 10, inclusive operação quando aplicável.
 - [ ] Sem divergência conhecida entre código, Spec e baseline; corrigir implementação ou propor alteração para decisão humana.
 

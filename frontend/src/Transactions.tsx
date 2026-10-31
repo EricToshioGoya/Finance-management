@@ -105,7 +105,7 @@ export function Transactions({ token, lang }: { token: string; lang: Lang }) {
         {kind === 'expense' && <div className="field"><label htmlFor="tx-category">{pt ? 'Categoria' : 'Category'}</label>
           <select id="tx-category" name="category" required defaultValue={editing?.category_key ?? ''}><option value="" disabled>{pt ? 'Selecione' : 'Select'}</option>{categories.map(item => <option key={item.key} value={item.key}>{item.name}</option>)}</select></div>}
         {kind === 'expense' && !editing && <div className="field"><label htmlFor="tx-origin">{pt ? 'Pago com' : 'Paid with'}</label>
-          <select id="tx-origin" name="origin" defaultValue=""><option value="">{pt ? 'Não informado' : 'Not specified'}</option>
+          <select id="tx-origin" name="origin" required defaultValue=""><option value="" disabled>{pt ? 'Selecione a conta ou o cartão' : 'Select the account or card'}</option>
             {accounts.map(item => <option key={item.id} value={`a:${item.id}`}>{pt ? 'Conta' : 'Account'}: {item.name}</option>)}
             {cards.map(item => <option key={item.id} value={`c:${item.id}`}>{pt ? 'Cartão' : 'Card'}: {item.name}</option>)}</select></div>}
         {(kind === 'one-time' || kind === 'recurring') && <div className="field"><label htmlFor="tx-account">{pt ? 'Conta de destino' : 'Destination account'}</label>

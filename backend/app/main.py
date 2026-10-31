@@ -32,6 +32,7 @@ from app.application.exchange_rates import ExchangeRateService
 from app.application.external_api import ExternalApiService
 from app.application.engagement import EngagementService
 from app.application.profile_distribution import ProfileDistributionService
+from app.application.sharing import SharingService
 from app.application.webhooks import HttpWebhookDelivery, WebhookService
 from app.application.market_quotes import MarketQuoteService
 from app.config import Settings, get_settings
@@ -92,6 +93,13 @@ from app.presentation.schemas import (
     ExternalNetWorthOutput,
     EngagementOutput,
     ProfileDistributionOutput,
+    SettlementInput,
+    ShareExpenseInput,
+    SharedBalanceOutput,
+    ShareSplitInput,
+    SharingInviteInput,
+    SharingInviteOutput,
+    SharingOverviewOutput,
     FinancialIndicatorOutput,
     FinancialSourcesOutput,
     FinancingComparisonInput,
@@ -557,6 +565,104 @@ def create_app(
             raise AuthError("invalid_session")
         user, _ = auth.authenticate(credentials.credentials)
         return ProfileDistributionService(auth.db, auth).distribution(user, start, end)
+
+    # ---------- SPEC-044/045: vínculo entre usuários e despesas compartilhadas ----------
+    SHARING_PREFIX = f"{COOKIE_PATH}/sharing"
+
+    def sharing_user(auth: AuthService, credentials) -> uuid.UUID:
+        if not credentials:
+            raise AuthError("invalid_session")
+        user, _ = auth.authenticate(credentials.credentials)
+        return user.id
+
+    def split_percent(data: ShareSplitInput) -> Decimal:
+        try:
+            return data.resolved_payer_percent()
+        except ValueError as exc:
+            raise AuthError("split_must_total_100", 422) from exc
+
+    @app.get(SHARING_PREFIX, response_model=SharingOverviewOutput, tags=["sharing"])
+    def sharing_overview(auth: Service, credentials: Credentials):
+        return SharingService(auth.db, auth).overview(sharing_user(auth, credentials))
+
+    @app.post(
+        f"{SHARING_PREFIX}/invitations",
+        response_model=SharingInviteOutput,
+        status_code=202,
+        tags=["sharing"],
+    )
+    def sharing_invite(data: SharingInviteInput, auth: Service, credentials: Credentials):
+        return SharingService(auth.db, auth).invite(sharing_user(auth, credentials), data.email)
+
+    @app.post(
+        f"{SHARING_PREFIX}/invitations/{{link_id}}/accept",
+        response_model=SharingOverviewOutput,
+        tags=["sharing"],
+    )
+    def sharing_accept(link_id: uuid.UUID, auth: Service, credentials: Credentials):
+        return SharingService(auth.db, auth).accept(sharing_user(auth, credentials), link_id)
+
+    @app.post(
+        f"{SHARING_PREFIX}/invitations/{{link_id}}/decline", status_code=204, tags=["sharing"]
+    )
+    def sharing_decline(link_id: uuid.UUID, auth: Service, credentials: Credentials):
+        SharingService(auth.db, auth).decline(sharing_user(auth, credentials), link_id)
+        return Response(status_code=204)
+
+    @app.post(f"{SHARING_PREFIX}/invitations/{{link_id}}/cancel", status_code=204, tags=["sharing"])
+    def sharing_cancel(link_id: uuid.UUID, auth: Service, credentials: Credentials):
+        SharingService(auth.db, auth).cancel(sharing_user(auth, credentials), link_id)
+        return Response(status_code=204)
+
+    @app.post(f"{SHARING_PREFIX}/links/{{link_id}}/end", status_code=204, tags=["sharing"])
+    def sharing_end(link_id: uuid.UUID, auth: Service, credentials: Credentials):
+        SharingService(auth.db, auth).end(sharing_user(auth, credentials), link_id)
+        return Response(status_code=204)
+
+    @app.get(f"{SHARING_PREFIX}/balance", response_model=SharedBalanceOutput, tags=["sharing"])
+    def sharing_balance(auth: Service, credentials: Credentials, link_id: uuid.UUID | None = None):
+        return SharingService(auth.db, auth).balance(sharing_user(auth, credentials), link_id)
+
+    @app.post(
+        f"{SHARING_PREFIX}/expenses",
+        response_model=SharedBalanceOutput,
+        status_code=201,
+        tags=["sharing"],
+    )
+    def sharing_share_expense(data: ShareExpenseInput, auth: Service, credentials: Credentials):
+        return SharingService(auth.db, auth).share_expense(
+            sharing_user(auth, credentials), data.expense_id, split_percent(data)
+        )
+
+    @app.patch(
+        f"{SHARING_PREFIX}/expenses/{{share_id}}",
+        response_model=SharedBalanceOutput,
+        tags=["sharing"],
+    )
+    def sharing_update_expense(
+        share_id: uuid.UUID, data: ShareSplitInput, auth: Service, credentials: Credentials
+    ):
+        return SharingService(auth.db, auth).update_share(
+            sharing_user(auth, credentials), share_id, split_percent(data)
+        )
+
+    @app.delete(f"{SHARING_PREFIX}/expenses/{{share_id}}", status_code=204, tags=["sharing"])
+    def sharing_unshare(share_id: uuid.UUID, auth: Service, credentials: Credentials):
+        SharingService(auth.db, auth).unshare(sharing_user(auth, credentials), share_id)
+        return Response(status_code=204)
+
+    @app.post(
+        f"{SHARING_PREFIX}/settlements",
+        response_model=SharedBalanceOutput,
+        status_code=201,
+        tags=["sharing"],
+    )
+    def sharing_settle(
+        data: SettlementInput, request: Request, auth: Service, credentials: Credentials
+    ):
+        return SharingService(auth.db, auth).settle(
+            sharing_user(auth, credentials), data.amount, idempotency_key(request), data.link_id
+        )
 
     @app.get("/api/v1/health", tags=["system"])
     def health():
