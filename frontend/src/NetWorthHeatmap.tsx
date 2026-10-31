@@ -121,7 +121,7 @@ export function NetWorthHeatmap({ token, lang }: { token: string; lang: 'pt' | '
       {' '}{chosen.percentage.toFixed(1)}%; {rateLabel(chosen)}: {chosen.annual_rate === null
         ? pt ? 'não informado' : 'not available' : chosen.annual_rate + '%'}.
     </p>}
-    {rows.length > 0 && <div className="indicator-table-wrap"><table>
+    {rows.length > 0 && <div className="indicator-table-wrap" tabIndex={0}><table>
       <caption>{pt ? 'Dados acessíveis do mapa de calor' : 'Accessible heatmap values'}</caption>
       <thead><tr><th>{pt ? 'Nome' : 'Name'}</th><th>{pt ? 'Tipo' : 'Type'}</th>
         <th>{pt ? 'Valor (BRL)' : 'Amount (BRL)'}</th><th>%</th>

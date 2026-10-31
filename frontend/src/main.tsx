@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { translations, type Language, type Message } from './i18n';
 import { NetWorthHistory } from './NetWorthHistory';
@@ -12,6 +12,12 @@ import { FinancingComparison } from './FinancingComparison';
 import { EducationCenter } from './Education';
 import { HealthScore } from './HealthScore';
 import { NamedAssetGoals } from './NamedAssetGoals';
+import { Overview } from './Overview';
+import { Transactions } from './Transactions';
+import { CardInvoice, Planning } from './Planning';
+import { Investments } from './Investments';
+import { AdminEngagement, NetWorthItems, Notifications, Watchlist } from './Extras';
+import { money } from './api';
 import './style.css';
 import { demoRequest, demoNow, advanceDemo, resetDemo } from './demo';
 
@@ -26,13 +32,13 @@ type Category = { key: string; name: string; color: string; kind: 'standard' | '
 type Account = { id: string; name: string; account_type: string; initial_balance: string };
 type CreditCard = { id: string; name: string; credit_limit: string; closing_day: number; due_day: number };
 type FinancialSources = { accounts: Account[]; credit_cards: CreditCard[] };
-type RecurringIncome = { id: string; description: string; amount: string; account_id: string | null; starts_on: string };
 type AdminUser = { id: string; name: string; email: string; created_at: string; investor_profile: InvestorProfile | null; status: 'active' };
 type AdminUsersPage = { items: AdminUser[]; page: number; page_size: number; total: number };
 type PublicCompany = { id: string; ticker: string; cnpj: string; legal_name: string; sector: string };
 type OfficialDocument = { id: string; company_id: string; document_type: 'DFP' | 'ITR' | 'FRE' | 'IPE'; subject: string; reference_period: string; delivered_at: string; status: 'active' | 'restated' | 'replaced'; official_url: string; link_status: 'unchecked' | 'available' | 'broken'; last_checked_at: string | null };
 type FinancialIndicator = { id: string; company_id: string; metric: 'net_revenue' | 'net_income' | 'equity'; period_kind: 'annual' | 'quarterly'; reference_period: string; reference_date: string; value: string; unit: 'BRL_THOUSANDS'; source_name: string; source_url: string; status: 'active' | 'restated'; published_at: string; synced_at: string; effective: boolean };
 type MarketQuote = { ticker: string; asset_kind: 'stock' | 'fii'; price: string; daily_change_percent: string; referenced_at: string; fresh_until: string; source_name: string; catalogue_type: 'local_reference'; history: { quoted_on: string; close_price: string }[] };
+type Tab = 'overview' | 'transactions' | 'planning' | 'investments' | 'patrimony' | 'financing' | 'companies' | 'learn' | 'account' | 'admin';
 const prefix = '/api/v1/auth';
 const visualPreview = document.documentElement.dataset.preview === 'visual';
 const interactivePreview = document.documentElement.dataset.preview === 'interactive';
@@ -87,7 +93,8 @@ function App() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
-  const [recurringIncomes, setRecurringIncomes] = useState<RecurringIncome[]>([]);
+  const [tab, setTab] = useState<Tab>('overview');
+  const [watchVersion, setWatchVersion] = useState(0);
   const [adminUsers, setAdminUsers] = useState<AdminUsersPage | null>(null);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [companies, setCompanies] = useState<PublicCompany[]>([]);
@@ -122,17 +129,16 @@ function App() {
   async function acceptSession(session: Session) {
     access.current = session.access_token;
     const authHeaders = { Authorization: `Bearer ${session.access_token}` };
-    const [profile, currentSessions, currentCategories, sources, incomes, questions] = await Promise.all([
+    const [profile, currentSessions, currentCategories, sources, questions] = await Promise.all([
       request<Profile>('/profile', { headers: authHeaders }),
       request<ManagedSession[]>('/sessions', { headers: authHeaders }),
       request<Category[]>('/categories', { headers: authHeaders }),
       interactivePreview ? Promise.resolve<FinancialSources>({ accounts: [], credit_cards: [] }) : request<FinancialSources>('/financial/sources', { headers: authHeaders }),
-      interactivePreview ? Promise.resolve<RecurringIncome[]>([]) : request<RecurringIncome[]>('/financial/recurring-incomes', { headers: authHeaders }),
       interactivePreview ? Promise.resolve<QuizQuestion[]>([]) : request<QuizQuestion[]>('/investor-profile/quiz', { headers: authHeaders }),
     ]);
     setUser(profile.user); setPendingEmail(profile.pending_email); setPreferences(profile.preferences);
     setLang(profile.preferences.language); setManagedSessions(currentSessions); setCategories(currentCategories);
-    setAccounts(sources.accounts); setCreditCards(sources.credit_cards); setRecurringIncomes(incomes); setRetryAt(0);
+    setAccounts(sources.accounts); setCreditCards(sources.credit_cards); setRetryAt(0);
     setQuizQuestions(questions);
     // Best-effort telemetry: it is never allowed to delay or invalidate sign-in.
     void request<void>('/usage-events', {
@@ -296,20 +302,6 @@ function App() {
     finally { setBusy(false); }
   }
 
-  async function submitRecurringIncome(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!access.current || visualPreview) return;
-    const data = new FormData(event.currentTarget);
-    setBusy(true); setMessage(null); setError(false);
-    try {
-      const created = await request<RecurringIncome>('/financial/recurring-incomes', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + access.current, 'Idempotency-Key': crypto.randomUUID() },
-        body: JSON.stringify({ description: data.get('income-description'), amount: data.get('income-amount'), account_id: data.get('income-account') || null }),
-      });
-      setRecurringIncomes(current => [...current, created]); event.currentTarget.reset(); setMessage('incomeCreated');
-    } catch (cause) { notify(cause); }
-    finally { setBusy(false); }
-  }
   async function confirmEmail(token = confirmationToken) {
     if (!token || visualPreview) return;
     setBusy(true); setMessage(null); setError(false);
@@ -352,7 +344,7 @@ function App() {
     try {
       await request('/account', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${access.current}` }, body: JSON.stringify({ current_password: data.get('delete-password'), confirmation: data.get('delete-confirmation') }) });
       clearTimeout(timer.current); access.current = null; setUser(null); setManagedSessions([]);
-      setCategories([]); setAccounts([]); setCreditCards([]); setRecurringIncomes([]); setPendingEmail(null);
+      setCategories([]); setAccounts([]); setCreditCards([]); setPendingEmail(null); setTab('overview');
       setDeletionReview(false); setMode('login'); setMessage('deletionDone');
     } catch (cause) { notify(cause); }
     finally { form.reset(); setBusy(false); }
@@ -460,6 +452,15 @@ function App() {
     } catch (cause) { notify(cause); } finally { setBusy(false); }
   }
 
+  async function watchCompany(company: PublicCompany) {
+    if (!access.current) return;
+    setBusy(true); setMessage(null); setError(false);
+    try {
+      await request(`/api/v1/companies/${company.id}/watchlist`, { method: 'POST', headers: { Authorization: `Bearer ${access.current}` } });
+      setWatchVersion(version => version + 1);
+    } catch (cause) { notify(cause); } finally { setBusy(false); }
+  }
+
   async function checkDocumentLink(document: OfficialDocument) {
     if (!access.current) return;
     setBusy(true); setMessage(null); setError(false);
@@ -533,6 +534,291 @@ function App() {
 
   const seconds = Math.max(0, Math.ceil((retryAt - now) / 1000));
   const countdown = `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
+  const feedback = <>
+    <p className={`message ${error ? 'error' : ''}`} role={error ? 'alert' : 'status'} aria-live="polite">{message ? t[message] : ''}</p>
+    {seconds > 0 && <p className="retry-countdown">{t.retryIn} <span aria-live="off">{countdown}</span></p>}
+  </>;
+  const languageSelect = <div className="language"><label htmlFor="language">{t.language}</label>
+    <select id="language" value={lang} onChange={e => setLang(e.target.value as Language)}>
+      <option value="pt">Português</option><option value="en">English</option>
+    </select>
+  </div>;
+
+  if (user && !loading) {
+    const live = !visualPreview && !interactivePreview;
+    const token = access.current;
+    const financial = live && user.email_verified && !!token;
+    const pt = lang === 'pt';
+    const tabs: [Tab, string][] = [
+      ['overview', pt ? 'Visão geral' : 'Overview'], ['transactions', pt ? 'Lançamentos' : 'Transactions'],
+      ['planning', pt ? 'Planejamento' : 'Planning'], ['investments', pt ? 'Investimentos' : 'Investments'],
+      ['patrimony', pt ? 'Patrimônio' : 'Net worth'], ['financing', pt ? 'Financiamentos' : 'Financing'],
+      ['companies', pt ? 'Empresas' : 'Companies'], ['learn', pt ? 'Aprender' : 'Learn'],
+      ['account', pt ? 'Minha conta' : 'My account'],
+      ...(user.role === 'administrador' ? [['admin', pt ? 'Administração' : 'Admin'] as [Tab, string]] : []),
+    ];
+    const needsVerification = <p className="hint">{t.financeVerificationHint}</p>;
+    const verification = !user.email_verified && <section className="profile notice" aria-labelledby="verify-title">
+      <h3 id="verify-title">{t.emailPending}</h3>
+      <button onClick={resendConfirmation} disabled={busy}>{busy ? t.waiting : t.resendConfirmation}</button>
+      <form onSubmit={event => { event.preventDefault(); void confirmEmail(); }} aria-busy={busy}>
+        <div className="field"><label htmlFor="confirmation-token">{t.confirmationToken}</label>
+          <input id="confirmation-token" value={confirmationToken} onChange={event => setConfirmationToken(event.target.value)} autoComplete="one-time-code" required disabled={busy}/></div>
+        <button type="submit" disabled={busy || !confirmationToken}>{busy ? t.waiting : t.confirmEmail}</button>
+      </form>
+    </section>;
+    const content: Record<Tab, ReactNode> = {
+      overview: <>{verification}{financial && token ? <><Overview token={token} lang={lang} /><div className="grid-2"><HealthScore token={token} lang={lang} /><Notifications token={token} lang={lang} /></div></> : !user.email_verified ? null : <p className="hint">{t.previewMode}</p>}</>,
+      transactions: financial && token ? <>
+        <Transactions token={token} lang={lang} />
+        <div className="grid-2">
+          <section className="profile" aria-labelledby="financial-sources-title">
+            <h3 id="financial-sources-title">{t.financialSourcesTitle}</h3>
+            <ul className="source-list">
+              {accounts.map(account => <li key={account.id}><strong>{account.name}</strong><span>{t[account.account_type as 'checking' | 'savings' | 'cash' | 'investment']} · {money(account.initial_balance, lang)}</span></li>)}
+              {creditCards.map(card => <li key={card.id}><strong>{card.name}</strong><span>{t.creditLimit}: {money(card.credit_limit, lang)} · {t.closes}: {card.closing_day} · {t.due}: {card.due_day}</span></li>)}
+            </ul>
+            <form onSubmit={submitAccount} aria-busy={busy}>
+              <div className="field"><label htmlFor="account-name">{t.accountName}</label><input id="account-name" name="account-name" maxLength={60} required disabled={busy}/></div>
+              <div className="field"><label htmlFor="account-type">{t.accountType}</label><select id="account-type" name="account-type" defaultValue="checking" disabled={busy}><option value="checking">{t.checking}</option><option value="savings">{t.savings}</option><option value="cash">{t.cash}</option><option value="investment">{t.investment}</option></select></div>
+              <div className="field"><label htmlFor="account-balance">{t.initialBalance}</label><input id="account-balance" name="account-balance" type="number" step="0.01" defaultValue="0" required disabled={busy}/></div>
+              <button type="submit" disabled={busy}>{busy ? t.waiting : t.createAccount}</button>
+            </form>
+            <form onSubmit={submitCreditCard} aria-busy={busy}>
+              <div className="field"><label htmlFor="card-name">{t.cardName}</label><input id="card-name" name="card-name" maxLength={60} required disabled={busy}/></div>
+              <div className="field"><label htmlFor="card-limit">{t.creditLimit}</label><input id="card-limit" name="card-limit" type="number" min="0.01" step="0.01" required disabled={busy}/></div>
+              <div className="inline-fields">
+                <div className="field"><label htmlFor="closing-day">{t.closes}</label><input id="closing-day" name="closing-day" type="number" min="1" max="31" required disabled={busy}/></div>
+                <div className="field"><label htmlFor="due-day">{t.due}</label><input id="due-day" name="due-day" type="number" min="1" max="31" required disabled={busy}/></div>
+              </div>
+              <button type="submit" disabled={busy}>{busy ? t.waiting : t.createCard}</button>
+            </form>
+          </section>
+          <div className="stack">
+            <CardInvoice token={token} lang={lang} />
+            <section className="profile categories" aria-labelledby="categories-title">
+              <h3 id="categories-title">{t.categoriesTitle}</h3>
+              <p>{t.categoriesHint}</p>
+              <ul>
+                {categories.map(category => <li key={category.key} className={category.active ? '' : 'inactive'}>
+                  <span className="category-color" style={{ backgroundColor: category.color }} aria-hidden="true"/>
+                  <span>{category.name}</span>
+                  {category.kind === 'standard' && <button type="button" className="secondary" onClick={() => toggleDefaultCategory(category)} disabled={busy}>{category.active ? t.hideCategory : t.showCategory}</button>}
+                </li>)}
+              </ul>
+              <form onSubmit={submitCategory} aria-busy={busy}>
+                <div className="field"><label htmlFor="category-name">{t.categoryName}</label><input id="category-name" name="category-name" maxLength={60} required disabled={busy}/></div>
+                <div className="field"><label htmlFor="category-color">{t.categoryColor}</label><input id="category-color" name="category-color" type="color" defaultValue="#173F35" disabled={busy}/></div>
+                <button type="submit" disabled={busy}>{busy ? t.waiting : t.createCategory}</button>
+              </form>
+            </section>
+            <section className="profile" aria-labelledby="statement-title">
+              <h3 id="statement-title">{t.statementTitle}</h3><p>{t.statementHint}</p>
+              <form onSubmit={event => { event.preventDefault(); void downloadStatement('csv', event.currentTarget); }} aria-busy={busy}>
+                <div className="inline-fields">
+                  <div className="field"><label htmlFor="statement-start">{t.periodStart}</label><input id="statement-start" name="statement-start" type="date" required disabled={busy}/></div>
+                  <div className="field"><label htmlFor="statement-end">{t.periodEnd}</label><input id="statement-end" name="statement-end" type="date" required disabled={busy}/></div>
+                </div>
+                <div className="actions">
+                  <button type="submit" disabled={busy}>{t.exportCsv}</button>
+                  <button type="button" className="secondary" onClick={event => { const form = event.currentTarget.form; if (form) void downloadStatement('pdf', form); }} disabled={busy}>{t.exportPdf}</button>
+                </div>
+              </form>
+            </section>
+          </div>
+        </div>
+      </> : needsVerification,
+      planning: financial && token ? <><Planning token={token} lang={lang} /><NamedAssetGoals token={token} lang={lang} /><FinancialStress token={token} lang={lang} /></> : needsVerification,
+      investments: financial && token ? <><Investments token={token} lang={lang} /><div className="grid-2"><InvestmentAllocation token={token} lang={lang} />
+        <section className="profile" aria-labelledby="market-title">
+          <h3 id="market-title">{t.marketTitle}</h3>
+          <p>{t.marketHint}</p>
+          <form onSubmit={searchMarketQuote} aria-busy={busy}>
+            <div className="field"><label htmlFor="market-ticker">{t.marketTicker}</label><input id="market-ticker" name="market-ticker" minLength={5} maxLength={7} required disabled={busy}/></div>
+            <button type="submit" disabled={busy}>{busy ? t.waiting : t.marketSearch}</button>
+          </form>
+          {marketQuote && <div className="market-reference">
+            <p className="indicator-note">{t.marketLocalReference}</p>
+            <p><strong>{marketQuote.ticker}</strong> · {marketQuote.asset_kind === 'stock' ? t.marketStock : t.marketFii}</p>
+            <p className="market-price">{money(marketQuote.price, lang)} <small>{Number(marketQuote.daily_change_percent) >= 0 ? '+' : ''}{marketQuote.daily_change_percent}%</small></p>
+            <p><small>{t.referenceDate} {formatSessionInstant(marketQuote.referenced_at)} · {t.marketValidUntil} {formatSessionInstant(marketQuote.fresh_until)}</small></p>
+            <ul className="market-history" aria-label={t.marketHistory}>{marketQuote.history.map(point => <li key={point.quoted_on}>{point.quoted_on}: {money(point.close_price, lang)}</li>)}</ul>
+          </div>}
+          {manualMarketEntry && <p className="verification">{t.marketManualEntry}</p>}
+        </section></div></> : needsVerification,
+      patrimony: financial && token ? <><NetWorthItems token={token} lang={lang} /><NetWorthHistory token={token} lang={lang} /><NetWorthHeatmap token={token} lang={lang} /></> : needsVerification,
+      financing: financial && token ? <><Financing token={token} lang={lang} /><FinancingComparison token={token} lang={lang} /><ConfirmFinancing token={token} lang={lang} /></> : needsVerification,
+      companies: live && token ? <>
+        <section className="profile" aria-labelledby="companies-title">
+          <h3 id="companies-title">{t.companiesTitle}</h3>
+          <p>{t.companiesHint}</p>
+          <form onSubmit={searchCompanies} aria-busy={busy}>
+            <div className="field"><label htmlFor="company-query">{t.companySearch}</label><input id="company-query" name="company-query" minLength={1} maxLength={120} required disabled={busy}/></div>
+            <button type="submit" disabled={busy}>{busy ? t.waiting : t.searchCompanies}</button>
+          </form>
+          {companies.length > 0 && <ul className="company-results">
+            {companies.map(company => <li key={company.id}><button type="button" className="secondary" onClick={() => void selectCompany(company)} disabled={busy}>{company.ticker} — {company.legal_name}</button><small>{company.cnpj} · {company.sector}</small>
+              <button type="button" className="secondary" onClick={() => void watchCompany(company)} disabled={busy}>{pt ? 'Acompanhar' : 'Watch'}</button></li>)}
+          </ul>}
+          {selectedCompany && <div className="company-documents">
+            <h4>{selectedCompany.ticker} — {selectedCompany.legal_name}</h4>
+            <p className="privacy-note">{t.cvmDisclaimer}</p>
+            <h5>{t.financialIndicatorsTitle}</h5>
+            {financialIndicators.length === 0 ? <p>{t.noFinancialIndicators}</p> : <>
+              <p className="indicator-note">{t.indicatorsLocalFixture}</p>
+              <div className="indicator-table-wrap" tabIndex={0}><table>
+                <caption>{t.financialIndicatorsCaption}</caption>
+                <thead><tr><th>{t.indicatorMetric}</th><th>{t.indicatorPeriod}</th><th>{t.indicatorValue}</th><th>{t.indicatorStatus}</th><th>{t.indicatorSource}</th></tr></thead>
+                <tbody>{financialIndicators.map(indicator => <tr key={indicator.id} className={indicator.effective ? '' : 'superseded'}>
+                  <td>{indicator.metric === 'net_revenue' ? t.netRevenue : indicator.metric === 'net_income' ? t.netIncome : t.equity}</td><td>{indicator.reference_period}<br/><small>{t.referenceDate} {indicator.reference_date}</small></td><td>{new Intl.NumberFormat(lang === 'pt' ? 'pt-BR' : 'en-US', { maximumFractionDigits: 2 }).format(Number(indicator.value))} {t.thousandsOfReais}</td><td>{indicator.effective ? t.currentIndicator : t.restatedIndicator}</td><td><a href={indicator.source_url} target="_blank" rel="noopener noreferrer">{indicator.source_name}</a><br/><small>{t.syncedAt} {indicator.synced_at.slice(0, 10)}</small></td>
+                </tr>)}</tbody>
+              </table></div>
+              <div className="indicator-chart" role="img" aria-label={t.indicatorChartAlternative}>
+                <h6>{t.indicatorEvolution}</h6>
+                {(['net_revenue', 'net_income', 'equity'] as const).map(metric => {
+                  const rows = financialIndicators.filter(item => item.metric === metric && item.effective);
+                  const maximum = Math.max(...rows.map(item => Math.abs(Number(item.value))), 1);
+                  return <div className="indicator-series" key={metric}><strong>{metric === 'net_revenue' ? t.netRevenue : metric === 'net_income' ? t.netIncome : t.equity}</strong>{rows.map(item => <div className="indicator-bar" key={item.id}><span>{item.reference_period}</span><i style={{ width: `${Math.max(3, Math.abs(Number(item.value)) / maximum * 100)}%` }} /><b>{new Intl.NumberFormat(lang === 'pt' ? 'pt-BR' : 'en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(Number(item.value))}</b></div>)}</div>;
+                })}
+              </div>
+            </>}
+            {officialDocuments.length === 0 ? <p>{t.noDocuments}</p> : <ul>
+              {officialDocuments.map(document => <li key={document.id}>
+                <strong>{document.document_type}</strong> — {document.subject} ({document.reference_period})<br/>
+                <small>{t.deliveredAt} {document.delivered_at} · {t.documentStatus}: {document.status} · {t.linkStatus}: {document.link_status}</small><br/>
+                <a href={document.official_url} target="_blank" rel="noopener noreferrer">{t.openOfficialDocument}</a>{' '}
+                <button type="button" className="secondary" onClick={() => void checkDocumentLink(document)} disabled={busy}>{t.checkLink}</button>
+              </li>)}
+            </ul>}
+          </div>}
+        </section>
+        <Watchlist token={token} lang={lang} version={watchVersion} />
+      </> : needsVerification,
+      learn: live && token ? <EducationCenter token={token} lang={lang} /> : null,
+      account: <>
+        {verification}
+        <div className="grid-2">
+          <div className="stack">
+            <section className="profile" aria-labelledby="profile-title">
+              <h3 id="profile-title">{t.profileTitle}</h3>
+              <p className="email">{user.email}</p>
+              {pendingEmail && <p className="verification" role="status">{t.emailChangePending} {pendingEmail}</p>}
+              <p className="verification">{user.email_verified ? t.emailVerified : t.emailPending}</p>
+              <form onSubmit={submitProfile} aria-busy={busy}>
+                <div className="field"><label htmlFor="profile-name">{t.name}</label><input id="profile-name" name="profile-name" defaultValue={user.name} maxLength={100} disabled={busy}/></div>
+                <div className="field"><label htmlFor="profile-email">{t.email}</label><input id="profile-email" name="profile-email" type="email" defaultValue={user.email} maxLength={254} disabled={busy}/></div>
+                <div className="field"><label htmlFor="current-password">{t.currentPassword}</label><input id="current-password" name="current-password" type="password" autoComplete="current-password" minLength={8} maxLength={128} disabled={busy}/><small>{t.emailChangeHint}</small></div>
+                <button type="submit" disabled={busy}>{busy ? t.waiting : t.saveProfile}</button>
+              </form>
+            </section>
+            <section className="profile" aria-labelledby="preferences-title">
+              <h3 id="preferences-title">{t.preferencesTitle}</h3>
+              <form onSubmit={submitPreferences} aria-busy={busy}>
+                <div className="field"><label htmlFor="preference-language">{t.language}</label><select id="preference-language" name="preference-language" defaultValue={preferences.language} disabled={busy}><option value="pt">Português</option><option value="en">English</option></select></div>
+                <div className="field"><label htmlFor="preference-theme">{t.theme}</label><select id="preference-theme" name="preference-theme" defaultValue={preferences.theme} disabled={busy}><option value="light">{t.lightTheme}</option><option value="dark">{t.darkTheme}</option></select></div>
+                <label className="check"><input type="checkbox" name="in-app" defaultChecked={preferences.in_app_notifications} disabled={busy}/>{t.inAppNotifications}</label>
+                <label className="check"><input type="checkbox" name="email-notifications" defaultChecked={preferences.email_notifications} disabled={busy}/>{t.emailNotifications}</label>
+                <label className="check"><input type="checkbox" name="push-notifications" defaultChecked={preferences.push_notifications} disabled={busy}/>{t.pushNotifications}</label>
+                <button type="submit" disabled={busy}>{busy ? t.waiting : t.savePreferences}</button>
+              </form>
+            </section>
+            <section className="profile" aria-labelledby="password-title">
+              <h3 id="password-title">{t.passwordTitle}</h3>
+              <form onSubmit={submitPasswordChange} aria-busy={busy}>
+                <div className="field"><label htmlFor="change-current-password">{t.currentPassword}</label><input id="change-current-password" name="change-current-password" type="password" autoComplete="current-password" minLength={8} maxLength={128} required disabled={busy}/></div>
+                <div className="field"><label htmlFor="change-new-password">{t.newPassword}</label><input id="change-new-password" name="change-new-password" type="password" autoComplete="new-password" minLength={8} maxLength={128} required disabled={busy}/></div>
+                <button type="submit" disabled={busy}>{busy ? t.waiting : t.changePassword}</button>
+              </form>
+            </section>
+          </div>
+          <div className="stack">
+            <section className="profile" aria-labelledby="investor-profile-title">
+              <h3 id="investor-profile-title">{t.investorProfileTitle}</h3>
+              <p>{user.investor_profile ? `${t.investorProfileCurrent}: ${user.investor_profile === 'conservador' ? t.profileConservador : user.investor_profile === 'moderado' ? t.profileModerado : t.profileArrojado}` : t.investorProfileHint}</p>
+              {quizQuestions.length > 0 && <form onSubmit={submitQuiz} aria-busy={busy}>
+                {quizQuestions.map(question => <fieldset key={question.id} className="field">
+                  <legend>{question.prompt}</legend>
+                  {question.options.map((option, index) => <label className="check" key={option}>
+                    <input type="radio" name={`quiz-${question.id}`} value={index} required disabled={busy}/>{option}
+                  </label>)}
+                </fieldset>)}
+                <button type="submit" disabled={busy}>{busy ? t.waiting : t.saveQuiz}</button>
+              </form>}
+            </section>
+            <section className="sessions profile" aria-labelledby="sessions-title">
+              <div className="sessions-heading">
+                <h3 id="sessions-title">{t.sessionsTitle}</h3>
+                <button type="button" className="secondary" onClick={revokeAllSessions} disabled={busy || !managedSessions.length}>
+                  {busy ? t.waiting : t.endAllSessions}
+                </button>
+              </div>
+              <p className="hint">{t.sessionHint}</p>
+              <ul>
+                {managedSessions.map(session => <li key={session.id}>
+                  <div>
+                    <strong>{session.current ? t.sessionCurrent : t.sessionOther}</strong>
+                    <span>{t.sessionStarted} {formatSessionInstant(session.started_at)}</span>
+                    <span>{t.sessionExpires} {formatSessionInstant(session.expires_at)}</span>
+                  </div>
+                  <button type="button" className="secondary" onClick={() => revokeSession(session)} disabled={busy}>
+                    {session.current ? t.endCurrentSession : t.endSession}
+                  </button>
+                </li>)}
+              </ul>
+            </section>
+            {financial && token && <ExternalIntegrations token={token} lang={lang} />}
+            {live && <section className="profile danger-zone" aria-labelledby="delete-title">
+              <h3 id="delete-title">{t.deleteAccount}</h3>
+              {!deletionReview ? <button type="button" onClick={reviewDeletion} disabled={busy}>{t.deletionReview}</button> : <>
+                <p>{t.deletionScope}</p>
+                <form onSubmit={submitDeletion} aria-busy={busy}>
+                  <div className="field"><label htmlFor="delete-password">{t.currentPassword}</label><input id="delete-password" name="delete-password" type="password" autoComplete="current-password" maxLength={128} required disabled={busy}/></div>
+                  <div className="field"><label htmlFor="delete-confirmation">{t.deletionText}</label><input id="delete-confirmation" name="delete-confirmation" pattern="EXCLUIR MINHA CONTA" autoComplete="off" required disabled={busy}/></div>
+                  <button type="submit" disabled={busy}>{t.deleteAccount}</button>
+                  <button type="button" className="secondary" onClick={() => setDeletionReview(false)} disabled={busy}>{t.deletionCancel}</button>
+                </form>
+              </>}
+            </section>}
+          </div>
+        </div>
+      </>,
+      admin: <>
+        {adminUsers && <section className="profile" aria-labelledby="admin-users-title">
+          <h3 id="admin-users-title">{t.adminUsersTitle}</h3>
+          <p>{t.adminUsersHint.replace('{total}', String(adminUsers.total))}</p>
+          <ul className="source-list">
+            {adminUsers.items.map(member => <li key={member.id}><strong>{member.name}</strong><span>{member.email} · {member.status} · {formatSessionInstant(member.created_at)}</span></li>)}
+          </ul>
+        </section>}
+        {live && token && <AdminEngagement token={token} lang={lang} />}
+      </>,
+    };
+    const visibleTabs = live ? tabs : tabs.filter(([key]) => key === 'account');
+    const current = visibleTabs.some(([key]) => key === tab) ? tab : visibleTabs[0][0];
+    return <div className="app">
+      <header className="topbar">
+        <p className="brand">FinNova<span aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 19 19 5M5 5h14v14"/></svg></span></p>
+        <div className="topbar-user">
+          <h2 ref={heading} tabIndex={-1}>{t.greeting} {user.name}</h2>
+          <p className="eyebrow">{t.authenticated} · {user.email_verified ? t.emailVerified : t.emailPending}</p>
+        </div>
+        <div className="topbar-actions">
+          {languageSelect}
+          <button onClick={logout} disabled={busy} className="secondary">{busy ? t.waiting : t.logout}</button>
+        </div>
+      </header>
+      <nav className="tabs" aria-label={pt ? 'Seções do FinNova' : 'FinNova sections'}>
+        {visibleTabs.map(([key, label]) => <button key={key} type="button" aria-current={current === key ? 'page' : undefined} onClick={() => { setTab(key); setMessage(null); }}>{label}</button>)}
+      </nav>
+      <main className="content">
+        {interactivePreview && <aside className="demo-notice" aria-label={t.demoTitle}><p><strong>{t.demoTitle}</strong><br/>{t.demoHint}</p></aside>}
+        <p className="privacy-note">{t.privacyUsage}</p>
+        {content[current]}
+        {feedback}
+      </main>
+    </div>;
+  }
+
   return <main className="layout">
     <section className="intro" aria-label="FinNova">
       <p className="brand">FinNova<span aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 19 19 5M5 5h14v14"/></svg></span></p>
@@ -540,11 +826,7 @@ function App() {
       <div className="illustration" aria-hidden="true"><span/><span/><span/><span/><span/></div>
     </section>
     <section className="panel">
-      <div className="language"><label htmlFor="language">{t.language}</label>
-        <select id="language" value={lang} onChange={e => setLang(e.target.value as Language)}>
-          <option value="pt">Português</option><option value="en">English</option>
-        </select>
-      </div>
+      {languageSelect}
       <div className="card">
         {interactivePreview && <aside className="demo-notice" aria-label={t.demoTitle}>
           <p><strong>{t.demoTitle}</strong><br/>{t.demoHint}</p>
@@ -560,241 +842,7 @@ function App() {
           </div>
         </aside>}
         {visualPreview && <p className="preview-notice" role="note">{t.previewMode}</p>}
-        {loading ? <p role="status">{t.loading}</p> : user ? <>
-          <p className="eyebrow">{t.authenticated}</p>
-          <h2 ref={heading} tabIndex={-1}>{t.greeting} {user.name}</h2>
-          <p className="email">{user.email}</p>
-          <p className="privacy-note">{t.privacyUsage}</p>
-          {pendingEmail && <p className="verification" role="status">{t.emailChangePending} {pendingEmail}</p>}
-          <p className="verification" role="status">{user.email_verified ? t.emailVerified : t.emailPending}</p>
-          {!user.email_verified && <>
-            <button onClick={resendConfirmation} disabled={busy}>{busy ? t.waiting : t.resendConfirmation}</button>
-            <form onSubmit={event => { event.preventDefault(); void confirmEmail(); }} aria-busy={busy}>
-              <div className="field"><label htmlFor="confirmation-token">{t.confirmationToken}</label>
-                <input id="confirmation-token" value={confirmationToken} onChange={event => setConfirmationToken(event.target.value)} autoComplete="one-time-code" required disabled={busy}/></div>
-              <button type="submit" disabled={busy || !confirmationToken}>{busy ? t.waiting : t.confirmEmail}</button>
-            </form>
-          </>}
-          {user.email_verified && access.current && !visualPreview && !interactivePreview &&
-            <NetWorthHistory token={access.current} lang={lang} />}
-          {user.email_verified && access.current && !visualPreview && !interactivePreview &&
-            <NetWorthHeatmap token={access.current} lang={lang} />}
-          {user.email_verified && access.current && !visualPreview && !interactivePreview &&
-            <InvestmentAllocation token={access.current} lang={lang} />}
-          {user.email_verified && access.current && !visualPreview && !interactivePreview &&
-            <FinancialStress token={access.current} lang={lang} />}
-          {user.email_verified && access.current && !visualPreview && !interactivePreview &&
-            <Financing token={access.current} lang={lang} />}
-          {user.email_verified && access.current && !visualPreview && !interactivePreview &&
-            <ConfirmFinancing token={access.current} lang={lang} />}
-          {user.email_verified && access.current && !visualPreview && !interactivePreview &&
-            <ExternalIntegrations token={access.current} lang={lang} />}
-          {user.email_verified && access.current && !visualPreview && !interactivePreview &&
-            <FinancingComparison token={access.current} lang={lang} />}
-          {user.email_verified && access.current && !visualPreview && !interactivePreview &&
-            <EducationCenter token={access.current} lang={lang} />}
-          {user.email_verified && access.current && !visualPreview && !interactivePreview &&
-            <HealthScore token={access.current} lang={lang} />}
-          {user.email_verified && access.current && !visualPreview && !interactivePreview &&
-            <NamedAssetGoals token={access.current} lang={lang} />}
-          <section className="profile" aria-labelledby="profile-title">
-            <h3 id="profile-title">{t.profileTitle}</h3>
-            <form onSubmit={submitProfile} aria-busy={busy}>
-              <div className="field"><label htmlFor="profile-name">{t.name}</label><input id="profile-name" name="profile-name" defaultValue={user.name} maxLength={100} disabled={busy}/></div>
-              <div className="field"><label htmlFor="profile-email">{t.email}</label><input id="profile-email" name="profile-email" type="email" defaultValue={user.email} maxLength={254} disabled={busy}/></div>
-              <div className="field"><label htmlFor="current-password">{t.currentPassword}</label><input id="current-password" name="current-password" type="password" autoComplete="current-password" minLength={8} maxLength={128} disabled={busy}/><small>{t.emailChangeHint}</small></div>
-              <button type="submit" disabled={busy}>{busy ? t.waiting : t.saveProfile}</button>
-            </form>
-          </section>
-          <section className="profile" aria-labelledby="investor-profile-title">
-            <h3 id="investor-profile-title">{t.investorProfileTitle}</h3>
-            <p>{user.investor_profile ? `${t.investorProfileCurrent}: ${user.investor_profile === 'conservador' ? t.profileConservador : user.investor_profile === 'moderado' ? t.profileModerado : t.profileArrojado}` : t.investorProfileHint}</p>
-            {quizQuestions.length > 0 && <form onSubmit={submitQuiz} aria-busy={busy}>
-              {quizQuestions.map(question => <fieldset key={question.id} className="field">
-                <legend>{question.prompt}</legend>
-                {question.options.map((option, index) => <label className="check" key={option}>
-                  <input type="radio" name={`quiz-${question.id}`} value={index} required disabled={busy}/>{option}
-                </label>)}
-              </fieldset>)}
-              <button type="submit" disabled={busy}>{busy ? t.waiting : t.saveQuiz}</button>
-            </form>}
-          </section>
-          <section className="profile" aria-labelledby="companies-title">
-            <h3 id="companies-title">{t.companiesTitle}</h3>
-            <p>{t.companiesHint}</p>
-            <form onSubmit={searchCompanies} aria-busy={busy}>
-              <div className="field"><label htmlFor="company-query">{t.companySearch}</label><input id="company-query" name="company-query" minLength={1} maxLength={120} required disabled={busy}/></div>
-              <button type="submit" disabled={busy}>{busy ? t.waiting : t.searchCompanies}</button>
-            </form>
-            {companies.length > 0 && <ul className="company-results">
-              {companies.map(company => <li key={company.id}><button type="button" className="secondary" onClick={() => void selectCompany(company)} disabled={busy}>{company.ticker} — {company.legal_name}</button><small>{company.cnpj} · {company.sector}</small></li>)}
-            </ul>}
-            {selectedCompany && <div className="company-documents">
-              <h4>{selectedCompany.ticker} — {selectedCompany.legal_name}</h4>
-              <p className="privacy-note">{t.cvmDisclaimer}</p>
-              <h5>{t.financialIndicatorsTitle}</h5>
-              {financialIndicators.length === 0 ? <p>{t.noFinancialIndicators}</p> : <>
-                <p className="indicator-note">{t.indicatorsLocalFixture}</p>
-                <div className="indicator-table-wrap"><table>
-                  <caption>{t.financialIndicatorsCaption}</caption>
-                  <thead><tr><th>{t.indicatorMetric}</th><th>{t.indicatorPeriod}</th><th>{t.indicatorValue}</th><th>{t.indicatorStatus}</th><th>{t.indicatorSource}</th></tr></thead>
-                  <tbody>{financialIndicators.map(indicator => <tr key={indicator.id} className={indicator.effective ? '' : 'superseded'}>
-                    <td>{indicator.metric === 'net_revenue' ? t.netRevenue : indicator.metric === 'net_income' ? t.netIncome : t.equity}</td><td>{indicator.reference_period}<br/><small>{t.referenceDate} {indicator.reference_date}</small></td><td>{new Intl.NumberFormat(lang === 'pt' ? 'pt-BR' : 'en-US', { maximumFractionDigits: 2 }).format(Number(indicator.value))} {t.thousandsOfReais}</td><td>{indicator.effective ? t.currentIndicator : t.restatedIndicator}</td><td><a href={indicator.source_url} target="_blank" rel="noopener noreferrer">{indicator.source_name}</a><br/><small>{t.syncedAt} {indicator.synced_at.slice(0, 10)}</small></td>
-                  </tr>)}</tbody>
-                </table></div>
-                <div className="indicator-chart" role="img" aria-label={t.indicatorChartAlternative}>
-                  <h6>{t.indicatorEvolution}</h6>
-                  {(['net_revenue', 'net_income', 'equity'] as const).map(metric => {
-                    const rows = financialIndicators.filter(item => item.metric === metric && item.effective);
-                    const maximum = Math.max(...rows.map(item => Math.abs(Number(item.value))), 1);
-                    return <div className="indicator-series" key={metric}><strong>{metric === 'net_revenue' ? t.netRevenue : metric === 'net_income' ? t.netIncome : t.equity}</strong>{rows.map(item => <div className="indicator-bar" key={item.id}><span>{item.reference_period}</span><i style={{ width: `${Math.max(3, Math.abs(Number(item.value)) / maximum * 100)}%` }} /><b>{new Intl.NumberFormat(lang === 'pt' ? 'pt-BR' : 'en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(Number(item.value))}</b></div>)}</div>;
-                  })}
-                </div>
-              </>}
-              {officialDocuments.length === 0 ? <p>{t.noDocuments}</p> : <ul>
-                {officialDocuments.map(document => <li key={document.id}>
-                  <strong>{document.document_type}</strong> — {document.subject} ({document.reference_period})<br/>
-                  <small>{t.deliveredAt} {document.delivered_at} · {t.documentStatus}: {document.status} · {t.linkStatus}: {document.link_status}</small><br/>
-                  <a href={document.official_url} target="_blank" rel="noopener noreferrer">{t.openOfficialDocument}</a>{' '}
-                  <button type="button" className="secondary" onClick={() => void checkDocumentLink(document)} disabled={busy}>{t.checkLink}</button>
-                </li>)}
-              </ul>}
-            </div>}
-          </section>
-          <section className="profile" aria-labelledby="market-title">
-            <h3 id="market-title">{t.marketTitle}</h3>
-            <p>{t.marketHint}</p>
-            <form onSubmit={searchMarketQuote} aria-busy={busy}>
-              <div className="field"><label htmlFor="market-ticker">{t.marketTicker}</label><input id="market-ticker" name="market-ticker" minLength={5} maxLength={7} required disabled={busy}/></div>
-              <button type="submit" disabled={busy}>{busy ? t.waiting : t.marketSearch}</button>
-            </form>
-            {marketQuote && <div className="market-reference">
-              <p className="indicator-note">{t.marketLocalReference}</p>
-              <p><strong>{marketQuote.ticker}</strong> · {marketQuote.asset_kind === 'stock' ? t.marketStock : t.marketFii}</p>
-              <p className="market-price">{new Intl.NumberFormat(lang === 'pt' ? 'pt-BR' : 'en-US', { style: 'currency', currency: 'BRL' }).format(Number(marketQuote.price))} <small>{Number(marketQuote.daily_change_percent) >= 0 ? '+' : ''}{marketQuote.daily_change_percent}%</small></p>
-              <p><small>{t.referenceDate} {formatSessionInstant(marketQuote.referenced_at)} · {t.marketValidUntil} {formatSessionInstant(marketQuote.fresh_until)}</small></p>
-              <ul className="market-history" aria-label={t.marketHistory}>{marketQuote.history.map(point => <li key={point.quoted_on}>{point.quoted_on}: {new Intl.NumberFormat(lang === 'pt' ? 'pt-BR' : 'en-US', { style: 'currency', currency: 'BRL' }).format(Number(point.close_price))}</li>)}</ul>
-            </div>}
-            {manualMarketEntry && <p className="verification">{t.marketManualEntry}</p>}
-          </section>
-          <section className="profile" aria-labelledby="preferences-title">
-            <h3 id="preferences-title">{t.preferencesTitle}</h3>
-            <form onSubmit={submitPreferences} aria-busy={busy}>
-              <div className="field"><label htmlFor="preference-language">{t.language}</label><select id="preference-language" name="preference-language" defaultValue={preferences.language} disabled={busy}><option value="pt">Português</option><option value="en">English</option></select></div>
-              <div className="field"><label htmlFor="preference-theme">{t.theme}</label><select id="preference-theme" name="preference-theme" defaultValue={preferences.theme} disabled={busy}><option value="light">{t.lightTheme}</option><option value="dark">{t.darkTheme}</option></select></div>
-              <label className="check"><input type="checkbox" name="in-app" defaultChecked={preferences.in_app_notifications} disabled={busy}/>{t.inAppNotifications}</label>
-              <label className="check"><input type="checkbox" name="email-notifications" defaultChecked={preferences.email_notifications} disabled={busy}/>{t.emailNotifications}</label>
-              <label className="check"><input type="checkbox" name="push-notifications" defaultChecked={preferences.push_notifications} disabled={busy}/>{t.pushNotifications}</label>
-              <button type="submit" disabled={busy}>{busy ? t.waiting : t.savePreferences}</button>
-            </form>
-          </section>
-          <section className="profile" aria-labelledby="password-title">
-            <h3 id="password-title">{t.passwordTitle}</h3>
-            <form onSubmit={submitPasswordChange} aria-busy={busy}>
-              <div className="field"><label htmlFor="change-current-password">{t.currentPassword}</label><input id="change-current-password" name="change-current-password" type="password" autoComplete="current-password" minLength={8} maxLength={128} required disabled={busy}/></div>
-              <div className="field"><label htmlFor="change-new-password">{t.newPassword}</label><input id="change-new-password" name="change-new-password" type="password" autoComplete="new-password" minLength={8} maxLength={128} required disabled={busy}/></div>
-              <button type="submit" disabled={busy}>{busy ? t.waiting : t.changePassword}</button>
-            </form>
-          </section>
-          {!visualPreview && !interactivePreview && <section className="profile" aria-labelledby="delete-title">
-            <h3 id="delete-title">{t.deleteAccount}</h3>
-            {!deletionReview ? <button type="button" onClick={reviewDeletion} disabled={busy}>{t.deletionReview}</button> : <>
-              <p>{t.deletionScope}</p>
-              <form onSubmit={submitDeletion} aria-busy={busy}>
-                <div className="field"><label htmlFor="delete-password">{t.currentPassword}</label><input id="delete-password" name="delete-password" type="password" autoComplete="current-password" maxLength={128} required disabled={busy}/></div>
-                <div className="field"><label htmlFor="delete-confirmation">{t.deletionText}</label><input id="delete-confirmation" name="delete-confirmation" pattern="EXCLUIR MINHA CONTA" autoComplete="off" required disabled={busy}/></div>
-                <button type="submit" disabled={busy}>{t.deleteAccount}</button>
-                <button type="button" className="secondary" onClick={() => setDeletionReview(false)} disabled={busy}>{t.deletionCancel}</button>
-              </form>
-            </>}
-          </section>}
-          <section className="profile categories" aria-labelledby="categories-title">
-            <h3 id="categories-title">{t.categoriesTitle}</h3>
-            <p>{t.categoriesHint}</p>
-            <ul>
-              {categories.map(category => <li key={category.key} className={category.active ? '' : 'inactive'}>
-                <span className="category-color" style={{ backgroundColor: category.color }} aria-hidden="true"/>
-                <span>{category.name}</span>
-                {category.kind === 'standard' && user.email_verified && <button type="button" className="secondary" onClick={() => toggleDefaultCategory(category)} disabled={busy}>{category.active ? t.hideCategory : t.showCategory}</button>}
-              </li>)}
-            </ul>
-            {user.email_verified ? <form onSubmit={submitCategory} aria-busy={busy}>
-              <div className="field"><label htmlFor="category-name">{t.categoryName}</label><input id="category-name" name="category-name" maxLength={60} required disabled={busy}/></div>
-              <div className="field"><label htmlFor="category-color">{t.categoryColor}</label><input id="category-color" name="category-color" type="color" defaultValue="#173F35" disabled={busy}/></div>
-              <button type="submit" disabled={busy}>{busy ? t.waiting : t.createCategory}</button>
-            </form> : <p>{t.categoryVerificationHint}</p>}
-          </section>
-          <section className="profile" aria-labelledby="financial-sources-title">
-            <h3 id="financial-sources-title">{t.financialSourcesTitle}</h3>
-            {user.email_verified ? <>
-              <ul className="source-list">
-                {accounts.map(account => <li key={account.id}><strong>{account.name}</strong><span>{t[account.account_type as 'checking' | 'savings' | 'cash' | 'investment']} · {account.initial_balance}</span></li>)}
-                {creditCards.map(card => <li key={card.id}><strong>{card.name}</strong><span>{t.creditLimit}: {card.credit_limit} · {t.closes}: {card.closing_day} · {t.due}: {card.due_day}</span></li>)}
-              </ul>
-              <form onSubmit={submitAccount} aria-busy={busy}>
-                <div className="field"><label htmlFor="account-name">{t.accountName}</label><input id="account-name" name="account-name" maxLength={60} required disabled={busy}/></div>
-                <div className="field"><label htmlFor="account-type">{t.accountType}</label><select id="account-type" name="account-type" defaultValue="checking" disabled={busy}><option value="checking">{t.checking}</option><option value="savings">{t.savings}</option><option value="cash">{t.cash}</option><option value="investment">{t.investment}</option></select></div>
-                <div className="field"><label htmlFor="account-balance">{t.initialBalance}</label><input id="account-balance" name="account-balance" type="number" step="0.01" defaultValue="0" required disabled={busy}/></div>
-                <button type="submit" disabled={busy}>{busy ? t.waiting : t.createAccount}</button>
-              </form>
-              <form onSubmit={submitCreditCard} aria-busy={busy}>
-                <div className="field"><label htmlFor="card-name">{t.cardName}</label><input id="card-name" name="card-name" maxLength={60} required disabled={busy}/></div>
-                <div className="field"><label htmlFor="card-limit">{t.creditLimit}</label><input id="card-limit" name="card-limit" type="number" min="0.01" step="0.01" required disabled={busy}/></div>
-                <div className="field"><label htmlFor="closing-day">{t.closes}</label><input id="closing-day" name="closing-day" type="number" min="1" max="31" required disabled={busy}/></div>
-                <div className="field"><label htmlFor="due-day">{t.due}</label><input id="due-day" name="due-day" type="number" min="1" max="31" required disabled={busy}/></div>
-                <button type="submit" disabled={busy}>{busy ? t.waiting : t.createCard}</button>
-              </form>
-            </> : <p>{t.financeVerificationHint}</p>}
-          </section>
-          <section className="profile" aria-labelledby="statement-title">
-            <h3 id="statement-title">{t.statementTitle}</h3><p>{t.statementHint}</p>
-            {user.email_verified ? <form onSubmit={event => { event.preventDefault(); void downloadStatement('csv', event.currentTarget); }} aria-busy={busy}>
-              <div className="field"><label htmlFor="statement-start">{t.periodStart}</label><input id="statement-start" name="statement-start" type="date" required disabled={busy}/></div>
-              <div className="field"><label htmlFor="statement-end">{t.periodEnd}</label><input id="statement-end" name="statement-end" type="date" required disabled={busy}/></div>
-              <button type="submit" disabled={busy}>{t.exportCsv}</button>
-              <button type="button" className="secondary" onClick={event => { const form = event.currentTarget.form; if (form) void downloadStatement('pdf', form); }} disabled={busy}>{t.exportPdf}</button>
-            </form> : <p>{t.financeVerificationHint}</p>}
-          </section>
-          {user.role === 'administrador' && adminUsers && <section className="profile" aria-labelledby="admin-users-title">
-            <h3 id="admin-users-title">{t.adminUsersTitle}</h3>
-            <p>{t.adminUsersHint.replace('{total}', String(adminUsers.total))}</p>
-            <ul className="source-list">
-              {adminUsers.items.map(member => <li key={member.id}><strong>{member.name}</strong><span>{member.email} · {member.status} · {formatSessionInstant(member.created_at)}</span></li>)}
-            </ul>
-          </section>}
-          <section className="profile" aria-labelledby="recurring-income-title">
-            <h3 id="recurring-income-title">{t.recurringIncomeTitle}</h3>
-            <ul className="source-list">{recurringIncomes.map(income => <li key={income.id}><strong>{income.description}</strong><span>{income.amount} · {income.starts_on}</span></li>)}</ul>
-            {user.email_verified ? <form onSubmit={submitRecurringIncome} aria-busy={busy}>
-              <div className="field"><label htmlFor="income-description">{t.incomeDescription}</label><input id="income-description" name="income-description" maxLength={100} required disabled={busy}/></div>
-              <div className="field"><label htmlFor="income-amount">{t.monthlyAmount}</label><input id="income-amount" name="income-amount" type="number" min="0.01" step="0.01" required disabled={busy}/></div>
-              <div className="field"><label htmlFor="income-account">{t.sourceAccount}</label><select id="income-account" name="income-account" defaultValue="" disabled={busy}><option value="">{t.noAccount}</option>{accounts.map(account => <option key={account.id} value={account.id}>{account.name}</option>)}</select></div>
-              <button type="submit" disabled={busy}>{busy ? t.waiting : t.createIncome}</button>
-            </form> : <p>{t.financeVerificationHint}</p>}
-          </section>
-          <p>{t.sessionHint}</p>
-          <section className="sessions" aria-labelledby="sessions-title">
-            <div className="sessions-heading">
-              <h3 id="sessions-title">{t.sessionsTitle}</h3>
-              <button type="button" className="secondary" onClick={revokeAllSessions} disabled={busy || !managedSessions.length}>
-                {busy ? t.waiting : t.endAllSessions}
-              </button>
-            </div>
-            <ul>
-              {managedSessions.map(session => <li key={session.id}>
-                <div>
-                  <strong>{session.current ? t.sessionCurrent : t.sessionOther}</strong>
-                  <span>{t.sessionStarted} {formatSessionInstant(session.started_at)}</span>
-                  <span>{t.sessionExpires} {formatSessionInstant(session.expires_at)}</span>
-                </div>
-                <button type="button" className="secondary" onClick={() => revokeSession(session)} disabled={busy}>
-                  {session.current ? t.endCurrentSession : t.endSession}
-                </button>
-              </li>)}
-            </ul>
-          </section>
-          <button onClick={logout} disabled={busy}>{busy ? t.waiting : t.logout}</button>
-        </> : passwordResetToken ? <>
+        {loading ? <p role="status">{t.loading}</p> : passwordResetToken ? <>
           <h2 ref={heading} tabIndex={-1}>{t.resetPasswordTitle}</h2>
           <p>{t.resetPasswordHint}</p>
           <form onSubmit={submitPasswordReset} aria-busy={busy}>
@@ -821,8 +869,7 @@ function App() {
             <button type="submit" disabled={busy || visualPreview}>{busy ? t.waiting : mode === 'login' ? t.submitLogin : mode === 'register' ? t.submitRegister : t.requestPasswordRecovery}</button>
           </form>
         </>}
-        <p className={`message ${error ? 'error' : ''}`} role={error ? 'alert' : 'status'} aria-live="polite">{message ? t[message] : ''}</p>
-        {seconds > 0 && <p className="retry-countdown">{t.retryIn} <span aria-live="off">{countdown}</span></p>}
+        {feedback}
       </div>
     </section>
   </main>;

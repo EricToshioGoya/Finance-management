@@ -152,7 +152,7 @@ export function InvestmentAllocation({ token, lang }: { token: string; lang: 'pt
           </div>
         </div>)}
       </div>
-      <div className="indicator-table-wrap"><table>
+      <div className="indicator-table-wrap" tabIndex={0}><table>
         <caption>{pt ? 'Distribuição real e desvios em pontos percentuais' :
           'Actual distribution and deviations in percentage points'}</caption>
         <thead><tr><th>{pt ? 'Classe' : 'Class'}</th><th>BRL</th>
