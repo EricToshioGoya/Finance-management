@@ -130,3 +130,42 @@ export function AdminEngagement({ token, lang }: { token: string; lang: Lang }) 
     <small>{pt ? 'Período' : 'Period'}: {shortDate(data.start, lang)} – {shortDate(data.end, lang)}</small>
   </section>;
 }
+
+type Distribution = { total_users: number; profiled_users: number; without_profile: number; items: { profile: string; count: number; percentage: string }[]; generated_at: string };
+const profileColors: Record<string, string> = { conservador: '#2f8f6b', moderado: '#c27c0e', arrojado: '#a0451f' };
+const profileNames: Record<string, [string, string]> = { conservador: ['Conservador', 'Conservative'], moderado: ['Moderado', 'Moderate'], arrojado: ['Arrojado', 'Aggressive'] };
+
+/** Distribuição de perfis de investidor no painel administrativo (SPEC-062). */
+export function AdminProfileDistribution({ token, lang }: { token: string; lang: Lang }) {
+  const pt = lang === 'pt';
+  const [start, setStart] = useState('');
+  const [end, setEnd] = useState('');
+  const [data, setData] = useState<Distribution | null>(null);
+  const [error, setError] = useState('');
+  const load = useCallback(async () => {
+    const query = new URLSearchParams();
+    if (start) query.set('start', start);
+    if (end) query.set('end', end);
+    try { setData(await api<Distribution>(token, `/api/v1/admin/investor-profiles?${query}`)); setError(''); }
+    catch (cause) { setError(errorText(cause, lang)); }
+  }, [token, start, end, lang]);
+  // R05: atualização automática enquanto o painel estiver aberto.
+  useEffect(() => { void load(); const timer = setInterval(() => void load(), 60000); return () => clearInterval(timer); }, [load]);
+  const peak = Math.max(1, ...(data?.items.map(item => item.count) ?? []));
+  return <section className="profile" aria-labelledby="profile-distribution-title">
+    <h3 id="profile-distribution-title">{pt ? 'Distribuição de perfis de investidor' : 'Investor profile distribution'}</h3>
+    <div className="inline-fields">
+      <label className="inline-field">{pt ? 'Cadastro de' : 'Registered from'}<input type="date" value={start} onChange={event => setStart(event.target.value)} /></label>
+      <label className="inline-field">{pt ? 'até' : 'to'}<input type="date" value={end} onChange={event => setEnd(event.target.value)} /></label>
+    </div>
+    {error && <p className="error" role="alert">{error}</p>}
+    {data && <>
+      <ul className="bar-list" aria-label={pt ? 'Usuários por perfil' : 'Users per profile'}>{data.items.map(item => <li key={item.profile}>
+        <span>{(profileNames[item.profile] ?? [item.profile, item.profile])[pt ? 0 : 1]}</span>
+        <i style={{ width: `${item.count / peak * 100}%`, background: profileColors[item.profile] }} />
+        <b>{item.count} <small>({percent(item.percentage, lang, 1)})</small></b>
+      </li>)}</ul>
+      <p className="hint">{pt ? 'Usuários com perfil' : 'Users with a profile'}: {data.profiled_users} · {pt ? 'sem quiz respondido' : 'quiz not answered'}: {data.without_profile} · {pt ? 'atualizado em' : 'updated at'} {new Date(data.generated_at).toLocaleTimeString(pt ? 'pt-BR' : 'en-US')}</p>
+    </>}
+  </section>;
+}

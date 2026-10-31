@@ -31,6 +31,7 @@ from app.application.cvm_cache import CvmCacheService
 from app.application.exchange_rates import ExchangeRateService
 from app.application.external_api import ExternalApiService
 from app.application.engagement import EngagementService
+from app.application.profile_distribution import ProfileDistributionService
 from app.application.webhooks import HttpWebhookDelivery, WebhookService
 from app.application.market_quotes import MarketQuoteService
 from app.config import Settings, get_settings
@@ -90,6 +91,7 @@ from app.presentation.schemas import (
     ExternalBalanceOutput,
     ExternalNetWorthOutput,
     EngagementOutput,
+    ProfileDistributionOutput,
     FinancialIndicatorOutput,
     FinancialSourcesOutput,
     FinancingComparisonInput,
@@ -538,6 +540,23 @@ def create_app(
             raise AuthError("invalid_session")
         user, _ = auth.authenticate(credentials.credentials)
         return EngagementService(auth.db, auth).report(user, start, end, inactive_days)
+
+    @app.get(
+        f"{ADMIN_PREFIX}/investor-profiles",
+        response_model=ProfileDistributionOutput,
+        tags=["admin"],
+    )
+    def investor_profile_distribution(
+        auth: Service,
+        credentials: Credentials,
+        start: date | None = None,
+        end: date | None = None,
+    ):
+        """SPEC-062: distribuição agregada por resultado do quiz, filtrável por cadastro."""
+        if not credentials:
+            raise AuthError("invalid_session")
+        user, _ = auth.authenticate(credentials.credentials)
+        return ProfileDistributionService(auth.db, auth).distribution(user, start, end)
 
     @app.get("/api/v1/health", tags=["system"])
     def health():

@@ -16,7 +16,7 @@ import { Overview } from './Overview';
 import { Transactions } from './Transactions';
 import { CardInvoice, Planning } from './Planning';
 import { Investments } from './Investments';
-import { AdminEngagement, NetWorthItems, Notifications, Watchlist } from './Extras';
+import { AdminEngagement, AdminProfileDistribution, NetWorthItems, Notifications, Watchlist } from './Extras';
 import { money } from './api';
 import './style.css';
 import { demoRequest, demoNow, advanceDemo, resetDemo } from './demo';
@@ -790,7 +790,7 @@ function App() {
             {adminUsers.items.map(member => <li key={member.id}><strong>{member.name}</strong><span>{member.email} · {member.status} · {formatSessionInstant(member.created_at)}</span></li>)}
           </ul>
         </section>}
-        {live && token && <AdminEngagement token={token} lang={lang} />}
+        {live && token && <div className="grid-2"><AdminProfileDistribution token={token} lang={lang} /><AdminEngagement token={token} lang={lang} /></div>}
       </>,
     };
     const visibleTabs = live ? tabs : tabs.filter(([key]) => key === 'account');
