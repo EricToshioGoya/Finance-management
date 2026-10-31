@@ -1235,3 +1235,96 @@ class SessionView(BaseModel):
 
 class RevokeAllSessionsOutput(BaseModel):
     revoked_sessions: int
+
+
+# ---------- SPEC-044/045: vínculo entre usuários e divisão de despesas ----------
+class SharingInviteInput(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+
+
+class SharingInviteOutput(BaseModel):
+    status: Literal["sent"]
+
+
+class SharedLinkActiveOutput(BaseModel):
+    id: UUID
+    partner_name: str
+    since: datetime | None
+
+
+class SharedInvitationReceivedOutput(BaseModel):
+    id: UUID
+    from_name: str
+    expires_at: datetime
+
+
+class SharedInvitationSentOutput(BaseModel):
+    id: UUID
+    expires_at: datetime
+
+
+class SharedLinkHistoryOutput(BaseModel):
+    id: UUID
+    partner_name: str
+    ended_at: datetime | None
+
+
+class SharingOverviewOutput(BaseModel):
+    active: SharedLinkActiveOutput | None
+    received: list[SharedInvitationReceivedOutput]
+    sent: list[SharedInvitationSentOutput]
+    history: list[SharedLinkHistoryOutput]
+
+
+class ShareSplitInput(BaseModel):
+    split: Literal["equal", "custom"] = "equal"
+    payer_percent: Decimal | None = Field(default=None, gt=0, lt=100, decimal_places=2)
+    partner_percent: Decimal | None = Field(default=None, gt=0, lt=100, decimal_places=2)
+
+    def resolved_payer_percent(self) -> Decimal:
+        """50/50 ou percentual customizado que precisa fechar 100%."""
+        if self.split == "equal":
+            return Decimal("50")
+        if self.payer_percent is None or self.partner_percent is None:
+            raise ValueError("split_must_total_100")
+        if self.payer_percent + self.partner_percent != Decimal("100"):
+            raise ValueError("split_must_total_100")
+        return self.payer_percent
+
+
+class ShareExpenseInput(ShareSplitInput):
+    expense_id: UUID
+
+
+class SettlementInput(BaseModel):
+    amount: Decimal = Field(gt=0, max_digits=14, decimal_places=2)
+    link_id: UUID | None = None
+
+
+class SharedItemOutput(BaseModel):
+    id: UUID
+    expense_id: UUID
+    description: str
+    amount: Decimal
+    occurred_on: date
+    paid_by: Literal["me", "partner"]
+    payer_percent: Decimal
+    my_share: Decimal
+    partner_share: Decimal
+
+
+class SettlementOutput(BaseModel):
+    id: UUID
+    amount: Decimal
+    paid_by: Literal["me", "partner"]
+    created_at: datetime
+
+
+class SharedBalanceOutput(BaseModel):
+    link_id: UUID
+    status: Literal["active", "ended"]
+    partner_name: str
+    items: list[SharedItemOutput]
+    settlements: list[SettlementOutput]
+    direction: Literal["settled", "partner_owes_me", "i_owe_partner"]
+    amount: Decimal
