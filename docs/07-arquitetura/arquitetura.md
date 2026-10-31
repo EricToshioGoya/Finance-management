@@ -4,7 +4,7 @@
 - **Última atualização:** 2026-10-18
 - **Decisões registradas:** `docs/07-arquitetura/adrs/` (ADR-001 a ADR-006)
 
-Este é o documento 2 do projeto: visão arquitetural, drivers, decisões técnicas, descrição da arquitetura e justificativas. O documento 1 (requisitos e modelagem) é formado por `docs/01-visao/`, `docs/02-personas/`, `docs/03-requisitos/`, `docs/04-casos-de-uso/` e `docs/modelo-dominio.md`.
+Este é o documento 2 do projeto: visão arquitetural, drivers, decisões técnicas, descrição da arquitetura e justificativas. O documento 1 (requisitos e modelagem) é formado por `docs/01-visao/`, `docs/02-personas/`, `docs/03-requisitos/`, `docs/04-casos-de-uso/` e `docs/05-modelo-de-dominio/modelo-de-dominio.md`.
 
 **Encadeamento:** visão → requisitos (RF, RNF, RB) → modelo de domínio → casos de uso → **drivers** (seção 1) → **decisões técnicas** (seção 2) → **ADRs** para as decisões difíceis de reverter.
 
@@ -40,7 +40,7 @@ Escolhas concretas em resposta aos drivers. **Critério para ADR: reversibilidad
 | DA-02 | Cálculos financeiros | Cálculo em funções puras na camada de domínio, com `Decimal` e taxa equivalente composta; testes unitários sem banco nem HTTP. | **ADR-002** — mover a regra de camada reescreve cálculo e testes. |
 | DA-03 | Simulação rápida e resiliente | Indicadores lidos apenas do cache local (`IndicadorOficial`), atualizado 1 vez por dia por rotina agendada. A simulação é síncrona (requisição e resposta), sem fila, porque o cálculo roda em memória e cabe no P95 de 3s. Na falha da fonte, usa o último valor com aviso. | **ADR-003** — muda integração e dados. |
 | DA-04 | Dados da CVM | Apenas metadados e números estruturados; documento completo acessado por link oficial; expurgo automático após 12 meses. | **ADR-004** — muda armazenamento e política legal. |
-| DA-05 | Segurança de acesso | JWT assinado e sem estado no servidor; senha com hash e salt (Bcrypt ou Argon2); bloqueio das tentativas de login para o e-mail por 15 minutos após 5 falhas consecutivas e rate limit de 100 requisições por minuto por cliente; papel verificado no backend, na camada de aplicação, em toda rota administrativa. | **ADR-005** — trocar o mecanismo de sessão afeta todos os clientes e rotas. |
+| DA-05 | Segurança de acesso | JWT assinado com sessão persistida e revogável no servidor; senha com hash e salt (Bcrypt ou Argon2); bloqueio das tentativas de login para o e-mail por 15 minutos após 5 falhas consecutivas e rate limit de 100 requisições por minuto por cliente; papel verificado no backend, na camada de aplicação, em toda rota administrativa. | **ADR-005** — trocar o mecanismo de sessão afeta todos os clientes e rotas. |
 | DA-06 | Posse dos dados | Negar por padrão: toda leitura e alteração de dado financeiro é filtrada pelo `usuario_id` do token dentro da própria consulta do repositório, nunca por verificação posterior. Categorias padrão (sem dono) são somente leitura. Exportação e exclusão completas por usuário. | **ADR-005** — mudar a política depois exige revisar todas as consultas. |
 | DA-07 | Regras em qualquer canal | A camada de domínio é o ponto único de validação das regras de negócio, alcançável pela API, pelos clientes e pelas rotinas. Pydantic valida apenas formato; nenhuma regra fica em router, schema ou trigger de banco. | Não — já coberta por ADR-001 e ADR-002. |
 | DA-08 | Saldo e dashboards imediatos | Saldo, renda total do mês (RB-05) e dashboards são calculados sob demanda a partir dos lançamentos, sem valores materializados; consultas de agregação apoiadas por índice em (`usuario_id`, `data`). Revisar se ultrapassar o P95 de 3s. | Não — materializar depois é uma otimização local, sem migrar os dados de origem. |
@@ -54,7 +54,7 @@ Escolhas concretas em resposta aos drivers. **Critério para ADR: reversibilidad
 
 | Estilo | Avaliação para o FinNova |
 |---|---|
-| **Monolítico modular em camadas (escolhido)** | Atende o backend único (RNF-05) com uma equipe de uma pessoa e um MVP curto; deploy e testes simples; baixa latência entre módulos. Custo: exige disciplina para não acoplar módulos, mitigada pela regra de dependência (seção 6) e pela divisão por abas. |
+| **Monolítico modular em camadas (escolhido)** | Atende o backend único (RNF-05) com uma equipe de duas pessoas (Eric Toshio Goya e Arthur Sá) e um MVP curto; deploy e testes simples; baixa latência entre módulos. Custo: exige disciplina para não acoplar módulos, mitigada pela regra de dependência (seção 6) e pela divisão por abas. |
 | Microsserviços | Descartado: alto custo operacional e de distribuição de dados, sem necessidade de escalar módulos de forma independente no MVP (ADR-001). |
 | MVC | Não é alternativa ao estilo do backend: é um padrão da camada de apresentação. Os routers FastAPI fazem o papel de controller e os clientes React fazem o de view. |
 
@@ -184,7 +184,7 @@ Rotina agendada → API SGS / Tesouro Transparente → atualização do cache de
 | Auditoria | Registro imutável de ações sensíveis | RNF-18 |
 | Segurança | Ver `docs/09-seguranca/seguranca-ssdlc.md` | DA-05, DA-06 |
 | Testes | Ver `docs/10-qualidade/estrategia-de-testes.md` | RNF-07, RNF-16 |
-| Elementos técnicos fora do domínio | `WebhookSubscription`, `AuditLog`, `EventoUso`, credenciais e preferências de interface ficam na infraestrutura, não no modelo de domínio (`docs/modelo-dominio.md`, seção 7) | RNF-18, RNF-23, RB-23 |
+| Elementos técnicos fora do domínio | `WebhookSubscription`, `AuditLog`, `EventoUso`, credenciais e preferências de interface ficam na infraestrutura, não no modelo de domínio (`docs/05-modelo-de-dominio/modelo-de-dominio.md`, seção 7) | RNF-18, RNF-23, RB-23 |
 
 ---
 
@@ -200,7 +200,34 @@ Containers Docker; pipeline de CI/CD no GitHub Actions; hospedagem em Railway ou
 |---|---|---|
 | Provedor de cotações de ações e FIIs | Bloqueia RF-24 | ADR futuro |
 | Tecnologia das rotinas agendadas | RF-23, RF-30, RF-33 | ADR futuro |
-| Expiração do JWT e refresh token | SPEC-001, ADR-005 | SPEC-001, OPEN-01 e OPEN-03 |
-| Política de arredondamento monetário | SPEC-002 | SPEC-002, OPEN-01 |
+| Política técnica de sessão implementada | Access de 15min, refresh rotativo, sessão absoluta de 7 dias; revisão formal pendente | ADR-007; OPEN-01 |
+| Política de arredondamento do motor | 50 dígitos Decimal, HALF_UP somente no consumo; adotada tecnicamente na SPEC-002 | ADR-002, OPEN-03 |
 | Prazo de retenção das chaves de idempotência | DA-10 | Plano da spec do RF-09 |
 | Carga do teste de desempenho | RNF-04 | `docs/10-qualidade/estrategia-de-testes.md`, seção 11 |
+
+
+## Manutenção da conta e serviços complementares
+
+RF-68 a RF-74 usam a mesma API/camadas e PostgreSQL. Envio transacional de e-mail é adaptador externo com fila/outbox persistida, retentativas limitadas e chave idempotente; falha de entrega não confirma endereço nem altera senha. Tokens temporários são aleatórios, vinculados à finalidade/titular, guardados como digest, expiram e são consumidos atomicamente uma única vez. Confirmação: 24h; recuperação: 30min; reenvio: mínimo 60s. A confirmação de e-mail foi implementada pela SPEC-015; recuperação, alteração, preferências e operação de entrega continuam pendentes.
+
+Recuperação/alteração de senha revoga todas as sessões. Alteração do e-mail exige reautenticação e confirmação antes de substituir o atual; preferências e sessões são filtradas pelo titular no servidor. Fluxos financeiros exigirão e-mail verificado; login atual ainda aceita contas sem confirmação. Provedor, credenciais e configuração operacional estão em OPEN-17. Backups exigem restauração isolada e aplicação das exclusões antes de disponibilizar dados recuperados (OPEN-05).
+
+## 12. Reconciliação e extensão de conta — 2026-10-22
+
+Os drivers DA-01 a DA-11 da main foram preservados. Nesta consolidação, o ADR de implementação antes também chamado ADR-005 passa a [ADR-007](adrs/ADR-007-autenticacao-spec001.md); o ADR-005 anterior permanece histórico. Prevalece para a sessão entregue o contrato do ADR-007: Argon2id, JWT de 15 minutos validado contra sessão PostgreSQL, refresh opaco rotacionado e logout revogável. A alternativa sem estado nas seções anteriores está substituída. O bloqueio por conta de RF-02 foi implementado separadamente do rate limit, conforme complemento do ADR-007 em 2026-10-23.
+
+A implementação usa `backend/app` e `frontend`, não a árvore `src/finnova` proposta acima. OpenAPI documenta somente operações existentes; web responsiva está disponível, Expo permanece planejado. As referências de fluxo atuais são UC-08 para cálculo, UC-09 para renda fixa e UC-06 para despesa; números antigos das seções anteriores são históricos. SPEC-002 é motor puro, sem infraestrutura de cache ou UI.
+
+RF-68 a RF-73 exigem aplicação de conta e adaptador de e-mail transacional, tokens com digest/finalidade/expiração, consumo atômico e migrations. A SPEC-015 oferece adaptador HTTPS configurável, mas nenhum provedor, remetente ou domínio foi configurado. Filas/retries não podem duplicar consumo nem revelar existência de conta. Preferências devem persistir por titular. Recuperação/troca de senha e exclusão revogam todas as sessões. Exportação usa armazenamento temporário com autorização e expiração. Retenção/backups em OPEN-05 e configuração de e-mail em OPEN-17.
+
+RF-23 usa cache somente dentro de sua validade; ausência/vencimento exige erro de taxa oficial ou hipótese manual explícita. Não incorporar resultado simulado ao patrimônio real. A previsão de infraestrutura e os diagramas não comprovam implementação financeira.
+
+
+## Reconciliação da implementação de identidade
+
+[ADR-007](adrs/ADR-007-autenticacao-spec001.md) substitui a proposta sem estado do ADR-005 para sessão, renovação e logout; titularidade e autorização continuam exigências do ADR-005. A API implementada está em `backend/app/`, com `frontend/` e `backend/migrations/`; `src/finnova/` é proposta histórica. O bloqueio após cinco falhas por conta durante quinze minutos está implementado no PostgreSQL, além do rate limit entregue; ver ADR-007 e registro da SPEC-001. Fluxos e decisões acima descrevem requisitos, não comprovação de implementação financeira.
+
+
+## Implementação do motor puro — 2026-10-23
+
+A SPEC-002 entrega `MotorJurosCompostos`, `ResultadoCalculo` e `ResultadoMensal` em `backend/app/domain/juros_compostos.py`, sem importações de infraestrutura, apresentação ou aplicação. O contrato numérico de OPEN-03/15 e o perfil parcial de OPEN-06 estão no ADR-002. Não há rota, migration ou cálculo financeiro duplicado no cliente; a integração pertence às Specs consumidoras. Evidências no [registro da SPEC-002](../09-qualidade/implementacao-SPEC-002.md).
