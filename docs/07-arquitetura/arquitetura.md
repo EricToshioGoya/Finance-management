@@ -2,7 +2,7 @@
 
 - **Status:** rascunho
 - **Última atualização:** 2026-10-18
-- **Decisões registradas:** `docs/07-arquitetura/adrs/` (ADR-001 a ADR-006)
+- **Decisões registradas:** `docs/07-arquitetura/adrs/` (ADR-001 a ADR-009)
 
 Este é o documento 2 do projeto: visão arquitetural, drivers, decisões técnicas, descrição da arquitetura e justificativas. O documento 1 (requisitos e modelagem) é formado por `docs/01-visao/`, `docs/02-personas/`, `docs/03-requisitos/`, `docs/04-casos-de-uso/` e `docs/05-modelo-de-dominio/modelo-de-dominio.md`.
 
@@ -38,7 +38,7 @@ Escolhas concretas em resposta aos drivers. **Critério para ADR: reversibilidad
 |---|---|---|---|
 | DA-01 | Backend único e modular | Monólito modular em camadas com FastAPI, expondo uma única API REST `/api/v1` para web e mobile; módulos organizados pelas abas da visão. | **ADR-001** — trocar o estilo exige reescrever a base. |
 | DA-02 | Cálculos financeiros | Cálculo em funções puras na camada de domínio, com `Decimal` e taxa equivalente composta; testes unitários sem banco nem HTTP. | **ADR-002** — mover a regra de camada reescreve cálculo e testes. |
-| DA-03 | Simulação rápida e resiliente | Indicadores lidos apenas do cache local (`IndicadorOficial`), atualizado 1 vez por dia por rotina agendada. A simulação é síncrona (requisição e resposta), sem fila, porque o cálculo roda em memória e cabe no P95 de 3s. Na falha da fonte, usa o último valor com aviso. | **ADR-003** — muda integração e dados. |
+| DA-03 | Simulação rápida e resiliente | Indicadores lidos apenas do cache local (`IndicadorOficial`), atualizado 1 vez por dia por rotina agendada. A simulação é síncrona (requisição e resposta), sem fila, porque o cálculo roda em memória e cabe no P95 de 3s. Na falha da fonte, usa o último valor com aviso. Provedores oficiais, agenda e contratos em ADR-009. | **ADR-003** e **ADR-009** — muda integração e dados. |
 | DA-04 | Dados da CVM | Apenas metadados e números estruturados; documento completo acessado por link oficial; expurgo automático após 12 meses. | **ADR-004** — muda armazenamento e política legal. |
 | DA-05 | Segurança de acesso | JWT assinado com sessão persistida e revogável no servidor; senha com hash e salt (Bcrypt ou Argon2); bloqueio das tentativas de login para o e-mail por 15 minutos após 5 falhas consecutivas e rate limit de 100 requisições por minuto por cliente; papel verificado no backend, na camada de aplicação, em toda rota administrativa. | **ADR-005** — trocar o mecanismo de sessão afeta todos os clientes e rotas. |
 | DA-06 | Posse dos dados | Negar por padrão: toda leitura e alteração de dado financeiro é filtrada pelo `usuario_id` do token dentro da própria consulta do repositório, nunca por verificação posterior. Categorias padrão (sem dono) são somente leitura. Exportação e exclusão completas por usuário. | **ADR-005** — mudar a política depois exige revisar todas as consultas. |

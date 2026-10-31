@@ -1,6 +1,6 @@
 # SPEC-026: Projetar investimento em moeda estrangeira
 
-**Estado:** implementada tecnicamente em 2026-10-30; política de câmbio confirmada pelo responsável, com CI como evidência técnica.
+**Estado:** implementada tecnicamente em 2026-10-30; política de câmbio confirmada pelo responsável, com CI como evidência técnica. Em 2026-10-31, a política OPEN-23 aprovada (PTAX D-1 útil, aviso até 5 dias úteis) substituiu a validade de 24 horas; a sincronização com o serviço PTAX do BCB segue o ADR-009.
 
 ## 1. Identificação
 

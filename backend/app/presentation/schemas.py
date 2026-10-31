@@ -958,6 +958,8 @@ class ForeignCurrencySimulationOutput(BaseModel):
     reference_date: date
     referenced_at: datetime
     source: str
+    stale: bool = False
+    notice: str | None = None
     risk_notice: str
     rule_version: str
 
