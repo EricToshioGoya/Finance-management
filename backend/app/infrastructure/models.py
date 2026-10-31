@@ -908,3 +908,29 @@ class SettlementRecord(Base):
     amount: Mapped[Decimal] = mapped_column(Numeric(14, 2))
     idempotency_key: Mapped[str] = mapped_column(String(128))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class TaxEstimateRecord(Base):
+    """SPEC-048: estimativa educativa de IR registrada pelo titular (alimenta a SPEC-049)."""
+
+    __tablename__ = "tax_estimates"
+    __table_args__ = (
+        CheckConstraint(
+            "regime IN ('fixed_income', 'stock', 'fii', 'day_trade')", name="valid_tax_regime"
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    regime: Mapped[str] = mapped_column(String(12))
+    competence: Mapped[date] = mapped_column(Date)
+    sales: Mapped[Decimal] = mapped_column(Numeric(14, 2))
+    result: Mapped[Decimal] = mapped_column(Numeric(14, 2))
+    tax_rate: Mapped[Decimal] = mapped_column(Numeric(5, 2))
+    tax: Mapped[Decimal] = mapped_column(Numeric(14, 2))
+    exempt: Mapped[bool] = mapped_column(Boolean)
+    darf_due_on: Mapped[date | None] = mapped_column(Date)
+    rule_version: Mapped[str] = mapped_column(String(20))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
