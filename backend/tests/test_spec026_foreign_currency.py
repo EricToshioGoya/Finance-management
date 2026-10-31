@@ -1,7 +1,8 @@
 """SPEC-026: projections use dated local PTAX and separate asset/currency hypotheses."""
 
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
 from app.infrastructure.models import ExchangeRateRecord, UserRecord
 
@@ -31,7 +32,7 @@ def seed_usd(app):
             ExchangeRateRecord(
                 currency="USD",
                 rate_to_brl=Decimal("5"),
-                reference_date=date(2026, 10, 30),
+                reference_date=now.astimezone(ZoneInfo("America/Sao_Paulo")).date(),
                 referenced_at=now,
                 source_name="PTAX venda BCB (fixture)",
                 availability="available",

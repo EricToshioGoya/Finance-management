@@ -5,7 +5,7 @@ from decimal import Decimal, localcontext
 from app.domain.financeiro import projetar
 from app.domain.juros_compostos import ErroCalculo
 
-RULE_VERSION = "spec-026-ptax-cache-v1"
+RULE_VERSION = "spec-026-ptax-cache-v2"
 
 
 def calcular_projecao_moeda_estrangeira(

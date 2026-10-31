@@ -62,7 +62,12 @@ export function Investments({ token, lang }: { token: string; lang: Lang }) {
         ? ['/financial/simulations/variable-income', { ...common, expected_annual_return: data.rate, ticker: data.ticker || null }]
         : ['/financial/simulations/foreign-currency', { ...common, asset_annual_return: data.rate, currency: data.currency, expected_exchange_annual_change: data.exchange }];
     setError(''); setStatus('');
-    try { await api(token, path, { method: 'POST', body: JSON.stringify(body) }); form.reset(); setStatus(pt ? 'Simulação salva.' : 'Simulation saved.'); await load(); }
+    try {
+      const saved = await api<Simulation>(token, path, { method: 'POST', body: JSON.stringify(body) });
+      // OPEN-23: PTAX antiga (2 a 5 dias úteis) é usada com aviso explícito.
+      const notice = (saved.payload.foreign_currency as { notice?: string | null } | undefined)?.notice;
+      form.reset(); setStatus(`${pt ? 'Simulação salva.' : 'Simulation saved.'}${notice ? ` ${notice}` : ''}`); await load();
+    }
     catch (cause) { setError(errorText(cause, lang)); }
   }
 
