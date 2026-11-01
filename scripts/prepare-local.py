@@ -19,10 +19,18 @@ if not config.exists():
         f"FINNOVA_JWT_SECRET={secrets.token_urlsafe(48)}\n"
         f"FINNOVA_DATA_KEY={Fernet.generate_key().decode()}\n"
         "FINNOVA_PUBLIC_ORIGIN=https://localhost:8443\n"
+        "FINNOVA_OFFICIAL_SOURCES_SYNC=true\n"
     )
     fd = os.open(config, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(fd, "w") as stream:
         stream.write(contents)
+else:
+    # ADR-009: liga as rotinas de BCB/Tesouro (07:00) e CVM (domingo 03:00) em .env antigo,
+    # sem tocar em segredos; uma escolha explícita (true/false) já presente é preservada.
+    current = config.read_text()
+    if "FINNOVA_OFFICIAL_SOURCES_SYNC=" not in current:
+        with config.open("a") as stream:
+            stream.write(("" if current.endswith("\n") else "\n") + "FINNOVA_OFFICIAL_SOURCES_SYNC=true\n")
 cert, key = local / "localhost.crt", local / "localhost.key"
 if not cert.exists() and not key.exists():
     subprocess.run([

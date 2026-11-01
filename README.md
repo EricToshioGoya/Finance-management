@@ -35,6 +35,14 @@ cd mobile && npm ci && npm run typecheck && npm test && npx expo start   # app m
 
 A documentação interativa da API fica em `https://localhost:8443/api/v1/docs`. Variáveis de ambiente estão em `backend/.env.example` (nunca versionar `.env`, regra C-10).
 
+As rotinas de fontes oficiais (ADR-009) ficam ligadas no ambiente local por `FINNOVA_OFFICIAL_SOURCES_SYNC=true`, gravado por `scripts/setup-local.sh`: BCB (SELIC, CDI, IPCA, PTAX) e Tesouro Direto diariamente às 07:00, e CVM aos domingos às 03:00 (America/Sao_Paulo). Para popular o cache na hora, sem esperar o agendamento:
+
+```bash
+cd backend && uv run --frozen python -m app.jobs.indicator_sync && uv run --frozen python -m app.jobs.cvm_sync
+```
+
+Cada rotina imprime o resultado por item (`updated`, `kept` ou `failed`); `failed` mantém o último valor (C-08). Testes e CI nunca chamam as fontes reais (C-17).
+
 ## Documentação
 
 | Documento | Conteúdo |
