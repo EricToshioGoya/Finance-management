@@ -1,6 +1,6 @@
 # SPEC-060: Coletar eventos e auditar ações sensíveis
 
-**Estado:** implementação técnica autorizada nesta sessão em 2026-10-28; revisão formal do grupo pendente. O recorte e as decisões adotadas estão registrados na seção 13 e no [registro de implementação](../09-qualidade/implementacao-SPEC-060.md).
+**Estado:** implementação técnica autorizada nesta sessão em 2026-10-28; revisão formal do grupo pendente. O recorte e as decisões adotadas estão registrados na seção 13 e no [registro de implementação](../09-qualidade/implementacao-SPEC-060.md). Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
 
 ## 1. Identificação
 

@@ -59,6 +59,7 @@ def add_data(client, headers):
 
 
 def test_csv_pdf_period_summary_and_formula_safety(client, app):
+    """Cláusulas: SPEC-019-R01, SPEC-019-R03, SPEC-019-R05, SPEC-019-R06."""
     headers = owner(client, app)
     add_data(client, headers)
     query = "start=2026-01-01&end=2026-01-31"
@@ -76,6 +77,7 @@ def test_csv_pdf_period_summary_and_formula_safety(client, app):
 
 @pytest.mark.parametrize("query", ["month=2026-01", "year=2026", "start=2026-01-01&end=2026-01-31"])
 def test_all_supported_period_selectors_return_only_owner_data(client, app, query):
+    """Cláusulas: SPEC-019-R04, SPEC-019-R06."""
     own = owner(client, app)
     other = owner(client, app, "other-export@example.com")
     add_data(client, own)
@@ -94,6 +96,7 @@ def test_all_supported_period_selectors_return_only_owner_data(client, app, quer
     ],
 )
 def test_export_rejects_invalid_or_unauthenticated_request(client, app, path):
+    """Cláusulas: SPEC-019-R02."""
     headers = owner(client, app)
     assert client.get(f"{PREFIX}{path}").status_code == 401
     assert client.get(f"{PREFIX}{path}", headers=headers).status_code == 400

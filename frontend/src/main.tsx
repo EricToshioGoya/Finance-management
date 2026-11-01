@@ -120,6 +120,7 @@ function App() {
   );
   const [now, setNow] = useState(nowMs);
   const access = useRef<string | null>(null);
+  const suggestionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const heading = useRef<HTMLHeadingElement>(null);
   const t = translations[lang];
@@ -434,6 +435,7 @@ function App() {
 
   async function searchCompanies(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (suggestionTimer.current) clearTimeout(suggestionTimer.current);
     const query = String(new FormData(event.currentTarget).get('company-query') || '').trim();
     if (!query || !access.current) return;
     setBusy(true); setMessage(null); setError(false);
@@ -442,6 +444,18 @@ function App() {
       setCompanies(results); setSelectedCompany(null); setOfficialDocuments([]); setFinancialIndicators([]);
       if (!results.length) setMessage('companyNotFound');
     } catch (cause) { notify(cause); } finally { setBusy(false); }
+  }
+
+  // SPEC-012-R04: sugestões enquanto o usuário digita (a partir de 2 caracteres, após 300 ms).
+  function suggestCompanies(value: string) {
+    if (suggestionTimer.current) clearTimeout(suggestionTimer.current);
+    const query = value.trim();
+    if (query.length < 2 || !access.current) return;
+    suggestionTimer.current = setTimeout(() => {
+      void request<PublicCompany[]>(`/api/v1/companies?query=${encodeURIComponent(query)}`, { headers: { Authorization: `Bearer ${access.current}` } })
+        .then(results => { setCompanies(results); setSelectedCompany(null); setOfficialDocuments([]); setFinancialIndicators([]); })
+        .catch(() => undefined);
+    }, 300);
   }
 
   async function selectCompany(company: PublicCompany) {
@@ -662,10 +676,10 @@ function App() {
           <h3 id="companies-title">{t.companiesTitle}</h3>
           <p>{t.companiesHint}</p>
           <form onSubmit={searchCompanies} aria-busy={busy}>
-            <div className="field"><label htmlFor="company-query">{t.companySearch}</label><input id="company-query" name="company-query" minLength={1} maxLength={120} required disabled={busy}/></div>
+            <div className="field"><label htmlFor="company-query">{t.companySearch}</label><input id="company-query" name="company-query" minLength={1} maxLength={120} required disabled={busy} autoComplete="off" aria-controls="company-suggestions" onChange={event => suggestCompanies(event.target.value)}/></div>
             <button type="submit" disabled={busy}>{busy ? t.waiting : t.searchCompanies}</button>
           </form>
-          {companies.length > 0 && <ul className="company-results">
+          {companies.length > 0 && <ul className="company-results" id="company-suggestions" aria-live="polite" aria-label={pt ? 'Sugestões de empresas' : 'Company suggestions'}>
             {companies.map(company => <li key={company.id}><button type="button" className="secondary" onClick={() => void selectCompany(company)} disabled={busy}>{company.ticker} — {company.legal_name}</button><small>{company.cnpj} · {company.sector}</small>
               <button type="button" className="secondary" onClick={() => void watchCompany(company)} disabled={busy}>{pt ? 'Acompanhar' : 'Watch'}</button></li>)}
           </ul>}

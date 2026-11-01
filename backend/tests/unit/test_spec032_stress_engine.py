@@ -8,6 +8,7 @@ from app.domain.financial_stress import StressScenario, simulate_stress
 
 
 def test_loss_of_income_600_reserve_100_expenses_supports_six_months():
+    """Cláusulas: SPEC-032-R03, SPEC-032-R04."""
     result = simulate_stress(
         Decimal("600"),
         Decimal("0"),
@@ -22,6 +23,7 @@ def test_loss_of_income_600_reserve_100_expenses_supports_six_months():
 
 
 def test_income_reduction_versus_cutting_spending_changes_runway():
+    """Cláusulas: SPEC-032-R03, SPEC-032-R06."""
     without_cut = simulate_stress(
         Decimal("600"),
         Decimal("80"),
@@ -46,6 +48,7 @@ def test_income_reduction_versus_cutting_spending_changes_runway():
 
 
 def test_emergency_is_one_time_and_unknown_runway_is_not_infinite():
+    """Cláusulas: SPEC-032-R03."""
     exhausted = simulate_stress(
         Decimal("600"),
         Decimal("0"),
@@ -89,5 +92,28 @@ def test_emergency_is_one_time_and_unknown_runway_is_not_infinite():
     ],
 )
 def test_rejects_invalid_values(reserve, income, expenses, scenario, threshold):
+    """Cláusulas: SPEC-032-R02."""
     with pytest.raises(ValueError):
         simulate_stress(reserve, income, expenses, scenario, threshold)
+
+
+def test_SPEC_032_R05_alert_when_reserve_does_not_cover_configured_months():
+    """Reserva 200 e gasto 100: cobre 2 meses, abaixo do mínimo configurado (3 ou 6)."""
+    for minimum in (3, 6):
+        result = simulate_stress(
+            Decimal("200"),
+            Decimal("100"),
+            Decimal("100"),
+            StressScenario(kind="income_loss", months=12),
+            minimum,
+        )
+        assert result["low_reserve"] is True and result["falls_below_threshold"] is True
+        assert result["months_supported"] == Decimal("2.00")
+    healthy = simulate_stress(
+        Decimal("600"),
+        Decimal("100"),
+        Decimal("100"),
+        StressScenario(kind="income_loss", months=12),
+        6,
+    )
+    assert healthy["low_reserve"] is False and healthy["falls_below_threshold"] is False

@@ -17,6 +17,7 @@ def headers(client):
 
 
 def test_spec043_admin_aggregate_report_and_inactivity(client, app):
+    """Cláusulas: SPEC-043-R01, SPEC-043-R05, SPEC-043-R06, SPEC-043-R07."""
     admin = headers(client)
     with app.state.engine.begin() as db:
         db.execute(update(UserRecord).values(role="administrador"))
@@ -41,6 +42,7 @@ def test_spec043_admin_aggregate_report_and_inactivity(client, app):
 
 
 def test_spec043_requires_admin(client):
+    """Cláusulas: SPEC-043-R02."""
     assert client.get("/api/v1/admin/engagement").status_code == 401
     ordinary = headers(client)
     assert client.get("/api/v1/admin/engagement", headers=ordinary).status_code == 403

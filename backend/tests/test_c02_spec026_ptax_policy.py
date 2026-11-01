@@ -79,3 +79,23 @@ def test_SPEC_026_R02_ptax_older_than_five_business_days_is_refused(client, app)
     assert response.status_code == 503 and response.json()["detail"] == "ptax_stale"
     five_days = datetime(2026, 10, 30, 13, 0, tzinfo=UTC)
     assert simulate(client, app, headers, five_days).status_code == 201
+
+
+def test_SPEC_026_R03_R05_R06_R07_asset_return_and_exchange_change_are_separate(client, app):
+    headers = verified_user(client, app)
+    seed(app, date(2026, 10, 30))
+    app.state.clock = lambda: datetime(2026, 11, 2, 13, 0, tzinfo=UTC)
+    body = {**BODY, "asset_annual_return": "12", "expected_exchange_annual_change": "10"}
+    response = client.post(f"{FIN}/simulations/foreign-currency", headers=headers, json=body)
+    assert response.status_code == 201, response.text
+    data = response.json()["payload"]["foreign_currency"]
+    # R05: rentabilidade do ativo (12% a.a.) e câmbio esperado (10% a.a.) compõem-se à parte.
+    assert Decimal(data["final_amount_original"]).quantize(Decimal("0.01")) == Decimal("112.00")
+    assert Decimal(data["projected_exchange_rate_to_brl"]).quantize(Decimal("0.0001")) == Decimal(
+        "5.5000"
+    )
+    # R03/R07: resultado na moeda original e convertido para BRL pela PTAX oficial.
+    assert Decimal(data["final_amount_brl"]).quantize(Decimal("0.01")) == Decimal("616.00")
+    assert data["currency"] == "USD" and data["source"].startswith("PTAX venda")
+    # R06: variação cambial explicitada como risco distinto da rentabilidade do ativo.
+    assert "variação cambial" in data["risk_notice"] and "distinta" in data["risk_notice"]

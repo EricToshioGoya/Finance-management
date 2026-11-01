@@ -8,6 +8,7 @@ PREFIX = "/api/v1/auth/financial"
 
 
 def test_score_history_is_private_and_recalculation_is_idempotent(client):
+    """Cláusulas: SPEC-034-R02, SPEC-034-R05, SPEC-034-R08."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     owner = login(client, "healthscore-ui-owner@example.com")
@@ -53,6 +54,7 @@ def test_score_history_is_private_and_recalculation_is_idempotent(client):
 
 
 def test_score_requires_session_and_confirmed_email(client):
+    """Cláusulas: SPEC-034-R02."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     month = date.today().replace(day=1).isoformat()

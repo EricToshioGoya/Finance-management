@@ -1,6 +1,6 @@
 # SPEC-012: Pesquisar empresas e abrir documentos oficiais
 
-**Estado:** implementada em branch de trabalho, aguardando CI e revisão humana. Recorte local confirmado pelo responsável em 2026-10-28.
+**Estado:** implementada em branch de trabalho, aguardando CI e revisão humana. Recorte local confirmado pelo responsável em 2026-10-28. Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI). A busca passou a sugerir empresas enquanto o usuário digita (R04), com teste Playwright em `frontend/tests/spec012.spec.ts`.
 
 ## 1. Identificação
 

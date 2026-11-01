@@ -1,4 +1,5 @@
 from app.main import COOKIE
+from tests.clause_support import FIN, account, verified_user
 
 PREFIX = "/api/v1/auth"
 USER = {"name": "Larissa Alves", "email": "larissa@example.com", "password": "SenhaForte123"}
@@ -47,6 +48,7 @@ def confirm_email(client, headers, delivery):
 
 
 def test_SPEC_055_R01_defaults_and_personal_category_with_stable_color(client):
+    """Cláusulas: SPEC-055-R03, SPEC-055-R04, SPEC-055-R07."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     headers = headers_for(client, USER)
@@ -76,6 +78,7 @@ def test_SPEC_055_R01_defaults_and_personal_category_with_stable_color(client):
 
 
 def test_SPEC_055_R02_hiding_default_is_per_owner_and_preserves_category(client):
+    """Cláusulas: SPEC-055-R05."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     first = headers_for(client, USER)
@@ -102,6 +105,7 @@ def test_SPEC_055_R02_hiding_default_is_per_owner_and_preserves_category(client)
 
 
 def test_SPEC_055_R03_custom_categories_are_private_and_names_are_unique(client):
+    """Cláusulas: SPEC-055-R02, SPEC-055-R04."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     first = headers_for(client, USER)
@@ -124,3 +128,28 @@ def test_SPEC_055_R03_custom_categories_are_private_and_names_are_unique(client)
         f"{PREFIX}/categories/standard/inexistente", headers=other, json={"active": False}
     )
     assert missing.status_code == 403
+
+
+def test_SPEC_055_R06_each_expense_belongs_to_exactly_one_category(client, app):
+    headers = verified_user(client, app, "categoria-unica@example.com")
+    body = {
+        "description": "Sem categoria",
+        "amount": "10",
+        "occurred_on": "2026-03-10",
+        "account_id": account(client, headers),
+    }
+    missing = client.post(
+        f"{FIN}/expenses", headers={**headers, "Idempotency-Key": "sem-categoria"}, json=body
+    )
+    many = client.post(
+        f"{FIN}/expenses",
+        headers={**headers, "Idempotency-Key": "duas-categorias"},
+        json={**body, "category_key": ["standard:lazer", "standard:moradia"]},
+    )
+    assert missing.status_code == many.status_code == 422
+    created = client.post(
+        f"{FIN}/expenses",
+        headers={**headers, "Idempotency-Key": "uma-categoria"},
+        json={**body, "category_key": "standard:lazer"},
+    ).json()
+    assert created["category_key"] == "standard:lazer"

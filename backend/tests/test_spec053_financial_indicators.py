@@ -23,6 +23,7 @@ def company_id(client, headers, ticker):
 
 
 def test_spec053_returns_three_structured_metrics_in_two_periods_with_source_and_unit(client):
+    """Cláusulas: SPEC-053-R01, SPEC-053-R03, SPEC-053-R04, SPEC-053-R05, SPEC-053-R06."""
     headers = login(client)
     petr4 = company_id(client, headers, "PETR4")
     denied = client.get(f"{COMPANIES}/{petr4}/financial-indicators")
@@ -40,6 +41,7 @@ def test_spec053_returns_three_structured_metrics_in_two_periods_with_source_and
 
 
 def test_spec053_filters_only_known_metric_and_period_kinds(client):
+    """Cláusulas: SPEC-053-R02, SPEC-053-R04."""
     headers = login(client)
     petr4 = company_id(client, headers, "PETR4")
     revenue = client.get(
@@ -57,6 +59,7 @@ def test_spec053_filters_only_known_metric_and_period_kinds(client):
 
 
 def test_spec053_restatement_remains_visible_but_only_latest_revision_is_effective(client):
+    """Cláusulas: SPEC-053-R01, SPEC-053-R06."""
     headers = login(client)
     vale3 = company_id(client, headers, "VALE3")
     response = client.get(
@@ -75,6 +78,7 @@ def test_spec053_restatement_remains_visible_but_only_latest_revision_is_effecti
 
 
 def test_spec053_unknown_company_is_not_confirmed_as_data(client):
+    """Cláusulas: SPEC-053-R02."""
     headers = login(client)
     response = client.get(
         f"{COMPANIES}/00000000-0000-0000-0000-000000000000/financial-indicators",

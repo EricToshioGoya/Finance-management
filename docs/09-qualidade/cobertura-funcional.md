@@ -25,7 +25,7 @@ SPEC-018: implementação isolada com política confirmada em 2026-10-28. [Contr
 | CI obrigatória | Workflow `.github/workflows/ci.yml` (backend com PostgreSQL, frontend, mobile, segurança, E2E Playwright e verificador documental) em cada PR | Proteção de branch no GitHub ainda depende de configuração do repositório |
 | Ciclo do cartão OPEN-12 | Fatura pelo dia de fechamento, parcelas (1 a 48, resíduo na 1ª), limite com parcelas futuras e alerta configurável por cartão (70% a 100%) | Pagamento de fatura e financiamento (fora da OPEN-12) |
 | Sincronização CVM | Semanal, domingo 03:00 (ADR-009): cadastro e índices DFP/ITR/IPE, identidade CNPJ+tipo+referência+versão (IPE: CNPJ+protocolo+versão), reapresentação sem novo alerta e aviso da watchlist para documento inédito | Primeira execução real na implantação |
-| Rastreabilidade C-02 | `scripts/verificar-c02.py`: 201/398 cláusulas citadas por teste; 16 specs de testes agrupados concluídas em 2026-10-31 | Anotar com o ID da cláusula os testes por comportamento das 30 specs restantes |
+| Rastreabilidade C-02 | `scripts/verificar-c02.py --estrito` na CI: 398/398 cláusulas citadas por teste (2026-11-01) | Manter a citação em toda nova cláusula |
 | Desempenho RNF-04 | `scripts/carga.py`: P95 de 257 a 566 ms local | Medição em produção (OPEN-32) |
 | Backup/monitoramento | Requisitos sem evidência operacional | Evidências operacionais próprias (RNF-08/12/14) |
 | Compartilhamento, aposentadoria, previdência, IR/DARF, resumo anual, score por grupo, conquistas, tour, canais e resumo mensal | Implementado em 2026-10-31 (SPEC-040, 044 a 052, 061, 062) | Testes `test_SPEC_NNN_Rxx` por cláusula; registros próprios em `docs/09-qualidade/` |

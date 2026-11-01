@@ -34,6 +34,7 @@ def headers(token):
 
 
 def test_register_login_identity_and_logout(client, app):
+    """Cláusulas: SPEC-001-R01, SPEC-001-R03."""
     registered = register(client)
     assert registered.status_code == 201
     user = registered.json()
@@ -73,6 +74,7 @@ def test_register_login_identity_and_logout(client, app):
     ],
 )
 def test_reject_invalid_input_without_echoing_password(client, app, override):
+    """Cláusulas: SPEC-001-R05, SPEC-001-R06."""
     response = register(client, **override)
     assert response.status_code == 422
     assert response.json() == {"detail": "invalid_input"}
@@ -82,17 +84,20 @@ def test_reject_invalid_input_without_echoing_password(client, app, override):
 
 @pytest.mark.parametrize("field", ["name", "email", "password"])
 def test_required_fields(client, field):
+    """Cláusulas: SPEC-001-R05."""
     data = {k: v for k, v in USER.items() if k != field}
     assert client.post(f"{PREFIX}/register", json=data).status_code == 422
 
 
 def test_minimum_password_and_case_insensitive_email(client):
+    """Cláusulas: SPEC-001-R02."""
     assert register(client, password="12345678").status_code == 201
     assert register(client, email="MARIANA@EXAMPLE.COM").status_code == 409
     assert login(client, email="MARIANA@EXAMPLE.COM", password="12345678").status_code == 200
 
 
 def test_generic_login_error(client):
+    """Cláusulas: SPEC-001-R04."""
     register(client)
     wrong_password = login(client, password="WrongPassword123")
     absent_email = login(client, email="absent@example.com")
@@ -102,6 +107,8 @@ def test_generic_login_error(client):
 
 
 def test_duplicate_registration_concurrently(app):
+    """Cláusulas: SPEC-001-R02."""
+
     def create(_):
         with TestClient(app, base_url="https://localhost:8443") as client:
             return register(client).status_code
@@ -113,6 +120,7 @@ def test_duplicate_registration_concurrently(app):
 
 
 def test_encrypted_data_and_salted_passwords(client, app, caplog):
+    """Cláusulas: SPEC-001-R09."""
     register(client)
     register(client, email="other@example.com")
     with app.state.sessions() as db:
@@ -150,6 +158,7 @@ def test_logout_works_after_access_expires_using_refresh_cookie(client):
 
 @pytest.mark.parametrize("kind", ["expired", "tampered", "wrong_audience", "wrong_type"])
 def test_invalid_jwt(client, kind):
+    """Cláusulas: SPEC-001-R08."""
     register(client)
     token = login(client).json()["access_token"]
     settings = Settings()
@@ -176,6 +185,7 @@ def test_invalid_jwt(client, kind):
 
 
 def test_session_expiration_and_missing_credentials(client, app):
+    """Cláusulas: SPEC-001-R08."""
     register(client)
     token = login(client).json()["access_token"]
     with app.state.sessions() as db:
@@ -189,6 +199,7 @@ def test_session_expiration_and_missing_credentials(client, app):
 
 def test_limit_per_endpoint_and_client_and_window(client, app, monkeypatch):
     # Malformed payload avoids expensive hashing; all sensitive requests count.
+    """Cláusulas: SPEC-001-R07."""
     monkeypatch.setattr("app.main.time.time", lambda: 1000.0)
     for _ in range(100):
         assert client.post(f"{PREFIX}/login", json={}).status_code == 422
@@ -204,6 +215,7 @@ def test_limit_per_endpoint_and_client_and_window(client, app, monkeypatch):
 
 
 def test_https_origin_and_contract(client):
+    """Cláusulas: SPEC-001-R09, SPEC-001-R10."""
     assert (
         client.post(
             f"{PREFIX}/register", json=USER, headers={"Origin": "https://evil.example"}
@@ -287,6 +299,7 @@ def test_database_error_is_generic_without_secret_details(client, app, monkeypat
 
 
 def test_forwarded_headers_do_not_bypass_https(client):
+    """Cláusulas: SPEC-001-R09."""
     response = client.get("http://localhost/api/v1/health", headers={"X-Forwarded-Proto": "https"})
     assert response.status_code == 400
 

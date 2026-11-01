@@ -23,6 +23,7 @@ def _goal(asset_id: str, target: str = "1000.00") -> dict[str, str]:
 
 
 def test_goal_tracks_manual_real_asset_without_duplicating_net_worth(client):
+    """Cláusulas: SPEC-033-R01, SPEC-033-R03, SPEC-033-R04, SPEC-033-R05, SPEC-033-R06."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     owner = login(client, "named-goals-owner@example.com")
@@ -74,6 +75,7 @@ def test_goal_tracks_manual_real_asset_without_duplicating_net_worth(client):
 
 
 def test_goal_rejects_foreign_assets_liabilities_invalid_target_and_unverified(client):
+    """Cláusulas: SPEC-033-R02, SPEC-033-R04."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     assert client.get(f"{PREFIX}/named-asset-goals").status_code == 401

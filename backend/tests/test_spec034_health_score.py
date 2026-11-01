@@ -35,6 +35,7 @@ def verify(client, headers, delivery):
 
 
 def test_spec034_calculates_educational_score_and_preserves_one_month_history(client):
+    """Cláusulas: SPEC-034-R01, SPEC-034-R03, SPEC-034-R06."""
     delivery = Delivery()
     client.app.state.email_delivery = delivery
     headers = login(client, "score@example.com")
@@ -64,6 +65,7 @@ def test_spec034_calculates_educational_score_and_preserves_one_month_history(cl
 
 
 def test_spec034_refuses_arbitrary_score_when_income_is_zero_and_keeps_private(client):
+    """Cláusulas: SPEC-034-R02."""
     delivery = Delivery()
     client.app.state.email_delivery = delivery
     first = login(client, "zero-score@example.com")

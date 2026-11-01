@@ -1,6 +1,6 @@
 # SPEC-032: Simular stress financeiro isolado
 
-**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação técnica da SPEC-032 no PR #69 (`feature/32-financial-stress`), com API, motor puro, interface PT/EN e testes executados. Política formal de OPEN-03/OPEN-21, revisão do grupo e merge ainda pendentes.
+**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação técnica da SPEC-032 no PR #69 (`feature/32-financial-stress`), com API, motor puro, interface PT/EN e testes executados. Política formal de OPEN-03/OPEN-21, revisão do grupo e merge ainda pendentes. Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
 
 ## 1. Identificação
 

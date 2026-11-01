@@ -9,6 +9,7 @@ from app.domain.juros_compostos import ErroCalculo
 
 
 def test_zero_rate_120_brl_twelve_installments_exact():
+    """Cláusulas: SPEC-036-R04, SPEC-036-R05."""
     plan = simulate_financing(Decimal("120"), Decimal("0"), 12, Decimal("0"))
     assert plan.financed_amount == Decimal("120.00")
     assert plan.total_paid == Decimal("120.00")
@@ -20,6 +21,7 @@ def test_zero_rate_120_brl_twelve_installments_exact():
 
 
 def test_price_and_down_payment_keep_totals_consistent():
+    """Cláusulas: SPEC-036-R03, SPEC-036-R04."""
     plan = simulate_financing(Decimal("1000"), Decimal("200"), 12, Decimal("12"))
     assert plan.financed_amount == Decimal("800.00")
     assert plan.total_paid > Decimal("1000")
@@ -52,5 +54,6 @@ def test_down_payment_can_cover_full_price_without_debt():
     ],
 )
 def test_invalid_financing_is_rejected(asset, down, months, rate):
+    """Cláusulas: SPEC-036-R02."""
     with pytest.raises(ErroCalculo):
         simulate_financing(Decimal(asset), Decimal(down), months, Decimal(rate))

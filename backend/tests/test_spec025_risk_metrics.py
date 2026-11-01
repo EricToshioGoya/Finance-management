@@ -58,6 +58,7 @@ def seed_selic(app):
 def test_spec025_metrics_require_opt_in_for_non_arrojado_and_enrich_variable_simulation(
     client, app
 ):
+    """Cláusulas: SPEC-025-R01, SPEC-025-R05, SPEC-025-R06, SPEC-025-R07."""
     headers = login(client, "metrics@example.com", answers=[1, 1, 1, 1, 1])
     seed_selic(app)
     assert client.get(MARKET, headers=headers).status_code == 403
@@ -85,9 +86,29 @@ def test_spec025_metrics_require_opt_in_for_non_arrojado_and_enrich_variable_sim
     )
     assert simulation.status_code == 201
     assert simulation.json()["risk_metrics"]["ticker"] == "PETR4"
+    other = client.post(
+        f"{FINANCIAL}/simulations/variable-income",
+        headers=headers,
+        json={
+            "label": "PETR4 alternativa",
+            "ticker": "PETR4",
+            "initial_amount": "200",
+            "monthly_contribution": "0",
+            "expected_annual_return": "10",
+            "term_months": 12,
+        },
+    ).json()
+    compared = client.post(
+        f"{FINANCIAL}/simulations/compare",
+        headers=headers,
+        json={"simulation_ids": [simulation.json()["id"], other["id"]]},
+    ).json()
+    # R05: as métricas acompanham cada simulação também no comparador (RF-25).
+    assert all(item["risk_metrics"]["status"] == "available" for item in compared["simulations"])
 
 
 def test_spec025_arrojado_has_default_access_and_history_errors_are_explicit(client, app):
+    """Cláusulas: SPEC-025-R02, SPEC-025-R07."""
     advanced = login(client, "advanced@example.com", answers=[2, 2, 2, 2, 2])
     seed_selic(app)
     assert client.get(MARKET, headers=advanced).status_code == 200
@@ -96,6 +117,7 @@ def test_spec025_arrojado_has_default_access_and_history_errors_are_explicit(cli
 
 
 def test_spec025_zero_volatility_is_never_infinite_or_nan():
+    """Cláusulas: SPEC-025-R02, SPEC-025-R03."""
     result = calculate_historical_metrics(
         [
             (date(2026, 1, 2), Decimal("10")),
@@ -107,3 +129,25 @@ def test_spec025_zero_volatility_is_never_infinite_or_nan():
     assert result["status"] == "zero_volatility"
     assert result["sharpe"] is None
     assert result["volatility_annualized"] == Decimal("0.0000")
+
+
+def test_SPEC_025_R03_R04_volatility_and_simplified_sharpe_formula():
+    """Retornos +10% e −10%: média 0; desvio amostral √0,02; Selic anual composta ao dia útil."""
+    result = calculate_historical_metrics(
+        [
+            (date(2026, 1, 5), Decimal("10")),
+            (date(2026, 1, 6), Decimal("11")),
+            (date(2026, 1, 7), Decimal("9.9")),
+        ],
+        Decimal("10"),
+    )
+    daily_volatility = Decimal("0.02").sqrt()
+    factor = Decimal("252").sqrt()
+    daily_selic = Decimal("1.1") ** (Decimal("1") / Decimal("252")) - Decimal("1")
+    expected_volatility = (daily_volatility * factor).quantize(Decimal("0.0001"))
+    expected_sharpe = ((Decimal("0") - daily_selic) / daily_volatility * factor).quantize(
+        Decimal("0.0001")
+    )
+    assert result["volatility_annualized"] == expected_volatility == Decimal("2.2450")
+    assert result["sharpe"] == expected_sharpe
+    assert result["period_start"] == date(2026, 1, 5) and result["observations"] == 3

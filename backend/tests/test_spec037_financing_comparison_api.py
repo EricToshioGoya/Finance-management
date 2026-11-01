@@ -14,6 +14,7 @@ REQUEST = {
 
 
 def test_comparison_requires_auth_and_email_verification(client):
+    """Cláusulas: SPEC-037-R01, SPEC-037-R02."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     route = f"{PREFIX}/financing/compare"
@@ -33,6 +34,7 @@ def test_comparison_requires_auth_and_email_verification(client):
 
 
 def test_comparison_cannot_invent_purchase_or_change_owner_data(client):
+    """Cláusulas: SPEC-037-R02, SPEC-037-R05."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     headers = login(client, "compare-owner@example.com")

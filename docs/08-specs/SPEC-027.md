@@ -1,6 +1,6 @@
 # SPEC-027: Manter watchlist e avisar novo documento
 
-**Estado:** implementada tecnicamente em 2026-10-30, conforme política confirmada pelo responsável. Em 2026-10-31, a sincronização semanal com os Dados Abertos CVM (OPEN-27, ADR-009) passou a alimentar o aviso de documento novo (R05); testes em `backend/tests/test_c02_spec027_cvm_sync.py`.
+**Estado:** implementada tecnicamente em 2026-10-30, conforme política confirmada pelo responsável. Em 2026-10-31, a sincronização semanal com os Dados Abertos CVM (OPEN-27, ADR-009) passou a alimentar o aviso de documento novo (R05); testes em `backend/tests/test_c02_spec027_cvm_sync.py`. Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI). Corrigida a rota `GET /api/v1/companies/watchlist`, que era capturada por `/companies/{company_id}` e respondia 422; testes em `backend/tests/test_c02_spec027_watchlist.py`.
 
 ## 1. Identificação
 

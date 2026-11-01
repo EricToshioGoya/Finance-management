@@ -14,6 +14,7 @@ HALF = {
 
 
 def test_allocation_calculates_25_75_and_target_deviations(client):
+    """Cláusulas: SPEC-031-R01, SPEC-031-R03, SPEC-031-R04, SPEC-031-R05."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     owner = login(client, "allocation-owner@example.com")
@@ -81,6 +82,7 @@ def test_allocation_calculates_25_75_and_target_deviations(client):
 
 
 def test_allocation_rejects_invalid_targets_and_cross_owner_access(client):
+    """Cláusulas: SPEC-031-R02."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     owner = login(client, "allocation-private@example.com")
@@ -152,6 +154,7 @@ def test_allocation_rejects_invalid_targets_and_cross_owner_access(client):
 
 
 def test_zero_investments_and_savings_do_not_invent_percentages(client):
+    """Cláusulas: SPEC-031-R02, SPEC-031-R04."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     owner = login(client, "allocation-savings@example.com")

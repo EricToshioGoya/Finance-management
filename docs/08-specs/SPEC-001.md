@@ -1,6 +1,6 @@
 # SPEC-001: Cadastro de Usuário e Autenticação de Sessão
 
-**Estado:** implementação funcional web complementada em 2026-10-23, incluindo CA-011/INV-007 e regressão. A implementação inicial foi autorizada pelo pedido explícito do usuário nesta sessão, em 2026-10-15, na branch `correcoes-reorganizacao-docs`. Decisões técnicas adotadas em ADR-007; aprovação formal do mapa/grupo permanece pendente e não é inferida desta autorização. Evidências e limites no [registro de implementação](../09-qualidade/implementacao-SPEC-001.md).
+**Estado:** implementação funcional web complementada em 2026-10-23, incluindo CA-011/INV-007 e regressão. A implementação inicial foi autorizada pelo pedido explícito do usuário nesta sessão, em 2026-10-15, na branch `correcoes-reorganizacao-docs`. Decisões técnicas adotadas em ADR-007; aprovação formal do mapa/grupo permanece pendente e não é inferida desta autorização. Evidências e limites no [registro de implementação](../09-qualidade/implementacao-SPEC-001.md). Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
 
 ## 1. Identificação
 

@@ -20,6 +20,7 @@ def register_and_login(client, name="Quiz User", email="quiz@example.com"):
 
 
 def test_spec003_quiz_has_only_five_safe_questions_and_requires_session(client):
+    """Cláusulas: SPEC-003-R02, SPEC-003-R03."""
     assert client.get(f"{PREFIX}/investor-profile/quiz").status_code == 401
     headers = register_and_login(client)
     response = client.get(f"{PREFIX}/investor-profile/quiz", headers=headers)
@@ -39,6 +40,7 @@ def test_spec003_quiz_has_only_five_safe_questions_and_requires_session(client):
 
 
 def test_spec003_validates_answers_persists_and_allows_redo(client):
+    """Cláusulas: SPEC-003-R01, SPEC-003-R02, SPEC-003-R04, SPEC-003-R05, SPEC-003-R06."""
     headers = register_and_login(client)
     assert client.get(f"{PREFIX}/investor-profile", headers=headers).json()["profile"] is None
     assert (
@@ -66,6 +68,7 @@ def test_spec003_validates_answers_persists_and_allows_redo(client):
 
 
 def test_spec003_profile_is_private_and_guides_authenticated_simulator(client, app):
+    """Cláusulas: SPEC-003-R01, SPEC-003-R05."""
     first = register_and_login(client, "First", "first@example.com")
     second = register_and_login(client, "Second", "second@example.com")
     assert (

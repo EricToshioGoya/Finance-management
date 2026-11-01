@@ -1,6 +1,6 @@
 # SPEC-030: Visualizar mapa de calor patrimonial
 
-**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação técnica em validação na branch `feature/30-net-worth-heatmap` (PR #67). Endpoint, visualização web, testes de integração e registro técnico adicionados; aprovação formal do grupo e merge não presumidos.
+**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação técnica em validação na branch `feature/30-net-worth-heatmap` (PR #67). Endpoint, visualização web, testes de integração e registro técnico adicionados; aprovação formal do grupo e merge não presumidos. Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI). Cláusulas de interface verificadas no navegador em `frontend/tests/spec030.spec.ts`.
 
 ## 1. Identificação
 

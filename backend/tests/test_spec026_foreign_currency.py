@@ -54,6 +54,7 @@ def payload(currency="USD"):
 
 
 def test_spec026_projects_usd_in_original_and_brl_with_dated_ptax(client, app):
+    """Cláusulas: SPEC-026-R01, SPEC-026-R03, SPEC-026-R07."""
     headers = confirmed_headers(client, "usd@example.com")
     seed_usd(app)
     response = client.post(PREFIX, headers=headers, json=payload())
@@ -67,6 +68,7 @@ def test_spec026_projects_usd_in_original_and_brl_with_dated_ptax(client, app):
 
 
 def test_spec026_accepts_brl_parity_and_rejects_missing_or_invalid_ptax(client, app):
+    """Cláusulas: SPEC-026-R02, SPEC-026-R03."""
     headers = confirmed_headers(client, "brl@example.com")
     brl = client.post(PREFIX, headers=headers, json=payload("BRL"))
     assert brl.status_code == 201

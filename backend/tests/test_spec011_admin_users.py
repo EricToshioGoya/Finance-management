@@ -33,6 +33,7 @@ def register_and_login(client, name: str, email: str):
 
 
 def test_spec011_r03_r06_first_admin_requires_configured_email_confirmation(client, app):
+    """Cláusulas: SPEC-011-R03, SPEC-011-R06."""
     configured = "admin@example.com"
     settings = Settings().model_copy(
         update={
@@ -60,6 +61,9 @@ def test_spec011_r03_r06_first_admin_requires_configured_email_confirmation(clie
 def test_spec011_r04_r05_r08_r10_r11_admin_endpoint_is_server_protected_paginated_and_safe(
     client, app
 ):
+    """Cláusulas: SPEC-011-R01, SPEC-011-R04, SPEC-011-R05, SPEC-011-R08, SPEC-011-R10,
+    SPEC-011-R11.
+    """
     common = register_and_login(client, "Common User", "common@example.com")
     with app.state.sessions() as db:
         first = db.scalar(select(UserRecord).where(UserRecord.role == "usuario"))
@@ -90,6 +94,7 @@ def test_spec011_r04_r05_r08_r10_r11_admin_endpoint_is_server_protected_paginate
 
 
 def test_spec011_r07_r09_filters_and_audits_access(client, app):
+    """Cláusulas: SPEC-011-R01, SPEC-011-R07, SPEC-011-R09."""
     headers = register_and_login(client, "Admin Filter", "filter@example.com")
     with app.state.sessions() as db:
         user = db.scalar(
@@ -113,6 +118,7 @@ def test_spec011_r07_r09_filters_and_audits_access(client, app):
 
 
 def test_spec011_r02_public_registration_cannot_set_role(client):
+    """Cláusulas: SPEC-011-R02, SPEC-011-R06."""
     response = client.post(
         f"{PREFIX}/register",
         json={

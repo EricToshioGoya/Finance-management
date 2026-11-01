@@ -36,6 +36,7 @@ def erase(client, headers, **changes):
 
 
 def test_preview_and_authentication(client):
+    """Cláusulas: SPEC-018-R02, SPEC-018-R06."""
     assert client.get(f"{PREFIX}/account/deletion-preview").status_code == 401
     assert erase(client, {}).status_code == 401
     _, headers = owner(client)
@@ -60,12 +61,14 @@ def test_preview_and_authentication(client):
     ],
 )
 def test_invalid_confirmation_preserves_account(client, change, status):
+    """Cláusulas: SPEC-018-R02, SPEC-018-R04."""
     _, headers = owner(client)
     assert erase(client, headers, **change).status_code == status
     assert client.get(f"{PREFIX}/me", headers=headers).status_code == 200
 
 
 def test_delete_revokes_all_sessions_preserves_other_owner_and_cascades(client, app):
+    """Cláusulas: SPEC-018-R01, SPEC-018-R03, SPEC-018-R05."""
     first, first_headers = owner(client)
     second, second_headers = owner(client, "other@example.com")
     another_token = client.post(
@@ -102,6 +105,7 @@ def test_delete_revokes_all_sessions_preserves_other_owner_and_cascades(client, 
 
 
 def test_journal_failure_never_reports_success_or_deletes(client, monkeypatch):
+    """Cláusulas: SPEC-018-R02."""
     _, headers = owner(client)
 
     def fail(*args):
@@ -113,6 +117,7 @@ def test_journal_failure_never_reports_success_or_deletes(client, monkeypatch):
 
 
 def test_restore_reapplies_tombstone_before_serving(client, app):
+    """Cláusulas: SPEC-018-R05."""
     user, headers = owner(client)
     with app.state.sessions() as db:
         original = db.get(UserRecord, uuid.UUID(user["id"]))

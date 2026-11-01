@@ -1,6 +1,6 @@
 # SPEC-019: Exportar extrato pessoal CSV/PDF
 
-**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação isolada em andamento. Contrato, decisões técnicas, testes e limites em [registro SPEC-019](../09-qualidade/implementacao-SPEC-019.md). A baseline abaixo continua referência de aceitação; aprovação formal e portabilidade integral não são presumidas.
+**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação isolada em andamento. Contrato, decisões técnicas, testes e limites em [registro SPEC-019](../09-qualidade/implementacao-SPEC-019.md). A baseline abaixo continua referência de aceitação; aprovação formal e portabilidade integral não são presumidas. Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
 
 ## 1. Identificação
 

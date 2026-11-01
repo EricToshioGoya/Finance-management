@@ -22,6 +22,7 @@ def owner(client, email="audit@example.com"):
 
 
 def test_spec060_r01_r03_r04_minimal_event_is_backgrounded_and_persisted(client, app):
+    """Cláusulas: SPEC-060-R01, SPEC-060-R03, SPEC-060-R04."""
     user, headers = owner(client)
     response = client.post(
         f"{PREFIX}/usage-events",
@@ -45,6 +46,7 @@ def test_spec060_r01_r03_r04_minimal_event_is_backgrounded_and_persisted(client,
 
 
 def test_spec060_r02_rejects_invalid_or_unauthenticated_event_without_recording(client, app):
+    """Cláusulas: SPEC-060-R02."""
     _, headers = owner(client)
     unauthenticated = client.post(
         f"{PREFIX}/usage-events", json={"module": "simulator", "action": "opened"}
@@ -71,6 +73,7 @@ def test_spec060_r02_rejects_invalid_or_unauthenticated_event_without_recording(
 
 
 def test_spec060_r01_audit_is_server_written_and_has_no_mutation_route(client, app):
+    """Cláusulas: SPEC-060-R01."""
     user, headers = owner(client)
     changed = client.patch(
         f"{PREFIX}/password",
@@ -93,6 +96,7 @@ def test_spec060_r01_audit_is_server_written_and_has_no_mutation_route(client, a
 
 
 def test_spec060_r05_policy_is_public_in_frontend_source():
+    """Cláusulas: SPEC-060-R05."""
     source = "../frontend/src/i18n.ts"
     with open(source, encoding="utf-8") as frontend:
         text_source = frontend.read()
@@ -101,6 +105,7 @@ def test_spec060_r05_policy_is_public_in_frontend_source():
 
 
 def test_spec060_r06_account_deletion_anonymizes_events_and_audit(client, app):
+    """Cláusulas: SPEC-060-R06."""
     _, headers = owner(client)
     assert (
         client.post(

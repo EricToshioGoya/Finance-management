@@ -1,6 +1,6 @@
 # SPEC-037: Comparar financiamento e compra após investir
 
-**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação técnica provisória na branch `feature/37-finance-vs-invest` (backend, interface web, testes). OPEN-20/22 ainda dependem de decisão formal do grupo; não há aprovação histórica presumida.
+**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação técnica provisória na branch `feature/37-finance-vs-invest` (backend, interface web, testes). OPEN-20/22 ainda dependem de decisão formal do grupo; não há aprovação histórica presumida. Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
 
 ## 1. Identificação
 

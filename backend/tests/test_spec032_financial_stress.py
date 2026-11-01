@@ -16,6 +16,7 @@ INPUT = {
 
 
 def test_stress_requires_verified_account_and_actual_expense_history(client):
+    """Cláusulas: SPEC-032-R02."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     assert client.post(f"{PREFIX}/stress/compare", json=INPUT).status_code == 401
@@ -34,6 +35,7 @@ def test_stress_requires_verified_account_and_actual_expense_history(client):
 
 
 def test_stress_reads_real_ledger_but_never_changes_it(client):
+    """Cláusulas: SPEC-032-R01, SPEC-032-R04, SPEC-032-R06, SPEC-032-R07."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     headers = login(client, "stress-real-user@example.com")

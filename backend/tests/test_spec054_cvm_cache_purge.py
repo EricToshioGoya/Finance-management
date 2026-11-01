@@ -33,6 +33,7 @@ def company_id(client, headers, ticker):
 
 
 def test_spec054_expunges_at_calendar_limit_and_writes_aggregated_completed_run(client, app):
+    """Cláusulas: SPEC-054-R01, SPEC-054-R04, SPEC-054-R07."""
     headers = login(client)
     petr4 = company_id(client, headers, "PETR4")
     vale3 = company_id(client, headers, "VALE3")
@@ -85,6 +86,7 @@ def test_spec054_expunges_at_calendar_limit_and_writes_aggregated_completed_run(
 
 
 def test_spec054_next_company_consultation_rebuilds_only_public_local_cache(client, app):
+    """Cláusulas: SPEC-054-R05."""
     now = datetime.now(UTC)
     app.state.clock = lambda: now
     headers = login(client)
@@ -107,5 +109,6 @@ def test_spec054_next_company_consultation_rebuilds_only_public_local_cache(clie
 
 
 def test_spec054_calendar_boundary_handles_leap_day_without_extending_retention():
+    """Cláusulas: SPEC-054-R01, SPEC-054-R04."""
     leap_instant = datetime(2028, 2, 29, 3, 0, tzinfo=UTC)
     assert twelve_calendar_months_before(leap_instant) == datetime(2027, 2, 28, 3, 0, tzinfo=UTC)

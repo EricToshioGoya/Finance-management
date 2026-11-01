@@ -35,6 +35,7 @@ def verify(client, headers, delivery):
 
 
 def test_spec028_consolidates_real_account_manual_debt_and_excludes_projection(client):
+    """Cláusulas: SPEC-028-R01, SPEC-028-R03, SPEC-028-R05, SPEC-028-R06, SPEC-028-R07."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     headers = login(client, "worth@example.com")
@@ -78,6 +79,7 @@ def test_spec028_consolidates_real_account_manual_debt_and_excludes_projection(c
 
 
 def test_spec028_manual_items_require_verified_owner_and_are_private(client):
+    """Cláusulas: SPEC-028-R02, SPEC-028-R05, SPEC-028-R06."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     owner = login(client, "owner-worth@example.com")
@@ -117,6 +119,7 @@ def test_spec028_manual_items_require_verified_owner_and_are_private(client):
 
 
 def test_spec028_card_invoice_is_real_liability_and_values_are_validated(client):
+    """Cláusulas: SPEC-028-R02, SPEC-028-R04."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     headers = login(client, "card-worth@example.com")

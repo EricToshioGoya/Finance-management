@@ -21,6 +21,7 @@ def compare(**overrides):
 
 
 def test_zero_rates_and_fixed_price_have_no_fictitious_return():
+    """Cláusulas: SPEC-037-R03, SPEC-037-R04."""
     result = compare()
     assert result.monthly_investment == Decimal("10.00")
     assert result.financing_possession_month == 0
@@ -34,6 +35,7 @@ def test_zero_rates_and_fixed_price_have_no_fictitious_return():
 
 
 def test_not_reaching_target_is_not_reported_as_purchase_or_winner():
+    """Cláusulas: SPEC-037-R05."""
     result = compare(horizon_months=11)
     assert result.invest_possession_month is None
     assert result.invest_cost_to_possession is None
@@ -44,6 +46,7 @@ def test_not_reaching_target_is_not_reported_as_purchase_or_winner():
 
 
 def test_interest_on_financing_and_investment_changes_observable_results():
+    """Cláusulas: SPEC-037-R03, SPEC-037-R04, SPEC-037-R05."""
     result = compare(
         asset_value=Decimal("1000"),
         down_payment=Decimal("200"),
@@ -80,5 +83,6 @@ def test_full_down_payment_means_immediate_cash_possession():
     ],
 )
 def test_invalid_input_cannot_produce_comparison(changes):
+    """Cláusulas: SPEC-037-R02."""
     with pytest.raises(ErroCalculo):
         compare(**changes)
