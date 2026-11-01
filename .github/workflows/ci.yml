@@ -146,6 +146,8 @@ jobs:
             echo "FINNOVA_JWT_SECRET=$(openssl rand -hex 32)"
             echo "FINNOVA_DATA_KEY=$(uv run --frozen python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')"
             echo "FINNOVA_PUBLIC_ORIGIN=https://localhost:8443"
+            # C-17: o E2E nunca chama fontes oficiais reais.
+            echo "FINNOVA_OFFICIAL_SOURCES_SYNC=false"
           } > .env
           uv run --frozen python ../scripts/prepare-local.py
           uv run --frozen alembic upgrade head
