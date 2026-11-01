@@ -9,12 +9,14 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     LargeBinary,
     Numeric,
     String,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -136,12 +138,23 @@ class OfficialDocumentRecord(Base):
         CheckConstraint(
             "link_status IN ('unchecked', 'available', 'broken')", name="valid_official_link_status"
         ),
-        UniqueConstraint(
+        # OPEN-27: DFP/ITR por referência + versão; IPE por protocolo de entrega + versão.
+        Index(
+            "uq_official_document_identity",
             "company_id",
             "document_type",
             "cvm_reference_date",
             "cvm_version",
-            name="uq_official_document_identity",
+            unique=True,
+            postgresql_where=text("document_type <> 'IPE'"),
+        ),
+        Index(
+            "uq_official_ipe_identity",
+            "company_id",
+            "cvm_protocol",
+            "cvm_version",
+            unique=True,
+            postgresql_where=text("document_type = 'IPE'"),
         ),
     )
 
@@ -161,6 +174,7 @@ class OfficialDocumentRecord(Base):
     # OPEN-27: identidade CNPJ (via empresa) + tipo + data de referência + versão.
     cvm_reference_date: Mapped[date | None] = mapped_column(Date)
     cvm_version: Mapped[int | None] = mapped_column(Integer)
+    cvm_protocol: Mapped[str | None] = mapped_column(String(40))
 
 
 class FinancialIndicatorRecord(Base):

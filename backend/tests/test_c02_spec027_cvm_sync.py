@@ -48,10 +48,12 @@ def dfp_row(version: int, received: str = "2026-02-26", cnpj: str = PETR4_CNPJ) 
     )
 
 
-def ipe_row(subject: str, delivered: str = "2026-10-29") -> str:
+def ipe_row(
+    subject: str, delivered: str = "2026-10-29", protocol: str = "777", version: int = 1
+) -> str:
     return (
         f"{PETR4_CNPJ};PETROBRAS;9512;2026-10-29;Fato Relevante;;;{subject};{delivered};AP;"
-        f"777;1;{LINK.format(777)}"
+        f"{protocol};{version};{LINK.format(protocol)}"
     )
 
 
@@ -237,3 +239,29 @@ def test_identity_is_unique_per_company_type_reference_and_version(app, catalogu
         )
         with pytest.raises(Exception, match="uq_official_document_identity"):
             db.commit()
+
+
+def test_SPEC_027_R05_ipe_identity_is_delivery_protocol(app, client, catalogue):
+    """Decisão de 2026-11-01: dois IPE no mesmo dia com protocolos distintos são documentos
+    distintos; mesma entrega com versão nova é reapresentação, sem novo alerta."""
+    headers = verified_user(client, app)
+    client.post(f"/api/v1/companies/{PETR4}/watchlist", headers=headers)
+    same_day = [
+        ipe_row("Fato relevante A", protocol="801"),
+        ipe_row("Comunicado B", protocol="802"),
+    ]
+    run(app, responses(ipe_rows=same_day), ("IPE",))
+    assert sorted(s for _, s, *_ in synced(app, "IPE")) == ["active", "active"]
+    assert len(notifications(client, headers)) == 2
+    restated = [*same_day, ipe_row("Fato relevante A (retificado)", protocol="801", version=2)]
+    run(app, responses(ipe_rows=restated), ("IPE",))
+    with app.state.sessions() as db:
+        rows = {
+            (r.cvm_protocol, r.cvm_version): r.status
+            for r in db.scalars(
+                select(OfficialDocumentRecord).where(OfficialDocumentRecord.document_type == "IPE")
+            )
+            if r.cvm_protocol
+        }
+    assert rows == {("801", 1): "replaced", ("801", 2): "restated", ("802", 1): "active"}
+    assert len(notifications(client, headers)) == 2

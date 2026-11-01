@@ -25,7 +25,7 @@ As SPEC-007, SPEC-026, SPEC-027 e SPEC-053/054 dependem de dados públicos exter
 5. **Repetição:** em falha, até 3 novas tentativas, após 5, 15 e 45 minutos; esgotadas, a próxima execução é a do agendamento seguinte.
 6. **Atualização do cache:** um valor só substitui o anterior se a data de referência for igual ou mais recente; `checked_at` registra a última verificação bem-sucedida.
 7. **Resiliência (C-08):** na falha da fonte, mantém-se o último valor com aviso visível; indicador verificado há mais de 24 horas é marcado como desatualizado (RNF-09). A PTAX aceita até 5 dias úteis desde a data de referência, com aviso a partir do segundo dia útil; acima disso, a simulação em moeda estrangeira é recusada sem taxa inventada. Esta decisão complementa o item 3 do ADR-003 conforme a regra C-08.
-8. **CVM:** identidade de documento = CNPJ + tipo + data de referência + versão; reapresentação substitui a versão anterior como efetiva. Apenas metadados e link oficial são armazenados, nunca PDF (ADR-004, C-09).
+8. **CVM:** identidade de documento = CNPJ + tipo + data de referência + versão (IPE: CNPJ + protocolo de entrega + versão, complemento aprovado em 2026-11-01); reapresentação substitui a versão anterior como efetiva. Apenas metadados e link oficial são armazenados, nunca PDF (ADR-004, C-09).
 9. **Testes:** nenhum teste chama a fonte real (C-17); adaptadores recebem um transporte injetável e os testes usam dublês com respostas no formato documentado.
 
 ## Alternativas Consideradas
