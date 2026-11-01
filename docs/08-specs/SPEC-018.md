@@ -1,6 +1,6 @@
 # SPEC-018: Excluir conta e dados pessoais
 
-**Estado:** implementação isolada autorizada em 2026-10-28. Exclusão imediata, sessões revogadas, auditoria sem identificação e reaplicação após restauração confirmadas pelo responsável. [Contratos, testes e limites](../09-qualidade/implementacao-SPEC-018.md). Planejamento abaixo preservado como baseline; aprovação histórica e operação não presumidas.
+**Estado:** implementação isolada autorizada em 2026-10-28. Exclusão imediata, sessões revogadas, auditoria sem identificação e reaplicação após restauração confirmadas pelo responsável. [Contratos, testes e limites](../09-qualidade/implementacao-SPEC-018.md). Planejamento abaixo preservado como baseline; aprovação histórica e operação não presumidas. Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
 
 ## 1. Identificação
 

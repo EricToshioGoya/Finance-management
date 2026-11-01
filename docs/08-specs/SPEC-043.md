@@ -1,6 +1,6 @@
 # SPEC-043: Consultar uso por módulo e engajamento
 
-**Estado:** implementada em 2026-10-31; validação automatizada registrada no PR da implementação.
+**Estado:** implementada em 2026-10-31; validação automatizada registrada no PR da implementação. Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
 
 ## 1. Identificação
 

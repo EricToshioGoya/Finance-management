@@ -70,8 +70,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: python scripts/verificar-documentacao.py
-      # Relatório de rastreabilidade cláusula → teste (C-02); informativo até zerar as pendências.
-      - run: python scripts/verificar-c02.py
+      # Rastreabilidade cláusula → teste (C-02): toda cláusula SHALL citada por ao menos um teste.
+      - run: python scripts/verificar-c02.py --estrito
 
   mobile:
     runs-on: ubuntu-latest

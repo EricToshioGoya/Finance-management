@@ -88,6 +88,7 @@ def test_SPEC_016_R02_invalid_or_expired_token_preserves_credentials(client, app
 
 
 def test_SPEC_016_R03_authenticated_change_requires_current_password_and_revokes(client):
+    """Cláusulas: SPEC-016-R04."""
     access = register_and_login(client)
     failed = client.patch(
         f"{PREFIX}/password",
@@ -96,6 +97,12 @@ def test_SPEC_016_R03_authenticated_change_requires_current_password_and_revokes
     )
     assert failed.status_code == 401 and failed.json() == {"detail": "invalid_current_password"}
     assert client.get(f"{PREFIX}/me", headers=access).status_code == 200
+    weak = client.patch(
+        f"{PREFIX}/password",
+        headers=access,
+        json={"current_password": USER["password"], "new_password": "curta"},
+    )
+    assert weak.status_code == 422 and "curta" not in weak.text
     changed = client.patch(
         f"{PREFIX}/password",
         headers=access,

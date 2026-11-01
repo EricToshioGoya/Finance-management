@@ -1,6 +1,6 @@
 # SPEC-029: Consultar evolução mensal do patrimônio
 
-**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação em andamento na branch `feature/29-net-worth-history`; política de snapshots mensais do patrimônio real aprovada. Backend, interface e testes adicionados, mas execução do CI e captura automática pendentes; sem aprovação formal de merge presumida.
+**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação em andamento na branch `feature/29-net-worth-history`; política de snapshots mensais do patrimônio real aprovada. Backend, interface e testes adicionados, mas execução do CI e captura automática pendentes; sem aprovação formal de merge presumida. Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
 
 ## 1. Identificação
 

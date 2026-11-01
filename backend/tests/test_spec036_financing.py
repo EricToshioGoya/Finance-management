@@ -12,6 +12,7 @@ INPUT = {
 
 
 def test_financing_requires_session_and_confirmed_email(client):
+    """Cláusulas: SPEC-036-R01, SPEC-036-R02, SPEC-036-R03, SPEC-036-R04, SPEC-036-R05."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     route = f"{PREFIX}/financing/simulate"
@@ -31,6 +32,7 @@ def test_financing_requires_session_and_confirmed_email(client):
 
 
 def test_financing_refuses_invalid_and_is_side_effect_free(client):
+    """Cláusulas: SPEC-036-R02."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     headers = login(client, "financing-no-debt@example.com")

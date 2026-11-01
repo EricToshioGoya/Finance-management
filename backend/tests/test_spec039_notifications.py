@@ -48,6 +48,7 @@ def event(client, headers, kind, source_key):
 
 
 def test_spec039_creates_all_authorized_event_kinds_and_keeps_30_day_history(client, app):
+    """Cláusulas: SPEC-039-R01, SPEC-039-R03, SPEC-039-R05."""
     delivery = Delivery()
     app.state.email_delivery = delivery
     headers = login(client, "alerts@example.com")
@@ -75,6 +76,7 @@ def test_spec039_creates_all_authorized_event_kinds_and_keeps_30_day_history(cli
 
 
 def test_spec039_opt_out_deduplication_read_state_and_owner_isolation(client, app):
+    """Cláusulas: SPEC-039-R02, SPEC-039-R04."""
     delivery = Delivery()
     app.state.email_delivery = delivery
     owner = login(client, "owner-alerts@example.com")
@@ -101,6 +103,7 @@ def test_spec039_opt_out_deduplication_read_state_and_owner_isolation(client, ap
 
 
 def test_spec039_requires_authenticated_verified_owner_and_global_in_app_setting(client, app):
+    """Cláusulas: SPEC-039-R02."""
     delivery = Delivery()
     app.state.email_delivery = delivery
     headers = login(client, "unverified-alerts@example.com")

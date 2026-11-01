@@ -26,6 +26,7 @@ def grant(client, owner, name, scopes):
 
 
 def test_external_credential_is_separate_scoped_and_owner_only(client):
+    """Cláusulas: SPEC-041-R01, SPEC-041-R03, SPEC-041-R04."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     owner = registered(client, delivery, "api-grant-owner@example.com")
@@ -66,6 +67,7 @@ def test_external_credential_is_separate_scoped_and_owner_only(client):
 
 
 def test_external_read_net_worth_exposes_only_totals_and_isolated_owner(client):
+    """Cláusulas: SPEC-041-R01, SPEC-041-R03."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     owner = registered(client, delivery, "api-worth-owner@example.com")
@@ -89,6 +91,7 @@ def test_external_read_net_worth_exposes_only_totals_and_isolated_owner(client):
 
 
 def test_external_grant_expires_and_rate_limits_are_persistent(client):
+    """Cláusulas: SPEC-041-R02, SPEC-041-R06."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     owner = registered(client, delivery, "api-quota-owner@example.com")
@@ -117,6 +120,7 @@ def test_external_grant_expires_and_rate_limits_are_persistent(client):
 
 
 def test_no_unverified_user_can_issue_external_key(client):
+    """Cláusulas: SPEC-041-R02."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     headers = login(client, "api-no-email@example.com")

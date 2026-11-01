@@ -6,6 +6,7 @@ PREFIX = "/api/v1/auth/financial"
 
 
 def test_snapshot_is_real_idempotent_and_not_retroactively_recalculated(client):
+    """Cláusulas: SPEC-029-R01, SPEC-029-R02, SPEC-029-R03, SPEC-029-R04, SPEC-029-R05."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     headers = login(client, "history-owner@example.com")
@@ -62,6 +63,7 @@ def test_snapshot_is_real_idempotent_and_not_retroactively_recalculated(client):
 
 
 def test_history_is_private_and_does_not_backfill_missing_months(client):
+    """Cláusulas: SPEC-029-R02."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     owner = login(client, "history-private@example.com")

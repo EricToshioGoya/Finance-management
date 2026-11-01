@@ -15,6 +15,10 @@ DATA = {
 
 
 def test_financing_confirmation_is_explicit_once_and_real(client):
+    """Cláusulas: SPEC-028-R04.
+
+    Cláusulas: SPEC-038-R01, SPEC-038-R02, SPEC-038-R03.
+    """
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     route = f"{PREFIX}/financing/confirm"
@@ -61,6 +65,7 @@ def test_financing_confirmation_is_explicit_once_and_real(client):
 
 
 def test_real_financing_recurring_expense_is_atomic_and_linked(client):
+    """Cláusulas: SPEC-038-R01, SPEC-038-R04."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     owner = login(client, "real-financing-expense@example.com")

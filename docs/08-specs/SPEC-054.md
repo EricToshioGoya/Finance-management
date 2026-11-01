@@ -1,6 +1,6 @@
 # SPEC-054: Expurgar cache CVM após 12 meses
 
-**Estado:** implementada tecnicamente em 2026-10-29; aguarda revisão humana do grupo. Evidências em [implementacao-SPEC-054](../09-qualidade/implementacao-SPEC-054.md).
+**Estado:** implementada tecnicamente em 2026-10-29; aguarda revisão humana do grupo. Evidências em [implementacao-SPEC-054](../09-qualidade/implementacao-SPEC-054.md). Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
 
 ## 1. Identificação
 

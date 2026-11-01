@@ -1,6 +1,6 @@
 # SPEC-011: Proteger painel e consultar metadados de usuários
 
-**Estado:** implementação técnica autorizada nesta sessão em 2026-10-28; revisão formal do grupo pendente. O contrato adotado está registrado na seção 13 e no [registro de implementação](../09-qualidade/implementacao-SPEC-011.md).
+**Estado:** implementação técnica autorizada nesta sessão em 2026-10-28; revisão formal do grupo pendente. O contrato adotado está registrado na seção 13 e no [registro de implementação](../09-qualidade/implementacao-SPEC-011.md). Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
 
 ## 1. Identificação
 

@@ -1,6 +1,6 @@
 # SPEC-038: Registrar financiamento real a partir da confirmação
 
-**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: recorte técnico da implementação na branch `feature/38-confirm-real-financing`; aprovação das políticas OPEN-12/15/21/22 e revisão formal ainda pendentes.
+**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: recorte técnico da implementação na branch `feature/38-confirm-real-financing`; aprovação das políticas OPEN-12/15/21/22 e revisão formal ainda pendentes. Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
 
 ## 1. Identificação
 

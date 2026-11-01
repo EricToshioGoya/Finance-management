@@ -1,6 +1,6 @@
 # SPEC-031: Comparar alocação atual e alvo
 
-**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação técnica da SPEC-031 em validação no PR #68, branch `feature/31-portfolio-allocation`. Backend, interface, migração e testes adicionados; revisão/aceite formal do grupo e merge ainda não presumidos.
+**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação técnica da SPEC-031 em validação no PR #68, branch `feature/31-portfolio-allocation`. Backend, interface, migração e testes adicionados; revisão/aceite formal do grupo e merge ainda não presumidos. Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
 
 ## 1. Identificação
 

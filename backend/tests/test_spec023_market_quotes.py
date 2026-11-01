@@ -19,6 +19,7 @@ def login(client):
 
 
 def test_spec023_returns_dated_local_stock_and_fii_history(client, app):
+    """Cláusulas: SPEC-023-R01, SPEC-023-R03, SPEC-023-R04, SPEC-023-R05, SPEC-023-R07."""
     headers = login(client)
     app.state.clock = lambda: datetime(2026, 10, 29, 13, tzinfo=UTC)
     petr4 = client.get(f"{PREFIX}/petr4", headers=headers)
@@ -36,6 +37,7 @@ def test_spec023_returns_dated_local_stock_and_fii_history(client, app):
 
 
 def test_spec023_requires_authenticated_valid_ticker_and_identifies_unknown(client):
+    """Cláusulas: SPEC-023-R02."""
     assert client.get(f"{PREFIX}/PETR4").status_code == 401
     headers = login(client)
     assert client.get(f"{PREFIX}/PETR", headers=headers).json()["detail"] == "invalid_market_ticker"
@@ -45,6 +47,7 @@ def test_spec023_requires_authenticated_valid_ticker_and_identifies_unknown(clie
 
 
 def test_spec023_stale_or_unavailable_reference_permits_explicit_manual_entry(client, app):
+    """Cláusulas: SPEC-023-R06."""
     headers = login(client)
     app.state.clock = lambda: datetime(2026, 10, 30, 12, 0, 1, tzinfo=UTC)
     stale = client.get(f"{PREFIX}/PETR4", headers=headers)

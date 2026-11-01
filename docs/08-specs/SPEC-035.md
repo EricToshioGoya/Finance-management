@@ -1,6 +1,6 @@
 # SPEC-035: Buscar conteúdo educativo e ajuda contextual
 
-**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação técnica em validação na branch `feature/35-education-help` (PR a abrir). Conteúdo editorial definitivo e revisão humana ainda sujeitos a OPEN-30; não há aprovação formal presumida.
+**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação técnica em validação na branch `feature/35-education-help` (PR a abrir). Conteúdo editorial definitivo e revisão humana ainda sujeitos a OPEN-30; não há aprovação formal presumida. Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
 
 ## 1. Identificação
 

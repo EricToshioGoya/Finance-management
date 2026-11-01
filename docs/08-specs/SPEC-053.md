@@ -1,6 +1,6 @@
 # SPEC-053: Consultar indicadores contábeis CVM por período
 
-**Estado:** implementada tecnicamente em 2026-10-28; aguarda revisão humana do grupo. A evidência executável está em [implementacao-SPEC-053](../09-qualidade/implementacao-SPEC-053.md).
+**Estado:** implementada tecnicamente em 2026-10-28; aguarda revisão humana do grupo. A evidência executável está em [implementacao-SPEC-053](../09-qualidade/implementacao-SPEC-053.md). Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
 
 ## 1. Identificação
 

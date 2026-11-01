@@ -6,6 +6,7 @@ PREFIX = "/api/v1/auth/financial"
 
 
 def test_heatmap_requires_verified_session_and_starts_empty(client):
+    """Cláusulas: SPEC-030-R02."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     assert client.get(f"{PREFIX}/net-worth/heatmap").status_code == 401
@@ -19,6 +20,7 @@ def test_heatmap_requires_verified_session_and_starts_empty(client):
 
 
 def test_heatmap_preserves_relative_values_rates_and_privacy(client):
+    """Cláusulas: SPEC-030-R01, SPEC-030-R03, SPEC-030-R04, SPEC-030-R09."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     owner = login(client, "heatmap-owner@example.com")
@@ -80,6 +82,7 @@ def test_heatmap_preserves_relative_values_rates_and_privacy(client):
 
 
 def test_heatmap_missing_rate_is_not_invented(client):
+    """Cláusulas: SPEC-030-R05, SPEC-030-R06."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     owner = login(client, "heatmap-missing-rate@example.com")

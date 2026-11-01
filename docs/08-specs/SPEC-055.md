@@ -1,6 +1,6 @@
 # SPEC-055: Gerir categorias padrão e pessoais
 
-**Estado:** implementação técnica concluída em 2026-10-25; aprovação formal humana continua pendente.
+**Estado:** implementação técnica concluída em 2026-10-25; aprovação formal humana continua pendente. Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
 
 ## 1. Identificação
 

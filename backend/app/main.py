@@ -914,6 +914,16 @@ def create_app(
         auth.authenticate(credentials.credentials)
         return companies.search(query, limit)
 
+    # SPEC-027: registrada antes de /{company_id}, que capturaria "watchlist" como UUID.
+    @app.get(
+        "/api/v1/companies/watchlist", response_model=list[WatchlistOutput], tags=["companies"]
+    )
+    def list_watchlist(auth: Service, credentials: Credentials):
+        if not credentials:
+            raise AuthError("invalid_session")
+        user, _ = auth.authenticate(credentials.credentials)
+        return [WatchlistOutput.model_validate(item) for item in auth.list_watchlist(user.id)]
+
     @app.get(
         f"{COMPANY_PREFIX}/{{company_id}}", response_model=PublicCompanyOutput, tags=["companies"]
     )
@@ -1932,15 +1942,6 @@ def create_app(
         user, _ = auth.authenticate(credentials.credentials)
         created, item = auth.add_watchlist(user.id, company_id)
         return WatchlistMutationOutput(created=created, item=WatchlistOutput.model_validate(item))
-
-    @app.get(
-        "/api/v1/companies/watchlist", response_model=list[WatchlistOutput], tags=["companies"]
-    )
-    def list_watchlist(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
-        return [WatchlistOutput.model_validate(item) for item in auth.list_watchlist(user.id)]
 
     @app.delete("/api/v1/companies/{company_id}/watchlist", status_code=204, tags=["companies"])
     def remove_watchlist(company_id: uuid.UUID, auth: Service, credentials: Credentials):

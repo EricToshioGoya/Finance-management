@@ -1,6 +1,6 @@
 # SPEC-039: Gerar alertas e histórico in-app
 
-**Estado:** implementada tecnicamente em 2026-10-29, aguardando verificação de CI e revisão humana. A política do recorte foi confirmada pelo responsável nesta sessão; não equivale à aprovação histórica do grupo.
+**Estado:** implementada tecnicamente em 2026-10-29, aguardando verificação de CI e revisão humana. A política do recorte foi confirmada pelo responsável nesta sessão; não equivale à aprovação histórica do grupo. Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
 
 ## 1. Identificação
 

@@ -1,6 +1,6 @@
 # SPEC-041: Disponibilizar API para integrações autorizadas
 
-**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação técnica em `feature/41-authorized-read-api`; OPEN-24/15 exigem decisão formal, e o recorte de chave API de leitura é provisório.
+**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação técnica em `feature/41-authorized-read-api`; OPEN-24/15 exigem decisão formal, e o recorte de chave API de leitura é provisório. Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
 
 ## 1. Identificação
 

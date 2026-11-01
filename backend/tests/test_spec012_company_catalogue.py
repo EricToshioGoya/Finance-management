@@ -24,6 +24,7 @@ def login(client):
 
 
 def test_spec012_searches_ticker_cnpj_and_name_with_no_private_payload(client):
+    """Cláusulas: SPEC-012-R01, SPEC-012-R02, SPEC-012-R03, SPEC-012-R04, SPEC-012-R05."""
     headers = login(client)
     assert client.get(COMPANIES).status_code == 401
     by_ticker = client.get(f"{COMPANIES}?query=PETR4", headers=headers)
@@ -38,12 +39,19 @@ def test_spec012_searches_ticker_cnpj_and_name_with_no_private_payload(client):
 
 
 def test_spec012_lists_metadata_filters_and_never_returns_document_binary(client):
+    """Cláusulas: SPEC-012-R01, SPEC-012-R02, SPEC-012-R06, SPEC-012-R07, SPEC-012-R08,
+    SPEC-012-R09, SPEC-012-R10.
+    """
     headers = login(client)
     company = client.get(f"{COMPANIES}?query=PETR4", headers=headers).json()[0]
     documents = client.get(f"{COMPANIES}/{company['id']}/documents", headers=headers)
     assert documents.status_code == 200
     rows = documents.json()
     assert {row["document_type"] for row in rows} == {"DFP", "ITR", "FRE", "IPE"}
+    assert all(
+        {"document_type", "subject", "reference_period", "delivered_at", "status"} <= set(row)
+        for row in rows
+    )
     assert all(row["official_url"].startswith("https://www.rad.cvm.gov.br/") for row in rows)
     assert all("pdf" not in row and "content" not in row for row in rows)
     only_itr = client.get(
@@ -64,6 +72,7 @@ def test_spec012_lists_metadata_filters_and_never_returns_document_binary(client
 
 
 def test_spec012_checks_only_official_host_and_records_link_status(client, app, monkeypatch):
+    """Cláusulas: SPEC-012-R13."""
     headers = login(client)
     company = client.get(f"{COMPANIES}?query=VALE3", headers=headers).json()[0]
     document = client.get(

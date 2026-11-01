@@ -1,6 +1,6 @@
 # SPEC-036: Simular compra financiada e amortização
 
-**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação técnica provisória na branch `feature/36-financing-amortization`. Motor puro, API, interface e testes aplicados; a decisão formal OPEN-12/22 e revisão do grupo permanecem pendentes.
+**Estado:** implementada tecnicamente; código incorporado à `main` em 2026-10-31 (PR #43) e coberto pela CI. Registro anterior: implementação técnica provisória na branch `feature/36-financing-amortization`. Motor puro, API, interface e testes aplicados; a decisão formal OPEN-12/22 e revisão do grupo permanecem pendentes. Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
 
 ## 1. Identificação
 

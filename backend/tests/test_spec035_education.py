@@ -6,6 +6,7 @@ PREFIX = "/api/v1/education/articles"
 
 
 def test_education_requires_session_and_reuses_exact_article_in_context(client):
+    """Cláusulas: SPEC-035-R01, SPEC-035-R02, SPEC-035-R03, SPEC-035-R06, SPEC-035-R07."""
     assert client.get(PREFIX).status_code == 401
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
@@ -30,6 +31,7 @@ def test_education_requires_session_and_reuses_exact_article_in_context(client):
 
 
 def test_profile_based_order_and_search_without_exposing_other_user(client):
+    """Cláusulas: SPEC-035-R04, SPEC-035-R05."""
     delivery = CaptureDelivery()
     client.app.state.email_delivery = delivery
     first = login(client, "education-basic@example.com")

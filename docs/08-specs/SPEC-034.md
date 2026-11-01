@@ -1,6 +1,6 @@
 # SPEC-034: Calcular e explicar score de saúde financeira
 
-**Estado:** implementada tecnicamente em 2026-10-29; aguarda revisão humana do grupo. Evidências em [implementacao-SPEC-034](../09-qualidade/implementacao-SPEC-034.md).
+**Estado:** implementada tecnicamente em 2026-10-29; aguarda revisão humana do grupo. Evidências em [implementacao-SPEC-034](../09-qualidade/implementacao-SPEC-034.md). Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
 
 ## 1. Identificação
 

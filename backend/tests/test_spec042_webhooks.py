@@ -33,6 +33,7 @@ def login_and_verify(client, app, email):
 
 
 def test_spec042_hmac_history_and_manual_retry(client, app):
+    """Cláusulas: SPEC-042-R01, SPEC-042-R03, SPEC-042-R04, SPEC-042-R05, SPEC-042-R06."""
     email_delivery = type(
         "Email",
         (),
@@ -83,6 +84,7 @@ def test_spec042_hmac_history_and_manual_retry(client, app):
 
 
 def test_spec042_owner_isolation(client, app):
+    """Cláusulas: SPEC-042-R02."""
     email_delivery = type(
         "Email",
         (),
