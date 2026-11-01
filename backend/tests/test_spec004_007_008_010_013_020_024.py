@@ -149,7 +149,7 @@ def test_spec_020_021_022_invoice_budget_and_dashboard(client):
             "description": "Mercado",
             "amount": "80",
             "category_key": "standard:alimentacao",
-            "occurred_on": "2026-01-15",
+            "occurred_on": "2026-01-08",  # até o fechamento (dia 10): fatura de janeiro
             "credit_card_id": card,
         },
     )

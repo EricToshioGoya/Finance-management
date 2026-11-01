@@ -1,6 +1,6 @@
 # SPEC-020: Consultar fatura e limite disponível
 
-**Estado:** implementada tecnicamente no código do grupo, incorporado à `main` em 2026-10-31 (PR #43); testes automatizados em `backend/tests/test_spec004_007_008_010_013_020_024.py` e interface web na navegação por abas (PR #45). Cobertura por cláusula (C-02) concluída em 2026-10-31: cada cláusula `SHALL` tem teste `test_SPEC_020_Rxx` em `backend/tests/test_c02_spec005_020_021_022_painel.py`; aprovação formal do grupo pendente.
+**Estado:** implementada tecnicamente no código do grupo, incorporado à `main` em 2026-10-31 (PR #43); testes automatizados em `backend/tests/test_spec004_007_008_010_013_020_024.py` e interface web na navegação por abas (PR #45). Cobertura por cláusula (C-02) concluída em 2026-10-31: cada cláusula `SHALL` tem teste `test_SPEC_020_Rxx` em `backend/tests/test_c02_spec005_020_021_022_painel.py`; aprovação formal do grupo pendente. Em 2026-10-31, a política OPEN-12 aprovada (ciclo pelo dia de fechamento, parcelas e alerta configurável por cartão entre 70% e 100%, padrão 80%) foi implementada; testes em `backend/tests/test_c02_spec020_card_cycle.py` e registro em `docs/09-qualidade/implementacao-SPEC-020-ciclo.md`.
 
 ## 1. Identificação
 

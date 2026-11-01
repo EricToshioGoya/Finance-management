@@ -673,6 +673,7 @@ class CreditCardRecord(Base):
         CheckConstraint("credit_limit > 0", name="positive_credit_limit"),
         CheckConstraint("closing_day BETWEEN 1 AND 31", name="valid_closing_day"),
         CheckConstraint("due_day BETWEEN 1 AND 31", name="valid_due_day"),
+        CheckConstraint("alert_threshold BETWEEN 70 AND 100", name="valid_card_alert_threshold"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
@@ -683,6 +684,10 @@ class CreditCardRecord(Base):
     credit_limit: Mapped[Decimal] = mapped_column(Numeric(14, 2))
     closing_day: Mapped[int] = mapped_column(Integer)
     due_day: Mapped[int] = mapped_column(Integer)
+    # OPEN-12: percentual do limite que dispara o alerta de proximidade (SPEC-020-R05).
+    alert_threshold: Mapped[Decimal] = mapped_column(
+        Numeric(5, 2), default=Decimal("80"), server_default="80"
+    )
 
 
 class RecurringIncomeRecord(Base):
@@ -768,6 +773,10 @@ class ExpenseRecord(Base):
     occurred_on: Mapped[date] = mapped_column(Date)
     recurring: Mapped[bool] = mapped_column(Boolean, default=False)
     idempotency_key: Mapped[str] = mapped_column(String(128))
+    # OPEN-12: parcelas de uma mesma compra no cartão compartilham o grupo.
+    installment_group: Mapped[uuid.UUID | None] = mapped_column(index=True)
+    installment_number: Mapped[int | None] = mapped_column(Integer)
+    installment_count: Mapped[int | None] = mapped_column(Integer)
 
 
 class ExchangeRateRecord(Base):

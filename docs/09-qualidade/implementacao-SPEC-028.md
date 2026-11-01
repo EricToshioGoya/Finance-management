@@ -13,3 +13,7 @@
 ## Verificações
 
 `test_spec028_net_worth.py` cobre conta 100 menos dívida manual 30, projeção excluída, fatura como passivo, validação, confirmação de e-mail, edição/exclusão e isolamento entre titulares. A CI executa a suíte PostgreSQL completa e o cliente web; lint, migration e documentação são validados no PR.
+
+## Atualização de 2026-10-31 (OPEN-12)
+
+O passivo de cartão passou a ser a fatura aberta no ciclo que contém a data de referência (dia de fechamento), em vez do mês civil. Parcelas futuras não entram no passivo desta consolidação; elas reduzem o limite disponível do cartão (SPEC-020).

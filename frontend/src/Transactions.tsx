@@ -7,7 +7,7 @@ type Category = { key: string; name: string; color: string; active: boolean };
 type Recurring = { id: string; description: string; amount: string; account_id: string | null; starts_on: string };
 type OneTime = { id: string; description: string; amount: string; account_id: string | null; occurred_on: string };
 type Bonus = { id: string; description: string; amount: string; periodicity: 'monthly' | 'annual'; starts_on: string; reference_month: number | null };
-type Expense = { id: string; description: string; amount: string; category_key: string; occurred_on: string; recurring: boolean; account_id: string | null; credit_card_id: string | null };
+type Expense = { id: string; description: string; amount: string; category_key: string; occurred_on: string; recurring: boolean; account_id: string | null; credit_card_id: string | null; installment_number?: number | null; installment_count?: number | null };
 type Kind = 'expense' | 'one-time' | 'recurring' | 'bonus';
 
 /** Lançamentos: despesas (SPEC-059), receitas recorrentes/pontuais (SPEC-056/057), bônus (SPEC-058) e edição/exclusão (SPEC-006). */
@@ -67,6 +67,8 @@ export function Transactions({ token, lang }: { token: string; lang: Lang }) {
           ...body,
           account_id: origin.startsWith('a:') ? origin.slice(2) : null,
           credit_card_id: origin.startsWith('c:') ? origin.slice(2) : null,
+          // OPEN-12: parcelamento só para compra pontual no cartão.
+          installments: origin.startsWith('c:') && data.recurring !== 'on' ? Number(data.installments || 1) : 1,
         }) }), pt ? 'Despesa registrada.' : 'Expense saved.', form);
       }
     } else if (kind === 'one-time') {
@@ -89,7 +91,7 @@ export function Transactions({ token, lang }: { token: string; lang: Lang }) {
   const categoryName = (key: string) => categories.find(item => item.key === key)?.name ?? key;
   const tabs: [Kind, string][] = [['expense', pt ? 'Despesa' : 'Expense'], ['one-time', pt ? 'Receita pontual' : 'One-time income'], ['recurring', pt ? 'Receita recorrente' : 'Recurring income'], ['bonus', pt ? 'Bônus/PLR' : 'Bonus']];
   const rows = [
-    ...expenses.map(item => ({ id: item.id, date: item.occurred_on, label: item.description, detail: `${categoryName(item.category_key)}${item.recurring ? (pt ? ' · recorrente' : ' · recurring') : ''}`, amount: -Number(item.amount), path: `/financial/expenses/${item.id}`, expense: item })),
+    ...expenses.map(item => ({ id: item.id, date: item.occurred_on, label: item.description, detail: `${categoryName(item.category_key)}${item.recurring ? (pt ? ' · recorrente' : ' · recurring') : ''}${item.installment_count ? ` · ${pt ? 'parcela' : 'installment'} ${item.installment_number}/${item.installment_count}` : ''}`, amount: -Number(item.amount), path: `/financial/expenses/${item.id}`, expense: item })),
     ...oneTime.map(item => ({ id: item.id, date: item.occurred_on, label: item.description, detail: pt ? 'Receita pontual' : 'One-time income', amount: Number(item.amount), path: `/financial/one-time-incomes/${item.id}`, expense: null })),
     ...recurring.map(item => ({ id: item.id, date: item.starts_on, label: item.description, detail: pt ? 'Receita mensal recorrente' : 'Monthly recurring income', amount: Number(item.amount), path: `/financial/recurring-incomes/${item.id}`, expense: null })),
     ...bonuses.map(item => ({ id: item.id, date: item.starts_on, label: item.description, detail: item.periodicity === 'annual' ? `${pt ? 'Bônus anual · mês' : 'Annual bonus · month'} ${item.reference_month}` : (pt ? 'Bônus mensal' : 'Monthly bonus'), amount: Number(item.amount), path: `/financial/bonuses/${item.id}`, expense: null })),
@@ -117,6 +119,7 @@ export function Transactions({ token, lang }: { token: string; lang: Lang }) {
         {kind === 'bonus' && <div className="field"><label htmlFor="tx-periodicity">{pt ? 'Periodicidade' : 'Frequency'}</label>
           <select id="tx-periodicity" name="periodicity" defaultValue="annual"><option value="annual">{pt ? 'Anual' : 'Annual'}</option><option value="monthly">{pt ? 'Mensal' : 'Monthly'}</option></select></div>}
         {kind === 'bonus' && <div className="field"><label htmlFor="tx-month">{pt ? 'Mês de referência (anual)' : 'Reference month (annual)'}</label><input id="tx-month" name="month" type="number" min="1" max="12" defaultValue="12" /></div>}
+        {kind === 'expense' && !editing && <div className="field"><label htmlFor="tx-installments">{pt ? 'Parcelas (só cartão)' : 'Installments (card only)'}</label><input id="tx-installments" name="installments" type="number" min="1" max="48" step="1" defaultValue="1" /></div>}
         {kind === 'expense' && <label className="check"><input type="checkbox" name="recurring" defaultChecked={editing?.recurring} />{pt ? 'Despesa recorrente (repete todo mês)' : 'Recurring expense (repeats monthly)'}</label>}
         <div className="actions">
           <button type="submit" disabled={busy}>{editing ? (pt ? 'Salvar alterações' : 'Save changes') : (pt ? 'Registrar' : 'Save')}</button>

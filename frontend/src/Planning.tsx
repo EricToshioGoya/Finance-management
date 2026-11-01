@@ -5,7 +5,7 @@ type Category = { key: string; name: string; active: boolean };
 type Budget = { id: string; kind: string; category_key: string | null; target: string; alert_threshold: string; actual: string; percentage: string; status: string };
 type Target = { monthly_contribution_needed: string; feasible: boolean; warning: string | null };
 type Card = { id: string; name: string };
-type Invoice = { competence: string; invoice_total: string; credit_limit: string; available_limit: string; near_limit: boolean; due_day: number };
+type Invoice = { competence: string; invoice_total: string; credit_limit: string; available_limit: string; future_installments: string; near_limit: boolean; alert_threshold: string; closing_day: number; due_day: number };
 
 /** Metas de orçamento (SPEC-021) e aporte para objetivo (SPEC-024). */
 export function Planning({ token, lang }: { token: string; lang: Lang }) {
@@ -134,9 +134,11 @@ export function CardInvoice({ token, lang }: { token: string; lang: Lang }) {
         <div className="kpi"><span>{pt ? 'Total da fatura' : 'Statement total'}</span><strong>{money(invoice.invoice_total, lang)}</strong></div>
         <div className="kpi"><span>{pt ? 'Limite disponível' : 'Available limit'}</span><strong className={invoice.near_limit ? 'negative' : 'positive'}>{money(invoice.available_limit, lang)}</strong></div>
         <div className="kpi"><span>{pt ? 'Limite total' : 'Total limit'}</span><strong>{money(invoice.credit_limit, lang)}</strong></div>
-        <div className="kpi"><span>{pt ? 'Vencimento' : 'Due day'}</span><strong>{pt ? 'dia' : 'day'} {invoice.due_day}</strong></div>
+        <div className="kpi"><span>{pt ? 'Parcelas futuras' : 'Future installments'}</span><strong>{money(invoice.future_installments, lang)}</strong></div>
+        <div className="kpi"><span>{pt ? 'Fechamento / vencimento' : 'Closing / due day'}</span><strong>{pt ? 'dia' : 'day'} {invoice.closing_day} / {invoice.due_day}</strong></div>
       </div>}
-      {invoice?.near_limit && <p className="negative">{pt ? 'Atenção: limite próximo do fim.' : 'Warning: close to the credit limit.'}</p>}
+      {invoice && <p className="hint">{pt ? `Compras até o dia ${invoice.closing_day} entram nesta fatura; depois, na seguinte. O limite disponível desconta as parcelas futuras.` : `Purchases up to day ${invoice.closing_day} go to this statement; later ones to the next. The available limit discounts future installments.`}</p>}
+      {invoice?.near_limit && <p className="negative">{pt ? `Atenção: uso do limite atingiu ${Number(invoice.alert_threshold)}% ou mais.` : `Warning: limit usage reached ${Number(invoice.alert_threshold)}% or more.`}</p>}
     </>}
   </section>;
 }

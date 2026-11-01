@@ -93,6 +93,7 @@ from app.presentation.schemas import (
     ConfirmFinancingInput,
     CreditCardCreateInput,
     CreditCardOutput,
+    CreditCardUpdateInput,
     DashboardMonthOutput,
     EducationalArticleOutput,
     ErrorOutput,
@@ -1117,8 +1118,28 @@ def create_app(
         user, _ = auth.authenticate(credentials.credentials)
         return CreditCardOutput.model_validate(
             auth.create_credit_card(
-                user.id, data.name, data.credit_limit, data.closing_day, data.due_day
+                user.id,
+                data.name,
+                data.credit_limit,
+                data.closing_day,
+                data.due_day,
+                data.alert_threshold,
             )
+        )
+
+    @app.patch(
+        f"{FINANCIAL_PREFIX}/credit-cards/{{card_id}}",
+        response_model=CreditCardOutput,
+        tags=["financial"],
+    )
+    def update_credit_card(
+        card_id: uuid.UUID, data: CreditCardUpdateInput, auth: Service, credentials: Credentials
+    ):
+        if not credentials:
+            raise AuthError("invalid_session")
+        user, _ = auth.authenticate(credentials.credentials)
+        return CreditCardOutput.model_validate(
+            auth.update_card_alert_threshold(user.id, card_id, data.alert_threshold)
         )
 
     @app.get(f"{FINANCIAL_PREFIX}/net-worth", response_model=NetWorthOutput, tags=["financial"])

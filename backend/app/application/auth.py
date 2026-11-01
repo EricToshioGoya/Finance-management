@@ -15,6 +15,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.config import Settings
+from app.domain.cartao import competencia_da_fatura, dividir_parcelas, somar_meses
 from app.domain.financeiro import aporte_necessario
 from app.domain.financial_stress import StressScenario, simulate_stress
 from app.domain.financing import simulate_financing
@@ -948,6 +949,7 @@ class AuthService:
             "credit_limit": record.credit_limit,
             "closing_day": record.closing_day,
             "due_day": record.due_day,
+            "alert_threshold": record.alert_threshold,
         }
 
     def list_financial_sources(self, user_id: uuid.UUID) -> dict[str, list[dict[str, object]]]:
@@ -987,7 +989,13 @@ class AuthService:
         return self.account_output(record)
 
     def create_credit_card(
-        self, user_id: uuid.UUID, name: str, credit_limit: Decimal, closing_day: int, due_day: int
+        self,
+        user_id: uuid.UUID,
+        name: str,
+        credit_limit: Decimal,
+        closing_day: int,
+        due_day: int,
+        alert_threshold: Decimal = Decimal("80"),
     ) -> dict[str, object]:
         self.require_category_owner(user_id)
         record = CreditCardRecord(
@@ -996,10 +1004,27 @@ class AuthService:
             credit_limit=credit_limit,
             closing_day=closing_day,
             due_day=due_day,
+            alert_threshold=alert_threshold,
         )
         self.db.add(record)
         self.db.commit()
         return self.card_output(record)
+
+    def update_card_alert_threshold(
+        self, user_id: uuid.UUID, card_id: uuid.UUID, alert_threshold: Decimal
+    ) -> dict[str, object]:
+        """OPEN-12: percentual de alerta de proximidade do limite, por cartão (70% a 100%)."""
+        self.require_category_owner(user_id)
+        card = self.db.scalar(
+            select(CreditCardRecord).where(
+                CreditCardRecord.id == card_id, CreditCardRecord.user_id == user_id
+            )
+        )
+        if card is None:
+            raise AuthError("credit_card_not_found", 404)
+        card.alert_threshold = alert_threshold
+        self.db.commit()
+        return self.card_output(card)
 
     def recurring_income_output(self, record: RecurringIncomeRecord) -> dict[str, object]:
         return {
@@ -1598,27 +1623,35 @@ class AuthService:
         )
         if card is None:
             raise AuthError("credit_card_not_found", 404)
-        start, end = self.month_bounds(competence)
-        total = sum(
-            (
-                record.amount
-                for record in self.db.scalars(
-                    select(ExpenseRecord).where(
-                        ExpenseRecord.user_id == user_id, ExpenseRecord.credit_card_id == card_id
-                    )
-                )
-                if (record.recurring and record.occurred_on < end)
-                or (not record.recurring and start <= record.occurred_on < end)
-            ),
-            Decimal("0"),
-        )
+        # OPEN-12: a compra entra na fatura pelo dia de fechamento, não pelo mês civil.
+        invoice_month = competence.replace(day=1)
+        total = Decimal("0")
+        future = Decimal("0")
+        for record in self.db.scalars(
+            select(ExpenseRecord).where(
+                ExpenseRecord.user_id == user_id, ExpenseRecord.credit_card_id == card_id
+            )
+        ):
+            cycle = competencia_da_fatura(record.occurred_on, card.closing_day)
+            if record.recurring:
+                total += record.amount if cycle <= invoice_month else Decimal("0")
+            elif cycle == invoice_month:
+                total += record.amount
+            elif cycle > invoice_month and record.installment_group is not None:
+                future += record.amount
+        # Limite disponível = limite − fatura aberta − parcelas futuras; faturas anteriores
+        # são tratadas como pagas (pagamento de fatura segue fora da OPEN-12).
+        committed = total + future
         return {
             "card_id": card.id,
-            "competence": start.strftime("%Y-%m"),
+            "competence": invoice_month.strftime("%Y-%m"),
             "invoice_total": total,
             "credit_limit": card.credit_limit,
-            "available_limit": max(Decimal("0"), card.credit_limit - total),
-            "near_limit": total >= card.credit_limit * Decimal("0.80"),
+            "available_limit": max(Decimal("0"), card.credit_limit - committed),
+            "future_installments": future,
+            "near_limit": committed * Decimal("100") >= card.credit_limit * card.alert_threshold,
+            "alert_threshold": card.alert_threshold,
+            "closing_day": card.closing_day,
             "due_day": card.due_day,
         }
 
@@ -1686,7 +1719,10 @@ class AuthService:
         for card in self.db.scalars(
             select(CreditCardRecord).where(CreditCardRecord.user_id == user_id)
         ):
-            invoice = self.card_invoice(user_id, card.id, reference)
+            # OPEN-12: passivo é a fatura aberta no ciclo que contém a data de referência.
+            invoice = self.card_invoice(
+                user_id, card.id, competencia_da_fatura(reference, card.closing_day)
+            )
             if invoice["invoice_total"] > 0:
                 liabilities.append(
                     {
@@ -2540,6 +2576,9 @@ class AuthService:
             "recurring": record.recurring,
             "account_id": record.account_id,
             "credit_card_id": record.credit_card_id,
+            "installment_group": record.installment_group,
+            "installment_number": record.installment_number,
+            "installment_count": record.installment_count,
         }
 
     def valid_expense_category(self, user_id: uuid.UUID, key: str) -> bool:
@@ -2589,20 +2628,35 @@ class AuthService:
             card = self.db.get(CreditCardRecord, card_id)
             if card is None or card.user_id != user_id:
                 raise AuthError("credit_card_not_found", 404)
-        record = ExpenseRecord(
-            user_id=user_id,
-            account_id=account_id,
-            credit_card_id=card_id,
-            category_key=str(category_key),
-            description_encrypted=self.security.encrypt(str(data["description"])),
-            amount=data["amount"],
-            occurred_on=data["occurred_on"],
-            recurring=bool(data["recurring"]),
-            idempotency_key=idempotency_key,
+        count = int(data.get("installments") or 1)
+        if count > 1 and (card_id is None or data["recurring"]):
+            raise AuthError("installments_require_card", 422)
+        amounts = (
+            dividir_parcelas(Decimal(data["amount"]), count) if count > 1 else [data["amount"]]
         )
-        self.db.add(record)
+        group = uuid.uuid4() if count > 1 else None
+        # A chave do cliente fica na 1ª parcela; as demais derivam dela (reenvio não duplica).
+        derived = hashlib.sha256(idempotency_key.encode()).hexdigest()[:64]
+        records = [
+            ExpenseRecord(
+                user_id=user_id,
+                account_id=account_id,
+                credit_card_id=card_id,
+                category_key=str(category_key),
+                description_encrypted=self.security.encrypt(str(data["description"])),
+                amount=amount,
+                occurred_on=somar_meses(data["occurred_on"], index),
+                recurring=bool(data["recurring"]),
+                idempotency_key=idempotency_key if index == 0 else f"{derived}#{index + 1}",
+                installment_group=group,
+                installment_number=index + 1 if group else None,
+                installment_count=count if group else None,
+            )
+            for index, amount in enumerate(amounts)
+        ]
+        self.db.add_all(records)
         self.db.commit()
-        return self.expense_output(record)
+        return self.expense_output(records[0])
 
     def list_expenses(self, user_id: uuid.UUID) -> list[dict[str, object]]:
         return [
