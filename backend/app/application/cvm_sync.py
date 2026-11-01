@@ -2,7 +2,8 @@
 
 - Cadastro: atualiza razão social e setor das companhias já catalogadas (o cadastro CVM não
   traz ticker, então nenhuma companhia nova é criada).
-- Índices DFP/ITR/IPE: identidade = CNPJ + tipo + data de referência + versão. Versão nova de
+- Índices DFP/ITR/IPE: identidade = CNPJ + tipo + data de referência + versão; para IPE,
+  CNPJ + protocolo de entrega + versão (decisão de 2026-11-01). Versão nova de
   um documento já conhecido é reapresentação: passa a ser a efetiva (`restated`), a anterior
   vira `replaced` e não há novo alerta. Só o documento inédito (`active`) gera aviso da
   watchlist (SPEC-027-R05).
@@ -106,7 +107,10 @@ class CvmSyncService:
                 select(OfficialDocumentRecord).where(
                     OfficialDocumentRecord.company_id == company.id,
                     OfficialDocumentRecord.document_type == document.document_type,
-                    OfficialDocumentRecord.cvm_reference_date == document.reference_date,
+                    # OPEN-27: IPE pelo protocolo de entrega; DFP/ITR pela data de referência.
+                    OfficialDocumentRecord.cvm_protocol == document.protocol
+                    if document.document_type == "IPE"
+                    else OfficialDocumentRecord.cvm_reference_date == document.reference_date,
                 )
             )
         )
@@ -143,6 +147,7 @@ class CvmSyncService:
             synced_at=now,
             cvm_reference_date=document.reference_date,
             cvm_version=document.version,
+            cvm_protocol=document.protocol,
         )
         self.db.add(record)
         self.db.flush()

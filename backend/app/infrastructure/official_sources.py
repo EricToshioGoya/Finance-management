@@ -179,6 +179,7 @@ class CvmDocument:
     delivered_on: date
     link: str
     subject: str
+    protocol: str | None = None  # IPE: protocolo de entrega (identidade, OPEN-27)
 
 
 def digits(value: str) -> str:
@@ -211,6 +212,7 @@ def cvm_document_from_row(document_type: str, row: dict[str, str]) -> CvmDocumen
             delivered_on=_iso_date(row["Data_Entrega"]),
             link=row["Link_Download"].strip(),
             subject=(row.get("Assunto") or row.get("Categoria") or "Documento IPE").strip(),
+            protocol=row["Protocolo_Entrega"].strip(),
         )
     return CvmDocument(
         cnpj=digits(row["CNPJ_CIA"]),
