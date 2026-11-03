@@ -1,6 +1,6 @@
 # SPEC-017: Consultar, renovar e encerrar sessões
 
-**Estado:** implementação técnica concluída na branch feature/17-sessoes, aguardando CI e revisão humana. A autorização do usuário cobre este recorte; não comprova aprovação formal histórica do grupo.
+**Estado:** implementação técnica concluída na branch feature/17-sessoes, código na `main` e suíte de testes verde na verificação de 2026-11-03; revisão humana pendente. A autorização do usuário cobre este recorte; não comprova aprovação formal histórica do grupo.
 
 ## 1. Identificação
 

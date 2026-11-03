@@ -1,7 +1,7 @@
 # CLAUDE.md — Constituição do Projeto FinNova
 
 - **Versão:** v0 (rascunho)
-- **Última atualização:** 2026-10-31
+- **Última atualização:** 2026-11-03
 - **Escopo:** regras que valem para qualquer pessoa ou agente de codificação (Claude Code, Cursor) que altere este repositório.
 
 ---
@@ -28,7 +28,7 @@ Stack definida: Python 3.12+ com FastAPI, Pydantic e SQLAlchemy/Alembic; Postgre
 2. **Spec** em `docs/08-specs/`, com cláusulas EARS identificadas (`SPEC-NNN-Rxx`).
 3. **Plano** em `.specify/plans/PLAN-NNN.md`: como a spec será implementada (camadas, arquivos, riscos).
 4. **Tasks** em `.specify/tasks/TASKS-NNN.md`: lista ordenada de passos pequenos e verificáveis.
-5. **Implementação** em `src/` e **testes** em `tests/`.
+5. **Implementação** em `backend/app/`, `frontend/src/` e `mobile/` e **testes** em `backend/tests/`, `frontend/tests/` e `mobile/src/*.test.ts`.
 6. **Verificação:** testes passando, lint limpo e revisão com a pergunta "o código implementa a spec?".
 7. **Pull Request** vinculado à issue (`Closes #N`), com a spec atualizada no mesmo PR.
 
@@ -56,7 +56,7 @@ Convenções:
 | C-11 | Todos os endpoints ficam sob o prefixo `/api/v1`. | RNF-17 |
 | C-12 | A branch `main` só recebe alterações via PR; o merge exige testes e lint verdes na CI (`.github/workflows/ci.yml`). | RNF-16, `docs/combinados.md` |
 | C-13 | O uso de agente de IA é declarado na descrição do PR (o que foi gerado e o que foi revisado). | Contrato do curso (integridade) |
-| C-14 | Código, specs e documentação usam apenas os termos do glossário (`requisitos.md`, seção 8) e os nomes de classe do modelo de domínio; um termo novo entra primeiro no glossário. | `docs/modelo-dominio.md` |
+| C-14 | Código, specs e documentação usam apenas os termos do glossário (`requisitos.md`, seção 8) e os nomes de classe do modelo de domínio; um termo novo entra primeiro no glossário. | `docs/03-requisitos/requisitos.md` (seção 8.1) e `docs/05-modelo-de-dominio/modelo-de-dominio.md` |
 | C-15 | Data e hora são gravadas em UTC; o mês de competência e as datas exibidas usam America/Sao_Paulo; o domínio recebe o relógio por injeção. | RNF-25, ADR-006 |
 | C-16 | Toda criação de lançamento aceita chave de idempotência; um reenvio com a mesma chave não cria registro duplicado. | RNF-24, `docs/07-arquitetura/arquitetura.md` DA-10 |
 | C-17 | Testes automatizados nunca chamam serviço externo real; usam dublês. | `docs/10-qualidade/estrategia-de-testes.md`, seção 5 |

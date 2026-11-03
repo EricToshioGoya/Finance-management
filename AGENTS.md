@@ -8,6 +8,6 @@
 - Executar `python scripts/verificar-documentacao.py` após mudanças documentais. Quando existir código, executar os testes relevantes à Spec alterada.
 - Commits devem refletir alterações reais e explicáveis. Publicação segue autorização da sessão e política ativa; não presumir aprovação de PR ou merge.
 
-- SPEC-001 tem implementação autorizada na sessão de 2026-10-15; consultar ADR-007 e o registro de implementação, sem presumir aprovação formal do grupo ou de outras Specs.
+- As 62 Specs têm implementação técnica autorizada pelo responsável (situação por Spec no campo **Estado** e no `docs/08-specs/mapa-specs.md`); a revisão formal do grupo segue pendente e não deve ser presumida. Sessão e autenticação seguem o ADR-007.
 - Backend: em `backend`, usar `uv run --frozen ruff check .`, `uv run --frozen ruff format --check .` e `uv run --frozen pytest -q --cov=app --cov-fail-under=90`, com PostgreSQL de desenvolvimento disponível. Frontend: em `frontend`, `npm run lint`, `npm run build`, `npm test` com servidor HTTPS ativo.
 - Nunca usar banco de produção nos testes. Os testes da API criam/removem base temporária; os de navegador/smoke criam usuários sintéticos no banco local. Preservar `.env`, chaves e volume de dados locais.

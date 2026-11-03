@@ -45,6 +45,18 @@ def test_SPEC_007_R02_missing_indicator_is_unavailable_never_zero(client, app):
     assert response.status_code == 503 and response.json()["detail"] == "indicator_unavailable"
 
 
+def test_SPEC_007_R07_stale_warning_starts_after_24_hours_rnf09(client, app):
+    headers = verified_user(client, app)
+    now = datetime(2026, 10, 31, 12, tzinfo=UTC)
+    set_indicator(app, "cdi", "10", checked=now - timedelta(hours=23, minutes=59))
+    app.state.clock = lambda: now
+    assert client.get(f"{FIN}/indicators/cdi", headers=headers).json()["stale"] is False
+    app.state.clock = lambda: now + timedelta(minutes=2)
+    data = client.get(f"{FIN}/indicators/cdi", headers=headers).json()
+    assert data["stale"] is True and data["value"] == "10.000000"
+    clear_indicators(app)
+
+
 def test_SPEC_007_R07_source_failure_keeps_last_value_with_warning(client, app):
     headers = verified_user(client, app)
     set_indicator(app, "selic", "11", checked=datetime.now(UTC) - timedelta(days=3))

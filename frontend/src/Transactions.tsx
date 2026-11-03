@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { api, errorText, idempotent, money, shortDate, today, type Lang } from './api';
+import { api, errorText, money, shortDate, today, useIdempotencyKey, type Lang } from './api';
 
 type Account = { id: string; name: string };
 type Card = { id: string; name: string };
@@ -25,6 +25,7 @@ export function Transactions({ token, lang }: { token: string; lang: Lang }) {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
+  const creation = useIdempotencyKey();
 
   const load = useCallback(async () => {
     try {
@@ -44,7 +45,7 @@ export function Transactions({ token, lang }: { token: string; lang: Lang }) {
 
   async function run(action: () => Promise<unknown>, done: string, form?: HTMLFormElement) {
     setBusy(true); setError(''); setStatus('');
-    try { await action(); form?.reset(); setEditing(null); setStatus(done); await load(); }
+    try { await action(); creation.reset(); form?.reset(); setEditing(null); setStatus(done); await load(); }
     catch (cause) { setError(errorText(cause, lang)); }
     finally { setBusy(false); }
   }
@@ -63,7 +64,7 @@ export function Transactions({ token, lang }: { token: string; lang: Lang }) {
       if (editing) {
         void run(() => api(token, `/financial/expenses/${editing.id}`, { method: 'PATCH', body: JSON.stringify(body) }), pt ? 'Despesa atualizada.' : 'Expense updated.', form);
       } else {
-        void run(() => api(token, '/financial/expenses', { method: 'POST', headers: idempotent(), body: JSON.stringify({
+        void run(() => api(token, '/financial/expenses', { method: 'POST', headers: creation.headers(), body: JSON.stringify({
           ...body,
           account_id: origin.startsWith('a:') ? origin.slice(2) : null,
           credit_card_id: origin.startsWith('c:') ? origin.slice(2) : null,
@@ -72,11 +73,11 @@ export function Transactions({ token, lang }: { token: string; lang: Lang }) {
         }) }), pt ? 'Despesa registrada.' : 'Expense saved.', form);
       }
     } else if (kind === 'one-time') {
-      void run(() => api(token, '/financial/one-time-incomes', { method: 'POST', headers: idempotent(), body: JSON.stringify({ description: data.description, amount: data.amount, occurred_on: data.date, account_id: account }) }), pt ? 'Receita registrada.' : 'Income saved.', form);
+      void run(() => api(token, '/financial/one-time-incomes', { method: 'POST', headers: creation.headers(), body: JSON.stringify({ description: data.description, amount: data.amount, occurred_on: data.date, account_id: account }) }), pt ? 'Receita registrada.' : 'Income saved.', form);
     } else if (kind === 'recurring') {
-      void run(() => api(token, '/financial/recurring-incomes', { method: 'POST', headers: idempotent(), body: JSON.stringify({ description: data.description, amount: data.amount, starts_on: data.date || null, account_id: account }) }), pt ? 'Receita recorrente registrada.' : 'Recurring income saved.', form);
+      void run(() => api(token, '/financial/recurring-incomes', { method: 'POST', headers: creation.headers(), body: JSON.stringify({ description: data.description, amount: data.amount, starts_on: data.date || null, account_id: account }) }), pt ? 'Receita recorrente registrada.' : 'Recurring income saved.', form);
     } else {
-      void run(() => api(token, '/financial/bonuses', { method: 'POST', headers: idempotent(), body: JSON.stringify({
+      void run(() => api(token, '/financial/bonuses', { method: 'POST', headers: creation.headers(), body: JSON.stringify({
         description: data.description, amount: data.amount, periodicity: data.periodicity,
         starts_on: data.date || null, reference_month: data.periodicity === 'annual' ? Number(data.month) : null,
       }) }), pt ? 'Bônus registrado.' : 'Bonus saved.', form);
@@ -101,9 +102,9 @@ export function Transactions({ token, lang }: { token: string; lang: Lang }) {
     <section className="profile" aria-labelledby="new-entry-title">
       <h3 id="new-entry-title">{editing ? (pt ? 'Editar despesa' : 'Edit expense') : (pt ? 'Novo lançamento' : 'New entry')}</h3>
       {!editing && <div className="segmented" role="group" aria-label={pt ? 'Tipo de lançamento' : 'Entry type'}>
-        {tabs.map(([value, label]) => <button key={value} type="button" aria-pressed={kind === value} onClick={() => { setKind(value); setStatus(''); }}>{label}</button>)}
+        {tabs.map(([value, label]) => <button key={value} type="button" aria-pressed={kind === value} onClick={() => { setKind(value); setStatus(''); creation.reset(); }}>{label}</button>)}
       </div>}
-      <form onSubmit={submit} className="form-grid" key={`${kind}-${editing?.id ?? 'new'}`} aria-busy={busy}>
+      <form onSubmit={submit} onChange={creation.reset} className="form-grid" key={`${kind}-${editing?.id ?? 'new'}`} aria-busy={busy}>
         <div className="field"><label htmlFor="tx-description">{pt ? 'Descrição' : 'Description'}</label><input id="tx-description" name="description" maxLength={100} required defaultValue={editing?.description} /></div>
         <div className="field"><label htmlFor="tx-amount">{pt ? 'Valor (R$)' : 'Amount (BRL)'}</label><input id="tx-amount" name="amount" type="number" min={kind === 'bonus' ? '0' : '0.01'} step="0.01" required defaultValue={editing?.amount} /></div>
         <div className="field"><label htmlFor="tx-date">{kind === 'recurring' || kind === 'bonus' ? (pt ? 'Início (opcional)' : 'Start (optional)') : (pt ? 'Data' : 'Date')}</label>

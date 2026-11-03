@@ -16,7 +16,7 @@
 - **RB:** RB-15, RB-29.
 - **RNF:** RNF-01, RNF-05, RNF-06, RNF-11, RNF-12, RNF-13, RNF-14, RNF-15, RNF-16, RNF-17, RNF-20.
 - **Fluxo:** Fluxo conquistas RF-67; [catálogo de casos](../04-casos-de-uso/casos-de-uso-usuario.md) e [administração](../04-casos-de-uso/casos-de-uso-administrador.md). IDs UC só são usados quando existentes; fluxo nomeado é rastreável ao RF.
-- **Modelo:** Badge, Usuario e metas; [modelo conceitual](../05-modelo-de-dominio/modelo-de-dominio.md).
+- **Modelo:** Conquista, Usuario e metas; [modelo conceitual](../05-modelo-de-dominio/modelo-de-dominio.md).
 - **Arquitetura:** DA-01, DA-06, DA-07, DA-09; ADR-001, ADR-005, ADR-007; [arquitetura/ADRs](../07-arquitetura/arquitetura.md).
 
 ## 3. Escopo
@@ -66,7 +66,7 @@ Cada cláusula local é referenciada na tabela de testes; funcionalidades opcion
 
 ## 6. Regras e invariantes
 
-- **INV-001:** Badge não altera cálculo financeiro, score ou permissões.
+- **INV-001:** Conquista não altera cálculo financeiro, score ou permissões.
 - **INV-002:** Identificadores e filtros não permitem ler/alterar dados de outro titular; compartilhamento limita-se ao aceite e escopo explícitos. Erro não confirma alteração parcial.
 - **INV-003:** Decisões OPEN bloqueantes não são substituídas por valores, regras ou provedores inventados.
 
@@ -74,7 +74,7 @@ Regras herdadas: RB-15: O score de saúde financeira é educativo, não constitu
 
 ## 7. Modelo de domínio envolvido
 
-Usuario conquista 0..N Badge; cada conquista referencia condição/meta/marco aprovado. Badge não se relaciona a permissão ou multiplicador financeiro.
+Usuario conquista 0..N Conquista; cada conquista referencia condição/meta/marco aprovado. Conquista não se relaciona a permissão ou multiplicador financeiro.
 
 O [modelo conceitual](../05-modelo-de-dominio/modelo-de-dominio.md) mantém a origem das entidades. Não impor modelo físico ou migration nesta revisão. Campos/aliases e relações ainda ausentes são decisões de OPEN-15/19 e das OPEN locais.
 

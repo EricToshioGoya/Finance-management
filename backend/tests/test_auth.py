@@ -323,3 +323,24 @@ def test_rate_limit_state_is_shared_by_application_instances(app, client, monkey
             assert other.post(f"{PREFIX}/login", json={}).status_code == 429
     finally:
         another_app.state.engine.dispose()
+
+
+def test_SPEC_001_R07_write_limit_covers_sharing_webhooks_and_other_sensitive_groups(
+    client, monkeypatch
+):
+    """RNF-13: as escritas de compartilhamento, webhooks, eventos, perfil e concessões externas
+    também contam no limite de 100 pedidos/minuto por cliente e grupo de endpoint."""
+    monkeypatch.setattr("app.main.time.time", lambda: 5000.0)
+    groups = [
+        ("post", f"{PREFIX}/sharing/invitations"),
+        ("post", f"{PREFIX}/webhooks"),
+        ("post", f"{PREFIX}/usage-events"),
+        ("put", f"{PREFIX}/investor-profile"),
+        ("post", "/api/v1/external/grants"),
+    ]
+    for method, path in groups:
+        for _ in range(100):
+            assert getattr(client, method)(path, json={}).status_code != 429
+        response = getattr(client, method)(path, json={})
+        assert response.status_code == 429, path
+        assert response.json() == {"detail": "rate_limited"}

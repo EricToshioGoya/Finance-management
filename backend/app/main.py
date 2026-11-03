@@ -2212,7 +2212,7 @@ def create_app(
                 data.description,
                 data.amount,
                 data.account_id,
-                data.starts_on or date.today(),
+                data.starts_on,
                 idempotency_key,
             )
         )
@@ -2344,7 +2344,7 @@ def create_app(
                 data.description,
                 data.amount,
                 data.periodicity,
-                data.starts_on or date.today(),
+                data.starts_on,
                 data.reference_month,
                 idempotency_key(request),
             )

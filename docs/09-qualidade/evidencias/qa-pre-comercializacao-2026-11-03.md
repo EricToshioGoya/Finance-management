@@ -8,7 +8,7 @@ Execução local (contêiner Linux, 4 vCPU, PostgreSQL 16, API em um processo `u
 |---|---|---|
 | Backend: `ruff check` e `ruff format --check` | limpos | limpos |
 | Backend: `alembic check` (modelos × migrations) | divergente | sem divergência (incluído na CI) |
-| Backend: `pytest` com cobertura | 458 aprovados, 91,8% | 475 aprovados, 93,3% |
+| Backend: `pytest` com cobertura | 458 aprovados, 91,8% | 479 aprovados, 93,3% (com a `main` integrada) |
 | Web: lint, build e Playwright (fluxos, WCAG AA, layout) | 12/12 | 12/12 |
 | Mobile: typecheck, testes e export Android | aprovados | aprovados |
 | Bandit (média ou maior) e pip-audit | sem achados | sem achados |

@@ -16,7 +16,7 @@
 - **RB:** RB-10, RB-28, RB-29.
 - **RNF:** RNF-01, RNF-04, RNF-05, RNF-06, RNF-07, RNF-09, RNF-11, RNF-12, RNF-13, RNF-15, RNF-16, RNF-17, RNF-20.
 - **Fluxo:** UC-08; [catálogo de casos](../04-casos-de-uso/casos-de-uso-usuario.md) e [administração](../04-casos-de-uso/casos-de-uso-administrador.md). IDs UC só são usados quando existentes; fluxo nomeado é rastreável ao RF.
-- **Modelo:** ResultadoCalculo e IndicadorMercadoCache; [modelo conceitual](../05-modelo-de-dominio/modelo-de-dominio.md).
+- **Modelo:** ResultadoCalculo e IndicadorOficial; [modelo conceitual](../05-modelo-de-dominio/modelo-de-dominio.md).
 - **Arquitetura:** DA-01, DA-02, DA-03, DA-06, DA-07, DA-09; ADR-001, ADR-002, ADR-003, ADR-005, ADR-007; [arquitetura/ADRs](../07-arquitetura/arquitetura.md).
 
 ## 3. Escopo

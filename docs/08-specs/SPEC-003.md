@@ -1,6 +1,6 @@
 # SPEC-003: Classificar perfil por quiz
 
-**Estado:** implementada em branch de trabalho, aguardando CI e revisão humana. Política de quiz confirmada pelo responsável em 2026-10-28. Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
+**Estado:** implementada em branch de trabalho, código na `main` e suíte de testes verde na verificação de 2026-11-03; revisão humana pendente. Política de quiz confirmada pelo responsável em 2026-10-28. Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
 
 ## 1. Identificação
 

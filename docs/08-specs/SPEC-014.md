@@ -1,6 +1,6 @@
 # SPEC-014: Editar perfil e preferências persistidas
 
-**Estado:** implementação técnica concluída na branch feature/19-perfil-preferencias, aguardando CI e revisão humana. A autorização do usuário cobre este recorte; não comprova aprovação formal histórica do grupo.
+**Estado:** implementação técnica concluída na branch feature/19-perfil-preferencias, código na `main` e suíte de testes verde na verificação de 2026-11-03; revisão humana pendente. A autorização do usuário cobre este recorte; não comprova aprovação formal histórica do grupo.
 
 ## 1. Identificação
 
@@ -16,7 +16,7 @@
 - **RB:** RB-27, RB-29.
 - **RNF:** RNF-01, RNF-05, RNF-06, RNF-11, RNF-12, RNF-13, RNF-14, RNF-15, RNF-16, RNF-17, RNF-18, RNF-19, RNF-20.
 - **Fluxo:** UC-23, UC-27; [catálogo de casos](../04-casos-de-uso/casos-de-uso-usuario.md) e [administração](../04-casos-de-uso/casos-de-uso-administrador.md). IDs UC só são usados quando existentes; fluxo nomeado é rastreável ao RF.
-- **Modelo:** Usuario e PreferenciasUsuario; [modelo conceitual](../05-modelo-de-dominio/modelo-de-dominio.md).
+- **Modelo:** Usuario e PreferenciaUsuario; [modelo conceitual](../05-modelo-de-dominio/modelo-de-dominio.md).
 - **Arquitetura:** DA-01, DA-05, DA-06, DA-07, DA-09; ADR-001, ADR-005, ADR-007; [arquitetura/ADRs](../07-arquitetura/arquitetura.md).
 
 ## 3. Escopo
@@ -25,7 +25,7 @@
 
 **Fora do escopo:** demais capacidades do [mapa](mapa-specs.md), investimentos reais, Open Finance, push real, app Expo e operação de provedor de e-mail.
 
-Padronizar os aliases PreferenciasUsuario/PreferenciaUsuario em OPEN-19; canais configurados não pressupõem provedores já ativos.
+Alias PreferenciasUsuario padronizado como PreferenciaUsuario, conforme o glossário (OPEN-19, 2026-11-03); canais configurados não pressupõem provedores já ativos.
 
 ## 4. Dependências
 
@@ -72,7 +72,7 @@ Regras herdadas: RB-27: Cadastro exige nome, e-mail válido e único e senha de 
 
 ## 7. Modelo de domínio envolvido
 
-Um Usuario tem nome/e-mail ativo, e-mail pendente e preferências de idioma/tema/canais. A migration 005_profile_preferences materializa e-mail pendente cifrado, lookup HMAC e PreferenciasUsuario. E-mail só é promovido de pendente após confirmação; papel não é campo editável.
+Um Usuario tem nome/e-mail ativo, e-mail pendente e preferências de idioma/tema/canais. A migration 005_profile_preferences materializa e-mail pendente cifrado, lookup HMAC e PreferenciaUsuario. E-mail só é promovido de pendente após confirmação; papel não é campo editável.
 
 O [modelo conceitual](../05-modelo-de-dominio/modelo-de-dominio.md) mantém a origem das entidades. Não impor modelo físico ou migration nesta revisão. Campos/aliases e relações ainda ausentes são decisões de OPEN-15/19 e das OPEN locais.
 

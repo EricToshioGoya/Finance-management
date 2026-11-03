@@ -1,6 +1,6 @@
 # SPEC-007: Consultar indicador oficial válido em cache
 
-**Estado:** implementada tecnicamente no código do grupo, incorporado à `main` em 2026-10-31 (PR #43); testes automatizados em `backend/tests/test_spec004_007_008_010_013_020_024.py` e interface web na navegação por abas (PR #45). Cobertura por cláusula (C-02) concluída em 2026-10-31: cada cláusula `SHALL` tem teste `test_SPEC_007_Rxx` em `backend/tests/test_c02_spec007_010_simulacoes.py`; R03, R04 e R06 implementadas em 2026-10-31 conforme OPEN-04/OPEN-10 e ADR-009 (SGS 432/4389/13522, Tesouro Transparente, rotina diária às 07:00 com novas tentativas), com testes em `backend/tests/test_c02_spec007_indicator_sync.py`; aprovação formal do grupo pendente.
+**Estado:** implementada tecnicamente no código do grupo, incorporado à `main` em 2026-10-31 (PR #43); testes automatizados em `backend/tests/test_spec004_007_008_010_013_020_024.py` e interface web na navegação por abas (PR #45). Cobertura por cláusula (C-02) concluída em 2026-10-31: cada cláusula `SHALL` tem teste `test_SPEC_007_Rxx` em `backend/tests/test_c02_spec007_010_simulacoes.py`; R03, R04 e R06 implementadas em 2026-10-31 conforme OPEN-04/OPEN-10 e ADR-009 (SGS 432/4389/13522, Tesouro Transparente, rotina diária às 07:00 com novas tentativas), com testes em `backend/tests/test_c02_spec007_indicator_sync.py`. Em 2026-11-03, a política de cache defasado foi alinhada à C-08 (OPEN-19) e o aviso passou a valer após 24h para indicadores e Tesouro (RNF-09); aprovação formal do grupo pendente.
 
 ## 1. Identificação
 
@@ -16,7 +16,7 @@
 - **RB:** RB-11.
 - **RNF:** RNF-01, RNF-05, RNF-06, RNF-08, RNF-09, RNF-11, RNF-12, RNF-13, RNF-15, RNF-16, RNF-17, RNF-20, RNF-25.
 - **Fluxo:** UC-20 e consulta por UC-09; [catálogo de casos](../04-casos-de-uso/casos-de-uso-usuario.md) e [administração](../04-casos-de-uso/casos-de-uso-administrador.md). IDs UC só são usados quando existentes; fluxo nomeado é rastreável ao RF.
-- **Modelo:** IndicadorMercadoCache (aliases históricos em OPEN-19); [modelo conceitual](../05-modelo-de-dominio/modelo-de-dominio.md).
+- **Modelo:** IndicadorOficial (aliases históricos IndicadorMercadoCache e IndicadorFinanceiroCache resolvidos pelo glossário em 2026-11-03, OPEN-19); [modelo conceitual](../05-modelo-de-dominio/modelo-de-dominio.md).
 - **Arquitetura:** DA-01, DA-03, DA-07, DA-09, DA-11; ADR-001, ADR-003, ADR-006; [arquitetura/ADRs](../07-arquitetura/arquitetura.md).
 
 ## 3. Escopo
@@ -47,7 +47,7 @@ Decisões bloqueantes: OPEN-04, OPEN-10, OPEN-15, OPEN-19. Dependência condicio
 
 **Alternativa observável:** Com relógio controlado, cache verificado há 23h é disponibilizado com referência; falha de atualização preserva o registro sem renovar artificialmente sua data.
 
-**Exceções:** Cache ausente/vencido não é apresentado como atual; divergência de política deve ser resolvida em OPEN-19 antes do aceite.
+**Exceções:** Cache ausente devolve indisponibilidade (`indicator_unavailable`), nunca taxa zero; cache verificado há mais de 24h continua disponível com `stale` e aviso visual de defasagem, nunca apresentado como atual (RF-23, C-08; política confirmada pelo responsável em 2026-11-03, OPEN-19).
 
 **Pós-condições:** valor, unidade, periodicidade, referência e estado de disponibilidade; preservação dos invariantes. Erro não produz confirmação de resultado inexistente.
 
@@ -76,7 +76,7 @@ Regras herdadas: RB-11: ~~Quando a API oficial de indicadores falhar, usa-se o �
 
 ## 7. Modelo de domínio envolvido
 
-IndicadorMercadoCache contém código/fonte, valor/unidade/periodicidade, referência econômica e última verificação. Nome histórico IndicadorFinanceiroCache não é indicador contábil CVM (OPEN-19).
+IndicadorOficial contém código/fonte, valor/unidade/periodicidade, referência econômica e última verificação. Os nomes históricos IndicadorMercadoCache e IndicadorFinanceiroCache designam a mesma entidade, que não é o indicador contábil CVM `IndicadorFinanceiro` (OPEN-19).
 
 O [modelo conceitual](../05-modelo-de-dominio/modelo-de-dominio.md) mantém a origem das entidades. Não impor modelo físico ou migration nesta revisão. Campos/aliases e relações ainda ausentes são decisões de OPEN-15/19 e das OPEN locais.
 
@@ -94,7 +94,7 @@ ADRs relacionados: ADR-001, ADR-003, ADR-006. Sessão vigente é ADR-007; propos
 |---|---|
 | Entrada | indicador requerido e referência de verificação da fonte |
 | Saída | valor, unidade, periodicidade, referência e estado de disponibilidade |
-| Erro | Cache ausente/vencido não é apresentado como atual; divergência de política deve ser resolvida em OPEN-19 antes do aceite. |
+| Erro | Cache ausente devolve indisponibilidade (`indicator_unavailable`), nunca taxa zero; cache verificado há mais de 24h continua disponível com `stale` e aviso visual de defasagem, nunca apresentado como atual (RF-23, C-08; política confirmada pelo responsável em 2026-11-03, OPEN-19). |
 
 Identificadores, filtros e autorizações são verificados no servidor. Rotas, nomes JSON, limites, paginação e códigos não definidos dependem de OPEN-15; contratos externos dependem das OPEN locais. Prefixo HTTP futuro segue /api/v1 (ADR-001). Contratos de sessão existentes do ADR-007 não são alterados por esta Spec. A descrição acima não afirma endpoints publicados.
 
@@ -121,7 +121,7 @@ RNFs são associados ao comportamento e verificados na implementação/operaçã
 ## 11. Critérios de Aceitação
 
 - **CA-001** — **Dado** o recorte habilitado, dependências prontas e entradas de referência, **Quando** executar o fluxo principal, **Então** observar: Com relógio controlado, cache verificado há 23h é disponibilizado com referência; falha de atualização preserva o registro sem renovar artificialmente sua data.
-- **CA-002** — **Dado** a condição inválida ou não autorizada, **Quando** tentar executar a operação, **Então** observar: Cache ausente/vencido não é apresentado como atual; divergência de política deve ser resolvida em OPEN-19 antes do aceite.
+- **CA-002** — **Dado** a condição inválida ou não autorizada, **Quando** tentar executar a operação, **Então** observar: Cache ausente devolve indisponibilidade (`indicator_unavailable`), nunca taxa zero; cache verificado há mais de 24h continua disponível com `stale` e aviso visual de defasagem, nunca apresentado como atual (RF-23, C-08; política confirmada pelo responsável em 2026-11-03, OPEN-19).
 
 - **CA-003** — **Dado** rotina/fonte autorizada e contratos externos aprovados, entradas válidas e política aprovada de RF-23/C01, **Quando** exercitar esse comportamento no fluxo desta Spec, **Então** verificar: Selic, CDI e IPCA devem ser obtidos via API do **Banco Central do Brasil — Sistema Gerenciador de Séries Temporais (SGS)** (`api.bcb.gov.br/dados/serie`).
 
@@ -140,7 +140,7 @@ RNFs são associados ao comportamento e verificados na implementação/operaçã
 | Teste | Cláusula / critério / invariantes | Execução mínima planejada |
 |---|---|---|
 | T-001 | SPEC-007-R01; CA-001; INV-001, INV-002 | Fixture específica: Com relógio controlado, cache verificado há 23h é disponibilizado com referência; falha de atualização preserva o registro sem renovar artificialmente sua data. |
-| T-002 | SPEC-007-R02; CA-002; INV-001, INV-002, INV-003 | Negativa: Cache ausente/vencido não é apresentado como atual; divergência de política deve ser resolvida em OPEN-19 antes do aceite. Fechar política OPEN antes de testar resultado ainda indefinido. |
+| T-002 | SPEC-007-R02; CA-002; INV-001, INV-002, INV-003 | Negativa: Cache ausente devolve indisponibilidade (`indicator_unavailable`), nunca taxa zero; cache verificado há mais de 24h continua disponível com `stale` e aviso visual de defasagem, nunca apresentado como atual (RF-23, C-08; política confirmada pelo responsável em 2026-11-03, OPEN-19). Fechar política OPEN antes de testar resultado ainda indefinido. |
 | T-003 | SPEC-007-R03; CA-003 | RF-23/C01: preparar entradas e limites da baseline, executar comportamento e conferir assertion: Selic, CDI e IPCA devem ser obtidos via API do **Banco Central do Brasil — Sistema Gerenciador de Séries Temporais (SGS)** (`api.bcb.gov.br/dados/serie`). |
 | T-004 | SPEC-007-R04; CA-004 | RF-23/C02: preparar entradas e limites da baseline, executar comportamento e conferir assertion: Taxas de títulos do Tesouro Direto devem ser obtidas via API do **Tesouro Transparente** (`www.tesourotransparente.gov.br`). |
 | T-005 | SPEC-007-R05; CA-005 | RF-23/C03: preparar entradas e limites da baseline, executar comportamento e conferir assertion: Os valores obtidos devem ser armazenados em cache local, com data/hora da última atualização. |
@@ -157,6 +157,7 @@ Testes automatizados em `backend/tests/test_spec004_007_008_010_013_020_024.py`,
 - OPEN-10 — decisão necessária: consultar definição e estado no registro central; bloqueia o comportamento desta unidade que dela dependa.
 - OPEN-15 — decisão necessária: consultar definição e estado no registro central; bloqueia o comportamento desta unidade que dela dependa.
 - OPEN-19 — decisão necessária: Conciliar inconsistências herdadas: RF-23/RNF-09 versus ADR-003 (cache vencido/referência), RF-35 versus RB-13 (simulado/real), RB-18 (valor/progresso), aliases de entidade, antigos UCs, prazo de token normativo versus proposta e retenção versus auditoria imutável / Specs consumidoras e baseline; registrar alteração aprovada, não escolher silenciosamente.
+  - Decidido em 2026-11-03 para esta Spec: cache defasado segue RF-23/C-08 (último valor com aviso, limite de 24h do RNF-09, teste `test_SPEC_007_R07_stale_warning_starts_after_24_hours_rnf09`) e o nome da entidade é `IndicadorOficial`.
 
 [Registro central](questoes-abertas.md). Antes de implementar, registrar decisão e refletir alterações de comportamento na baseline e nesta Spec; se não houver decisão, conservar o bloqueio explícito.
 
