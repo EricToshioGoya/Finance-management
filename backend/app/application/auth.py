@@ -63,6 +63,9 @@ from app.infrastructure.models import (
 )
 from app.infrastructure.security import Security, token_digest
 
+# RNF-09: indicador oficial com verificação mais antiga que 24h é exibido com aviso (C-08).
+INDICATOR_MAX_AGE = timedelta(hours=24)
+
 
 class AuthError(Exception):
     def __init__(
@@ -189,6 +192,10 @@ class AuthService:
         # SPEC-061: adaptadores por canal externo ({"email": ..., "push": ...}).
         self.channel_delivery = channel_delivery or {}
         self.clock = clock or (lambda: datetime.now(UTC))
+
+    def local_today(self) -> date:
+        """Data civil em America/Sao_Paulo a partir do relógio injetado (C-15, ADR-006)."""
+        return self.clock().astimezone(ZoneInfo("America/Sao_Paulo")).date()
 
     def public_user(self, record: UserRecord) -> User:
         return User(
@@ -1053,7 +1060,7 @@ class AuthService:
         description: str,
         amount: Decimal,
         account_id: uuid.UUID | None,
-        starts_on: date,
+        starts_on: date | None,
         idempotency_key: str,
     ) -> dict[str, object]:
         self.require_category_owner(user_id)
@@ -1079,7 +1086,7 @@ class AuthService:
             account_id=account_id,
             description_encrypted=self.security.encrypt(description),
             amount=amount,
-            starts_on=starts_on,
+            starts_on=starts_on or self.local_today(),
             idempotency_key=idempotency_key,
         )
         self.db.add(record)
@@ -1255,7 +1262,7 @@ class AuthService:
         description: str,
         amount: Decimal,
         periodicity: str,
-        starts_on: date,
+        starts_on: date | None,
         reference_month: int | None,
         idempotency_key: str,
     ) -> dict[str, object]:
@@ -1273,7 +1280,7 @@ class AuthService:
             description_encrypted=self.security.encrypt(description),
             amount=amount,
             periodicity=periodicity,
-            starts_on=starts_on,
+            starts_on=starts_on or self.local_today(),
             reference_month=reference_month,
             idempotency_key=idempotency_key,
         )
@@ -1515,7 +1522,8 @@ class AuthService:
         record = self.db.get(MarketIndicatorRecord, code)
         if record is None:
             raise AuthError("indicator_unavailable", 503)
-        stale = self.clock() - record.checked_at > timedelta(hours=23)
+        # RNF-09: defasagem máxima de 24h, mesma regra das taxas do Tesouro Direto.
+        stale = self.clock() - record.checked_at > INDICATOR_MAX_AGE
         return {
             "code": record.code,
             "value": record.value,
@@ -1542,7 +1550,7 @@ class AuthService:
                 "reference_date": record.reference_date,
                 "checked_at": record.checked_at,
                 "source": record.source,
-                "stale": now - record.checked_at > timedelta(hours=24),
+                "stale": now - record.checked_at > INDICATOR_MAX_AGE,
             }
             for record in records
         ]

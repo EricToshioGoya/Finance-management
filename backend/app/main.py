@@ -228,6 +228,20 @@ COMPANY_PREFIX = "/api/v1/companies"
 MARKET_PREFIX = "/api/v1/market"
 ADMIN_PREFIX = "/api/v1/admin"
 NOTIFICATION_PREFIX = "/api/v1/notifications"
+# RNF-13: escritas limitadas por cliente e grupo de endpoint (100 pedidos/minuto).
+RATE_LIMITED_PREFIXES = (
+    SESSION_PREFIX,
+    PROFILE_PREFIX,
+    CATEGORY_PREFIX,
+    FINANCIAL_PREFIX,
+    COMPANY_PREFIX,
+    NOTIFICATION_PREFIX,
+    f"{COOKIE_PATH}/sharing",
+    f"{COOKIE_PATH}/webhooks",
+    f"{COOKIE_PATH}/usage-events",
+    f"{COOKIE_PATH}/investor-profile",
+    "/api/v1/external/grants",
+)
 bearer = HTTPBearer(auto_error=False)
 
 
@@ -460,31 +474,13 @@ def create_app(
                 return JSONResponse({"detail": "invalid_origin"}, status_code=403)
             if request.headers.get("sec-fetch-site") == "cross-site":
                 return JSONResponse({"detail": "invalid_origin"}, status_code=403)
-        sensitive_path = (
-            request.url.path in SENSITIVE
-            or request.url.path.startswith(SESSION_PREFIX)
-            or request.url.path.startswith(PROFILE_PREFIX)
-            or request.url.path.startswith(CATEGORY_PREFIX)
-            or request.url.path.startswith(FINANCIAL_PREFIX)
-            or request.url.path.startswith(COMPANY_PREFIX)
-            or request.url.path.startswith(NOTIFICATION_PREFIX)
-        )
-        if sensitive_path and request.method in {"POST", "PATCH", "DELETE"}:
+        path = request.url.path
+        prefix = next((item for item in RATE_LIMITED_PREFIXES if path.startswith(item)), None)
+        sensitive_path = path in SENSITIVE or prefix is not None
+        if sensitive_path and request.method in {"POST", "PUT", "PATCH", "DELETE"}:
             window = int(time.time()) // 60
             client = request.client.host if request.client else "unknown"
-            endpoint = request.url.path
-            if request.url.path.startswith(SESSION_PREFIX):
-                endpoint = SESSION_PREFIX
-            if request.url.path.startswith(PROFILE_PREFIX):
-                endpoint = PROFILE_PREFIX
-            if request.url.path.startswith(CATEGORY_PREFIX):
-                endpoint = CATEGORY_PREFIX
-            if request.url.path.startswith(FINANCIAL_PREFIX):
-                endpoint = FINANCIAL_PREFIX
-            if request.url.path.startswith(COMPANY_PREFIX):
-                endpoint = COMPANY_PREFIX
-            if request.url.path.startswith(NOTIFICATION_PREFIX):
-                endpoint = NOTIFICATION_PREFIX
+            endpoint = prefix or path
             key = security.lookup(f"rate:{client}:{endpoint}")
             try:
                 with sessions() as db:
@@ -2111,7 +2107,7 @@ def create_app(
                 data.description,
                 data.amount,
                 data.account_id,
-                data.starts_on or date.today(),
+                data.starts_on,
                 idempotency_key,
             )
         )
@@ -2243,7 +2239,7 @@ def create_app(
                 data.description,
                 data.amount,
                 data.periodicity,
-                data.starts_on or date.today(),
+                data.starts_on,
                 data.reference_month,
                 idempotency_key(request),
             )

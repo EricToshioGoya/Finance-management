@@ -1,6 +1,6 @@
 # SPEC-058: Registrar bônus ou PLR mensal/anual
 
-**Estado:** implementada tecnicamente no código do grupo, incorporado à `main` em 2026-10-31 (PR #43); testes automatizados em `backend/tests/test_spec057_058_variable_income.py` e interface web na navegação por abas (PR #45). Cobertura por cláusula (C-02) concluída em 2026-10-31: cada cláusula `SHALL` tem teste `test_SPEC_058_Rxx` em `backend/tests/test_spec057_058_variable_income.py`; aprovação formal do grupo pendente.
+**Estado:** implementada tecnicamente no código do grupo, incorporado à `main` em 2026-10-31 (PR #43); testes automatizados em `backend/tests/test_spec057_058_variable_income.py` e interface web na navegação por abas (PR #45). Cobertura por cláusula (C-02) concluída em 2026-10-31: cada cláusula `SHALL` tem teste `test_SPEC_058_Rxx` em `backend/tests/test_spec057_058_variable_income.py`; aprovação formal do grupo pendente. Em 2026-11-03, a data de início padrão do bônus passou a usar o dia civil de America/Sao_Paulo pelo relógio injetado (C-15, ADR-006), com teste `test_SPEC_058_R01_default_bonus_start_date_is_sao_paulo_calendar_day`.
 
 ## 1. Identificação
 
