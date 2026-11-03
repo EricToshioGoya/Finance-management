@@ -152,6 +152,10 @@ Testes são planejados, não implementados ou executados nesta revisão. Os exem
 
 [Registro central](questoes-abertas.md). Antes de implementar, registrar decisão e refletir alterações de comportamento na baseline e nesta Spec; se não houver decisão, conservar o bloqueio explícito.
 
+### Correções da varredura de QA (2026-11-03)
+
+Proteção contra SSRF (OPEN-25): a entrega não segue redirecionamentos (3xx é registrado como tentativa com falha) e conecta ao IP público validado na resolução, mantendo SNI e verificação do certificado pelo nome do host, o que impede DNS rebinding entre validação e conexão. Antes, um destino público podia redirecionar o POST para um serviço interno. Testes `test_SPEC_042_R02_*` em `backend/tests/test_qa_2026_11_correcoes.py`; ver [registro da varredura](../09-qualidade/evidencias/qa-pre-comercializacao-2026-11-03.md).
+
 ## 14. Definition of Done da Spec
 
 - [ ] Mapa e recorte revisados pelo grupo, com evidência real.

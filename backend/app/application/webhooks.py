@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import http.client
 import ipaddress
 import json
 import secrets
 import socket
-import urllib.error
-import urllib.request
+import ssl
 from typing import Protocol
 from urllib.parse import urlparse
 
@@ -26,21 +26,46 @@ class WebhookDelivery(Protocol):
     def deliver(self, url: str, payload: bytes, headers: dict[str, str]) -> int: ...
 
 
+class _PinnedHTTPSConnection(http.client.HTTPSConnection):
+    """Conecta ao IP já validado, mantendo SNI e verificação de certificado pelo hostname.
+
+    Evita DNS rebinding entre a validação e a conexão (SSRF).
+    """
+
+    def __init__(self, host: str, port: int, address: str, **kwargs):
+        super().__init__(host, port, **kwargs)
+        self._pinned_address = address
+
+    def connect(self) -> None:
+        sock = socket.create_connection((self._pinned_address, self.port), self.timeout)
+        self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
+
+
 class HttpWebhookDelivery:
+    """Entrega POST HTTPS sem seguir redirecionamentos (3xx é registrado como falha)."""
+
+    def __init__(self, context: ssl.SSLContext | None = None, resolver=None):
+        self.context = context or ssl.create_default_context()
+        self.resolver = resolver or socket.getaddrinfo
+
     def deliver(self, url: str, payload: bytes, headers: dict[str, str]) -> int:
-        _validate_public_https_destination(url, resolve=True)
+        address = _validate_public_https_destination(url, resolve=True, resolver=self.resolver)
+        parsed = urlparse(url)
+        target = (parsed.path or "/") + (f"?{parsed.query}" if parsed.query else "")
+        connection = _PinnedHTTPSConnection(
+            parsed.hostname, parsed.port or 443, address, timeout=5, context=self.context
+        )
         try:
-            with urllib.request.urlopen(  # nosec B310 - destino HTTPS público validado (SSRF)
-                urllib.request.Request(url, data=payload, headers=headers, method="POST"), timeout=5
-            ) as response:
-                return int(response.status)
-        except urllib.error.HTTPError as error:
-            return int(error.code)
-        except (OSError, ValueError):
+            connection.request("POST", target, body=payload, headers=headers)
+            return int(connection.getresponse().status)
+        except (OSError, ValueError, http.client.HTTPException):
             return 0
+        finally:
+            connection.close()
 
 
-def _validate_public_https_destination(url: str, *, resolve: bool) -> None:
+def _validate_public_https_destination(url: str, *, resolve: bool, resolver=None) -> str | None:
+    """Valida destino HTTPS público; com `resolve`, devolve o IP global a ser usado."""
     try:
         p = urlparse(url)
         h = p.hostname
@@ -63,13 +88,15 @@ def _validate_public_https_destination(url: str, *, resolve: bool) -> None:
     if ip is not None and not ip.is_global:
         raise AuthError("invalid_webhook_url", 422)
     if not resolve:
-        return
+        return None
     try:
-        ips = {x[4][0] for x in socket.getaddrinfo(h, port or 443, type=socket.SOCK_STREAM)}
+        lookup = resolver or socket.getaddrinfo
+        ips = sorted({x[4][0] for x in lookup(h, port or 443, type=socket.SOCK_STREAM)})
         if not ips or any(not ipaddress.ip_address(x).is_global for x in ips):
             raise ValueError
     except (OSError, ValueError) as exc:
         raise AuthError("invalid_webhook_destination", 422) from exc
+    return ips[0]
 
 
 class WebhookService:

@@ -156,6 +156,10 @@ Testes são planejados, não implementados ou executados nesta revisão. Os exem
 
 [Registro central](questoes-abertas.md). Antes de implementar, registrar decisão e refletir alterações de comportamento na baseline e nesta Spec; se não houver decisão, conservar o bloqueio explícito.
 
+### Correções da varredura de QA (2026-11-03)
+
+Correção: o saldo de conta consolidado em ativos (R03) descontava a despesa recorrente uma única vez, enquanto o resumo mensal, o extrato e a fatura a repetem em cada competência desde a data informada. O saldo passa a descontá-la por competência iniciada até a data de referência, a mesma regra já usada para a receita recorrente; assim, patrimônio = saldo inicial + soma das variações mensais (SPEC-006-R05). Teste `test_SPEC_028_R03_SPEC_006_R05_SPEC_059_R06_*` em `backend/tests/test_qa_2026_11_correcoes.py`; ver [registro da varredura](../09-qualidade/evidencias/qa-pre-comercializacao-2026-11-03.md).
+
 ## 14. Definition of Done da Spec
 
 - [x] Recorte técnico e política autorizados com evidência real.

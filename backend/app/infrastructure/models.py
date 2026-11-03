@@ -13,6 +13,7 @@ from sqlalchemy import (
     Integer,
     LargeBinary,
     Numeric,
+    PrimaryKeyConstraint,
     String,
     UniqueConstraint,
     func,
@@ -116,10 +117,16 @@ class PublicCompanyRecord(Base):
     """CVM catalogue metadata; this table deliberately has no user ownership or PDF content."""
 
     __tablename__ = "public_companies"
+    __table_args__ = (
+        UniqueConstraint("ticker", name="public_companies_ticker_key"),
+        UniqueConstraint("cnpj", name="public_companies_cnpj_key"),
+        Index("ix_public_companies_ticker", "ticker"),
+        Index("ix_public_companies_cnpj", "cnpj"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
-    ticker: Mapped[str] = mapped_column(String(12), unique=True, index=True)
-    cnpj: Mapped[str] = mapped_column(String(18), unique=True, index=True)
+    ticker: Mapped[str] = mapped_column(String(12))
+    cnpj: Mapped[str] = mapped_column(String(18))
     legal_name: Mapped[str] = mapped_column(String(180), index=True)
     sector: Mapped[str] = mapped_column(String(100))
 
@@ -481,6 +488,7 @@ class AuditLogRecord(Base):
 
 class SessionRecord(Base):
     __tablename__ = "auth_sessions"
+    __table_args__ = (Index("ix_auth_sessions_user_created", "user_id", "created_at"),)
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
@@ -584,7 +592,10 @@ class AdvancedMetricsPreferenceRecord(Base):
 
 class WatchlistRecord(Base):
     __tablename__ = "watchlist"
-    __table_args__ = (UniqueConstraint("user_id", "company_id", name="uq_watchlist_owner_company"),)
+    # A chave primária composta (nomeada na migration 025) já garante um item por empresa.
+    __table_args__ = (
+        PrimaryKeyConstraint("user_id", "company_id", name="uq_watchlist_owner_company"),
+    )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
@@ -641,7 +652,10 @@ class NotificationRecord(Base):
 
 class CategoryRecord(Base):
     __tablename__ = "categories"
-    __table_args__ = (CheckConstraint("color ~ '^#[0-9A-Fa-f]{6}$'", name="valid_category_color"),)
+    __table_args__ = (
+        CheckConstraint("color ~ '^#[0-9A-Fa-f]{6}$'", name="valid_category_color"),
+        UniqueConstraint("user_id", "name_lookup", name="uq_categories_user_name_lookup"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -706,7 +720,10 @@ class CreditCardRecord(Base):
 
 class RecurringIncomeRecord(Base):
     __tablename__ = "recurring_incomes"
-    __table_args__ = (CheckConstraint("amount > 0", name="positive_recurring_income"),)
+    __table_args__ = (
+        CheckConstraint("amount > 0", name="positive_recurring_income"),
+        UniqueConstraint("user_id", "idempotency_key", name="uq_recurring_income_owner_key"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -723,7 +740,10 @@ class RecurringIncomeRecord(Base):
 
 class OneTimeIncomeRecord(Base):
     __tablename__ = "one_time_incomes"
-    __table_args__ = (CheckConstraint("amount > 0", name="positive_one_time_income"),)
+    __table_args__ = (
+        CheckConstraint("amount > 0", name="positive_one_time_income"),
+        UniqueConstraint("user_id", "idempotency_key", name="uq_one_time_income_owner_key"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -741,6 +761,7 @@ class OneTimeIncomeRecord(Base):
 class BonusRecord(Base):
     __tablename__ = "bonuses"
     __table_args__ = (
+        UniqueConstraint("user_id", "idempotency_key", name="uq_bonus_owner_key"),
         CheckConstraint("amount >= 0", name="nonnegative_bonus"),
         CheckConstraint("periodicity IN ('monthly', 'annual')", name="valid_bonus_periodicity"),
         CheckConstraint(
@@ -765,6 +786,8 @@ class BonusRecord(Base):
 class ExpenseRecord(Base):
     __tablename__ = "expenses"
     __table_args__ = (
+        # RNF-24: a chave de idempotência é única por titular (protege reenvio concorrente).
+        UniqueConstraint("user_id", "idempotency_key", name="uq_expense_owner_key"),
         CheckConstraint("amount > 0", name="positive_expense"),
         CheckConstraint(
             "(account_id IS NOT NULL) <> (credit_card_id IS NOT NULL)", name="one_expense_source"

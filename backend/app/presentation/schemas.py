@@ -1,9 +1,10 @@
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import (
+    AfterValidator,
     BaseModel,
     ConfigDict,
     EmailStr,
@@ -12,6 +13,18 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+
+from app.domain.periodo import data_suportada
+
+
+def _supported_date(value: date) -> date:
+    if not data_suportada(value):
+        raise ValueError("date_out_of_range")
+    return value
+
+
+# Datas informadas pelo usuário ficam entre 1900-01-01 e 2100-12-31 (app.domain.periodo).
+SupportedDate = Annotated[date, AfterValidator(_supported_date)]
 
 
 class AccountDeletionInput(BaseModel):
@@ -318,7 +331,7 @@ class NamedAssetGoalInput(BaseModel):
     category: Literal["emergency", "travel", "home", "education", "other"]
     asset_id: UUID
     target_amount: Decimal = Field(gt=0, max_digits=14, decimal_places=2)
-    deadline: date
+    deadline: SupportedDate
     annual_rate: Decimal = Field(default=Decimal("0"), ge=0, le=100, decimal_places=6)
 
     @field_validator("name")
@@ -464,7 +477,7 @@ class ConfirmFinancingInput(BaseModel):
     create_recurring_expense: bool = False
     expense_category_key: str | None = Field(default=None, max_length=80)
     expense_account_id: UUID | None = None
-    first_payment_on: date | None = None
+    first_payment_on: SupportedDate | None = None
 
     @field_validator("name")
     @classmethod
@@ -682,7 +695,7 @@ class RecurringIncomeCreateInput(BaseModel):
     description: str = Field(min_length=1, max_length=100)
     amount: Decimal = Field(gt=0, max_digits=14, decimal_places=2)
     account_id: UUID | None = None
-    starts_on: date | None = None
+    starts_on: SupportedDate | None = None
 
     @field_validator("description")
     @classmethod
@@ -704,7 +717,7 @@ class RecurringIncomeUpdateInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     description: str | None = Field(default=None, min_length=1, max_length=100)
     amount: Decimal | None = Field(default=None, gt=0, max_digits=14, decimal_places=2)
-    starts_on: date | None = None
+    starts_on: SupportedDate | None = None
 
     @field_validator("description")
     @classmethod
@@ -719,7 +732,7 @@ class OneTimeIncomeCreateInput(BaseModel):
     description: str = Field(min_length=1, max_length=100)
     amount: Decimal = Field(gt=0, max_digits=14, decimal_places=2)
     account_id: UUID | None = None
-    occurred_on: date
+    occurred_on: SupportedDate
 
     @field_validator("description")
     @classmethod
@@ -741,7 +754,7 @@ class OneTimeIncomeUpdateInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     description: str | None = Field(default=None, min_length=1, max_length=100)
     amount: Decimal | None = Field(default=None, gt=0, max_digits=14, decimal_places=2)
-    occurred_on: date | None = None
+    occurred_on: SupportedDate | None = None
 
     @field_validator("description")
     @classmethod
@@ -756,7 +769,7 @@ class BonusCreateInput(BaseModel):
     description: str = Field(min_length=1, max_length=100)
     amount: Decimal = Field(ge=0, max_digits=14, decimal_places=2)
     periodicity: str = Field(pattern="^(monthly|annual)$")
-    starts_on: date | None = None
+    starts_on: SupportedDate | None = None
     reference_month: int | None = Field(default=None, ge=1, le=12)
 
     @model_validator(mode="after")
@@ -789,7 +802,7 @@ class BonusUpdateInput(BaseModel):
     description: str | None = Field(default=None, min_length=1, max_length=100)
     amount: Decimal | None = Field(default=None, ge=0, max_digits=14, decimal_places=2)
     periodicity: str | None = Field(default=None, pattern="^(monthly|annual)$")
-    starts_on: date | None = None
+    starts_on: SupportedDate | None = None
     reference_month: int | None = Field(default=None, ge=1, le=12)
 
 
@@ -806,12 +819,19 @@ class ExpenseCreateInput(BaseModel):
     description: str = Field(min_length=1, max_length=100)
     amount: Decimal = Field(gt=0, max_digits=14, decimal_places=2)
     category_key: str = Field(min_length=1, max_length=80)
-    occurred_on: date
+    occurred_on: SupportedDate
     recurring: bool = False
     account_id: UUID | None = None
     credit_card_id: UUID | None = None
     # OPEN-12: compra parcelada no cartão gera N parcelas mensais.
     installments: int = Field(default=1, ge=1, le=48)
+
+    @field_validator("description")
+    @classmethod
+    def valid_description(cls, description: str) -> str:
+        if not description.strip():
+            raise ValueError("Expense description is required")
+        return description.strip()
 
     @model_validator(mode="after")
     def exactly_one_source(self):
@@ -829,15 +849,17 @@ class ExpenseUpdateInput(BaseModel):
     description: str | None = Field(default=None, min_length=1, max_length=100)
     amount: Decimal | None = Field(default=None, gt=0, max_digits=14, decimal_places=2)
     category_key: str | None = Field(default=None, min_length=1, max_length=80)
-    occurred_on: date | None = None
+    occurred_on: SupportedDate | None = None
     recurring: bool | None = None
 
     @field_validator("description")
     @classmethod
     def valid_description(cls, description: str | None) -> str | None:
-        if description is not None and description.strip():
-            return description.strip()
-        return description
+        if description is None:
+            return None
+        if not description.strip():
+            raise ValueError("Expense description is required")
+        return description.strip()
 
 
 class ExpenseOutput(BaseModel):

@@ -180,6 +180,10 @@ Testes automatizados em `backend/tests/test_spec004_007_008_010_013_020_024.py`,
 
 [Registro central](questoes-abertas.md). Antes de implementar, registrar decisão e refletir alterações de comportamento na baseline e nesta Spec; se não houver decisão, conservar o bloqueio explícito.
 
+### Correções da varredura de QA (2026-11-03)
+
+Intervalo de meses (R08/R12) limitado a 120 competências entre 1900-01 e 2100-12 no dashboard e no gasto por categoria; fora disso, 400 `invalid_period` ou `period_too_long`. Antes, um intervalo de 0001 a 9999 ocupava uma thread e uma conexão por minutos (negação de serviço). A agregação por categoria passou a ler os lançamentos uma vez por consulta. Decisão técnica parcial para OPEN-21. Teste `test_SPEC_022_R02_R08_R12_*` em `backend/tests/test_qa_2026_11_correcoes.py`; ver [registro da varredura](../09-qualidade/evidencias/qa-pre-comercializacao-2026-11-03.md).
+
 ## 14. Definition of Done da Spec
 
 - [ ] Mapa e recorte revisados pelo grupo, com evidência real.

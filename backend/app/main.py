@@ -20,6 +20,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
+from starlette.concurrency import run_in_threadpool
 from sqlalchemy import create_engine, delete, select, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import SQLAlchemyError
@@ -53,6 +54,14 @@ from app.domain.financing import simulate_financing
 from app.domain.financing_comparison import compare_financing_and_investing
 from app.domain.foreign_currency import calcular_projecao_moeda_estrangeira
 from app.domain.juros_compostos import ErroCalculo, MotorJurosCompostos, arredondar_moeda
+from app.domain.periodo import (
+    DATA_MAXIMA,
+    DATA_MINIMA,
+    MAXIMO_COMPETENCIAS,
+    competencia,
+    competencias_no_periodo,
+    data_suportada,
+)
 from app.infrastructure.account_deletion import DeletionJournal
 from app.infrastructure.email_delivery import (
     EmailConfirmationDelivery,
@@ -67,6 +76,13 @@ from app.infrastructure.models import (
 from app.infrastructure.official_sources import CvmSources, OfficialSources
 from app.infrastructure.pdf import pdf_document
 from app.infrastructure.channel_delivery import HttpsChannelDelivery, UnconfiguredChannelDelivery
+from app.infrastructure.runtime import (
+    AdmissionControl,
+    client_address,
+    configure_logging,
+    error_location,
+    parse_trusted_proxies,
+)
 from app.infrastructure.security import Security
 from app.presentation.schemas import (
     AccountCreateInput,
@@ -197,6 +213,7 @@ from app.presentation.schemas import (
     TreasuryBondRateOutput,
     TaxProjectionInput,
     TaxProjectionOutput,
+    SupportedDate,
     TokenOutput,
     UsageEventInput,
     WebhookAttemptOutput,
@@ -228,6 +245,34 @@ COMPANY_PREFIX = "/api/v1/companies"
 MARKET_PREFIX = "/api/v1/market"
 ADMIN_PREFIX = "/api/v1/admin"
 NOTIFICATION_PREFIX = "/api/v1/notifications"
+API_PREFIX = "/api/v1/"
+WRITE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+# RNF-13: escritas agrupadas por prefixo; rotas de autenticação sensíveis têm grupo próprio.
+RATE_GROUPS = (
+    SESSION_PREFIX,
+    PROFILE_PREFIX,
+    CATEGORY_PREFIX,
+    FINANCIAL_PREFIX,
+    COMPANY_PREFIX,
+    NOTIFICATION_PREFIX,
+    ADMIN_PREFIX,
+    f"{COOKIE_PATH}/sharing",
+    f"{COOKIE_PATH}/webhooks",
+    f"{COOKIE_PATH}/investor-profile",
+    f"{COOKIE_PATH}/usage-events",
+    "/api/v1/external",
+)
+
+
+def rate_group(path: str) -> str:
+    if path in SENSITIVE:
+        return path
+    for prefix in RATE_GROUPS:
+        if path == prefix or path.startswith(prefix + "/"):
+            return prefix
+    return path
+
+
 bearer = HTTPBearer(auto_error=False)
 
 
@@ -235,17 +280,46 @@ def create_app(
     settings: Settings | None = None, email_delivery: EmailConfirmationDelivery | None = None
 ) -> FastAPI:
     settings = settings or get_settings()
-    engine = create_engine(settings.database_url.get_secret_value(), pool_pre_ping=True)
+    # RNF-04: pool acima do limite de admissão, com espera curta (falha rápida em vez de fila).
+    engine = create_engine(
+        settings.database_url.get_secret_value(),
+        pool_pre_ping=True,
+        pool_size=settings.db_pool_size,
+        max_overflow=settings.db_max_overflow,
+        pool_timeout=settings.db_pool_timeout_seconds,
+    )
     sessions = sessionmaker(engine, expire_on_commit=False)
     security = Security(settings.data_key.get_secret_value())
+    logger = configure_logging()
 
-    @asynccontextmanager
-    async def lifespan(app: FastAPI):
-        # Fail closed: no request is served if replay of deletion intents fails.
+    def apply_deletion_journal() -> None:
         with sessions() as db:
             DeletionJournal(
                 settings.deletion_journal_path, settings.data_key.get_secret_value()
             ).apply(db)
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        # Fail closed: no request is served if replay of deletion intents fails. O banco pode
+        # subir depois da API: novas tentativas antes de desistir (sem atender requisições).
+        for attempt in range(1, settings.startup_attempts + 1):
+            try:
+                await asyncio.to_thread(apply_deletion_journal)
+                break
+            except (OSError, SQLAlchemyError, sqlite3.Error) as error:
+                logger.warning(
+                    "startup_retry",
+                    extra={
+                        "fields": {
+                            "attempt": attempt,
+                            "attempts": settings.startup_attempts,
+                            "error_type": type(error).__name__,
+                        }
+                    },
+                )
+                if attempt == settings.startup_attempts:
+                    raise
+                await asyncio.sleep(settings.startup_retry_seconds)
         task = asyncio.create_task(run_daily_cvm_cache_purge(app))
         summary_task = asyncio.create_task(run_daily_monthly_summary(app))
         background = [task, summary_task]
@@ -282,6 +356,7 @@ def create_app(
             else UnconfiguredEmailConfirmationDelivery()
         )
     app.state.engine, app.state.sessions, app.state.security = engine, sessions, security
+    app.state.settings = settings
     app.state.email_delivery = email_delivery
     app.state.webhook_delivery = HttpWebhookDelivery()
     # SPEC-061: canais externos opcionais; sem despachante configurado, nada é enviado.
@@ -450,6 +525,43 @@ def create_app(
     async def database_error(request: Request, error: SQLAlchemyError):
         return JSONResponse({"detail": "service_unavailable"}, status_code=503)
 
+    trusted_proxies = parse_trusted_proxies(settings.trusted_proxies)
+
+    def consume_rate_bucket(key: str, window: int) -> int:
+        with sessions() as db:
+            statement = insert(RateBucket).values(client_endpoint=key, window=window, count=1)
+            count = db.scalar(
+                statement.on_conflict_do_update(
+                    index_elements=[RateBucket.client_endpoint, RateBucket.window],
+                    set_={"count": RateBucket.count + 1},
+                ).returning(RateBucket.count)
+            )
+            db.execute(delete(RateBucket).where(RateBucket.window < window - 1))
+            db.commit()
+        return int(count)
+
+    @app.exception_handler(Exception)
+    async def unhandled_error(request: Request, error: Exception):
+        # RNF-12: todo erro não tratado é registrado (tipo e pilha resumida, sem dados pessoais).
+        request_id = getattr(request.state, "request_id", None)
+        logger.error(
+            "unhandled_error",
+            extra={
+                "fields": {
+                    "request_id": request_id,
+                    "method": request.method,
+                    "path": request.url.path,
+                    "error_type": type(error).__name__,
+                    "location": error_location(error),
+                }
+            },
+        )
+        return JSONResponse(
+            {"detail": "internal_error", "request_id": request_id},
+            status_code=500,
+            headers={"Cache-Control": "no-store"},
+        )
+
     @app.middleware("http")
     async def protections(request: Request, call_next):
         if request.url.scheme != "https":
@@ -460,53 +572,25 @@ def create_app(
                 return JSONResponse({"detail": "invalid_origin"}, status_code=403)
             if request.headers.get("sec-fetch-site") == "cross-site":
                 return JSONResponse({"detail": "invalid_origin"}, status_code=403)
-        sensitive_path = (
-            request.url.path in SENSITIVE
-            or request.url.path.startswith(SESSION_PREFIX)
-            or request.url.path.startswith(PROFILE_PREFIX)
-            or request.url.path.startswith(CATEGORY_PREFIX)
-            or request.url.path.startswith(FINANCIAL_PREFIX)
-            or request.url.path.startswith(COMPANY_PREFIX)
-            or request.url.path.startswith(NOTIFICATION_PREFIX)
-        )
-        if sensitive_path and request.method in {"POST", "PATCH", "DELETE"}:
+        # RNF-13: toda escrita sob /api/v1 é limitada por cliente e grupo de endpoint.
+        if request.method in WRITE_METHODS and request.url.path.startswith(API_PREFIX):
             window = int(time.time()) // 60
-            client = request.client.host if request.client else "unknown"
-            endpoint = request.url.path
-            if request.url.path.startswith(SESSION_PREFIX):
-                endpoint = SESSION_PREFIX
-            if request.url.path.startswith(PROFILE_PREFIX):
-                endpoint = PROFILE_PREFIX
-            if request.url.path.startswith(CATEGORY_PREFIX):
-                endpoint = CATEGORY_PREFIX
-            if request.url.path.startswith(FINANCIAL_PREFIX):
-                endpoint = FINANCIAL_PREFIX
-            if request.url.path.startswith(COMPANY_PREFIX):
-                endpoint = COMPANY_PREFIX
-            if request.url.path.startswith(NOTIFICATION_PREFIX):
-                endpoint = NOTIFICATION_PREFIX
-            key = security.lookup(f"rate:{client}:{endpoint}")
+            client = client_address(
+                request.client.host if request.client else None,
+                request.headers.get("x-forwarded-for"),
+                trusted_proxies,
+            )
+            key = security.lookup(f"rate:{client}:{rate_group(request.url.path)}")
             try:
-                with sessions() as db:
-                    statement = insert(RateBucket).values(
-                        client_endpoint=key, window=window, count=1
-                    )
-                    count = db.scalar(
-                        statement.on_conflict_do_update(
-                            index_elements=[RateBucket.client_endpoint, RateBucket.window],
-                            set_={"count": RateBucket.count + 1},
-                        ).returning(RateBucket.count)
-                    )
-                    db.execute(delete(RateBucket).where(RateBucket.window < window - 1))
-                    db.commit()
-                if count > settings.rate_limit:
-                    return JSONResponse(
-                        {"detail": "rate_limited"},
-                        status_code=429,
-                        headers={"Retry-After": str(60 - int(time.time()) % 60)},
-                    )
+                count = await run_in_threadpool(consume_rate_bucket, key, window)
             except SQLAlchemyError:
                 return JSONResponse({"detail": "service_unavailable"}, status_code=503)
+            if count > settings.rate_limit:
+                return JSONResponse(
+                    {"detail": "rate_limited"},
+                    status_code=429,
+                    headers={"Retry-After": str(60 - int(time.time()) % 60)},
+                )
         response = await call_next(request)
         response.headers["Cache-Control"] = "no-store"
         response.headers["X-Content-Type-Options"] = "nosniff"
@@ -518,6 +602,14 @@ def create_app(
             "frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
         )
         return response
+
+    # Adicionado por último = mais externo: a fila acontece antes de qualquer acesso ao banco.
+    app.add_middleware(
+        AdmissionControl,
+        max_concurrent=settings.max_concurrent_requests,
+        queue_timeout=settings.queue_timeout_seconds,
+        logger=logger,
+    )
 
     def token_response(response: Response, tokens: tuple[str, str]) -> TokenOutput:
         access, refresh = tokens
@@ -531,6 +623,18 @@ def create_app(
             path=COOKIE_PATH,
         )
         return TokenOutput(access_token=access, expires_in=settings.access_seconds)
+
+    def bounded_months(start: str, end: str) -> tuple[date, date]:
+        """Período `AAAA-MM`..`AAAA-MM` no intervalo suportado e com no máximo 120 competências."""
+        try:
+            start_month, end_month = competencia(start), competencia(end)
+        except ValueError as exc:
+            raise AuthError("invalid_period", 400) from exc
+        if start_month > end_month:
+            raise AuthError("invalid_period", 400)
+        if competencias_no_periodo(start_month, end_month) > MAXIMO_COMPETENCIAS:
+            raise AuthError("period_too_long", 400)
+        return start_month, end_month
 
     @app.get(f"{COOKIE_PATH}/account/deletion-preview", tags=["profile"])
     def deletion_preview(auth: Service, credentials: Credentials):
@@ -662,8 +766,8 @@ def create_app(
     def engagement_report(
         auth: Service,
         credentials: Credentials,
-        start: date | None = None,
-        end: date | None = None,
+        start: SupportedDate | None = None,
+        end: SupportedDate | None = None,
         inactive_days: int = Query(default=30, ge=1, le=365),
     ):
         if not credentials:
@@ -679,8 +783,8 @@ def create_app(
     def investor_profile_distribution(
         auth: Service,
         credentials: Credentials,
-        start: date | None = None,
-        end: date | None = None,
+        start: SupportedDate | None = None,
+        end: SupportedDate | None = None,
     ):
         """SPEC-062: distribuição agregada por resultado do quiz, filtrável por cadastro."""
         if not credentials:
@@ -949,8 +1053,8 @@ def create_app(
         companies: CompanyServiceDependency,
         credentials: Credentials,
         document_type: str | None = Query(default=None, pattern="^(DFP|ITR|FRE|IPE)$"),
-        starts_on: date | None = None,
-        ends_on: date | None = None,
+        starts_on: SupportedDate | None = None,
+        ends_on: SupportedDate | None = None,
     ):
         if not credentials:
             raise AuthError("invalid_session")
@@ -1153,7 +1257,7 @@ def create_app(
         )
 
     @app.get(f"{FINANCIAL_PREFIX}/net-worth", response_model=NetWorthOutput, tags=["financial"])
-    def get_net_worth(auth: Service, credentials: Credentials, as_of: date | None = None):
+    def get_net_worth(auth: Service, credentials: Credentials, as_of: SupportedDate | None = None):
         if not credentials:
             raise AuthError("invalid_session")
         user, _ = auth.authenticate(credentials.credentials)
@@ -1253,7 +1357,10 @@ def create_app(
         tags=["financial"],
     )
     def get_net_worth_history(
-        auth: Service, credentials: Credentials, start: date | None = None, end: date | None = None
+        auth: Service,
+        credentials: Credentials,
+        start: SupportedDate | None = None,
+        end: SupportedDate | None = None,
     ):
         if not credentials:
             raise AuthError("invalid_session")
@@ -1314,7 +1421,9 @@ def create_app(
     @app.get(
         f"{FINANCIAL_PREFIX}/health-score", response_model=HealthScoreOutput, tags=["financial"]
     )
-    def get_health_score(auth: Service, credentials: Credentials, competence: date | None = None):
+    def get_health_score(
+        auth: Service, credentials: Credentials, competence: SupportedDate | None = None
+    ):
         if not credentials:
             raise AuthError("invalid_session")
         user, _ = auth.authenticate(credentials.credentials)
@@ -1507,7 +1616,7 @@ def create_app(
         # A user JWT alone never authenticates a third-party consumer.
         owner_id = ExternalApiService(auth.db, security, auth).consume(api_key, "balance:read")
         try:
-            selected = date.fromisoformat(f"{competence}-01")
+            selected = competencia(competence)
             if selected.strftime("%Y-%m") != competence:
                 raise ValueError("Invalid competence")
         except ValueError as exc:
@@ -2002,7 +2111,7 @@ def create_app(
         if not credentials:
             raise AuthError("invalid_session")
         try:
-            selected = date.fromisoformat(f"{competence}-01")
+            selected = competencia(competence)
         except ValueError as exc:
             raise AuthError("invalid_competence", 400) from exc
         user, _ = auth.authenticate(credentials.credentials)
@@ -2029,7 +2138,7 @@ def create_app(
         if not credentials:
             raise AuthError("invalid_session")
         try:
-            selected = date.fromisoformat(f"{competence}-01")
+            selected = competencia(competence)
         except ValueError as exc:
             raise AuthError("invalid_competence", 400) from exc
         user, _ = auth.authenticate(credentials.credentials)
@@ -2047,11 +2156,7 @@ def create_app(
         if not credentials:
             raise AuthError("invalid_session")
         user, _ = auth.authenticate(credentials.credentials)
-        try:
-            start_month = date.fromisoformat(f"{start}-01")
-            end_month = date.fromisoformat(f"{end}-01")
-        except ValueError as exc:
-            raise AuthError("invalid_period", 400) from exc
+        start_month, end_month = bounded_months(start, end)
         return auth.spending_by_category(user.id, start_month, end_month)
 
     @app.get(
@@ -2062,11 +2167,7 @@ def create_app(
     def dashboard(start: str, end: str, auth: Service, credentials: Credentials):
         if not credentials:
             raise AuthError("invalid_session")
-        try:
-            start_month = date.fromisoformat(f"{start}-01")
-            end_month = date.fromisoformat(f"{end}-01")
-        except ValueError as exc:
-            raise AuthError("invalid_period", 400) from exc
+        start_month, end_month = bounded_months(start, end)
         user, _ = auth.authenticate(credentials.credentials)
         return [
             DashboardMonthOutput.model_validate(item)
@@ -2276,7 +2377,7 @@ def create_app(
         if not credentials:
             raise AuthError("invalid_session")
         try:
-            selected = date.fromisoformat(f"{competence}-01")
+            selected = competencia(competence)
         except ValueError as exc:
             raise AuthError("invalid_competence", 400) from exc
         user, _ = auth.authenticate(credentials.credentials)
@@ -2291,7 +2392,7 @@ def create_app(
         if not credentials:
             raise AuthError("invalid_session")
         try:
-            selected = date.fromisoformat(f"{competence}-01")
+            selected = competencia(competence)
         except ValueError as exc:
             raise AuthError("invalid_competence", 400) from exc
         user, _ = auth.authenticate(credentials.credentials)
@@ -2307,13 +2408,15 @@ def create_app(
     def export_period(start: str | None, end: str | None, month: str | None, year: int | None):
         if month is not None:
             try:
-                start_date = date.fromisoformat(f"{month}-01")
+                start_date = competencia(month)
             except ValueError as exc:
                 raise AuthError("invalid_period", 400) from exc
             return start_date, (start_date.replace(day=28) + timedelta(days=4)).replace(
                 day=1
             ) - timedelta(days=1)
         if year is not None:
+            if not DATA_MINIMA.year <= year <= DATA_MAXIMA.year:
+                raise AuthError("invalid_period", 400)
             return date(year, 1, 1), date(year, 12, 31)
         if start is None or end is None:
             raise AuthError("invalid_period", 400)
@@ -2321,8 +2424,10 @@ def create_app(
             start_date, end_date = date.fromisoformat(start), date.fromisoformat(end)
         except ValueError as exc:
             raise AuthError("invalid_period", 400) from exc
-        if start_date > end_date:
+        if start_date > end_date or not data_suportada(start_date) or not data_suportada(end_date):
             raise AuthError("invalid_period", 400)
+        if competencias_no_periodo(start_date, end_date) > MAXIMO_COMPETENCIAS:
+            raise AuthError("period_too_long", 400)
         return start_date, end_date
 
     def csv_cell(value: object) -> str:
@@ -2457,7 +2562,9 @@ def create_app(
         response_model=ScoreBenchmarkOutput,
         tags=["financial"],
     )
-    def score_benchmark(auth: Service, credentials: Credentials, competence: date | None = None):
+    def score_benchmark(
+        auth: Service, credentials: Credentials, competence: SupportedDate | None = None
+    ):
         """SPEC-050: média/mediana agregadas do grupo do mesmo perfil (mínimo de 30)."""
         return EngagementFeaturesService(auth.db, auth).benchmark(
             owner_id(auth, credentials), competence
@@ -2555,7 +2662,7 @@ def create_app(
     @app.get(f"{FINANCIAL_PREFIX}/monthly-summaries/{{competence}}/pdf", tags=["financial"])
     def monthly_summary_pdf(competence: str, auth: Service, credentials: Credentials):
         try:
-            month = date.fromisoformat(f"{competence}-01")
+            month = competencia(competence)
         except ValueError as exc:
             raise AuthError("invalid_competence", 400) from exc
         content = MonthlySummaryService(auth.db, auth).download(owner_id(auth, credentials), month)
