@@ -4,7 +4,7 @@ Pasta de trabalho do fluxo Spec-Driven Development definido em `CLAUDE.md` (seç
 
 | Pasta | Conteúdo | Convenção de nome |
 |---|---|---|
-| `docs/08-specs/` | Specs (fonte única de verdade, revisadas junto com o código) | `SPEC-NNN-descricao.md` |
+| `docs/08-specs/` | Specs (fonte única de verdade, revisadas junto com o código) | `SPEC-NNN.md` |
 | `.specify/plans/` | Plano técnico de implementação de cada spec | `PLAN-NNN.md` |
 | `.specify/tasks/` | Tarefas ordenadas e verificáveis derivadas do plano | `TASKS-NNN.md` |
 

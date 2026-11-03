@@ -16,7 +16,7 @@
 - **RB:** RB-29.
 - **RNF:** RNF-01, RNF-05, RNF-06, RNF-08, RNF-11, RNF-12, RNF-13, RNF-15, RNF-16, RNF-17, RNF-20.
 - **Fluxo:** UC-15; [catálogo de casos](../04-casos-de-uso/casos-de-uso-usuario.md) e [administração](../04-casos-de-uso/casos-de-uso-administrador.md). IDs UC só são usados quando existentes; fluxo nomeado é rastreável ao RF.
-- **Modelo:** Notificacao, Usuario e PreferenciasUsuario; [modelo conceitual](../05-modelo-de-dominio/modelo-de-dominio.md).
+- **Modelo:** Notificacao, Usuario e PreferenciaUsuario; [modelo conceitual](../05-modelo-de-dominio/modelo-de-dominio.md).
 - **Arquitetura:** DA-01, DA-07, DA-09; ADR-001; [arquitetura/ADRs](../07-arquitetura/arquitetura.md).
 
 ## 3. Escopo
@@ -73,7 +73,7 @@ Regras herdadas: RB-29: Lançamentos e simulações pessoais são acessíveis so
 
 ## 7. Modelo de domínio envolvido
 
-Notificacao referencia titular e PreferenciasUsuario; destino push/e-mail e segredo ficam em infraestrutura. Resultado de envio não altera notificação original nem dados financeiros.
+Notificacao referencia titular e PreferenciaUsuario; destino push/e-mail e segredo ficam em infraestrutura. Resultado de envio não altera notificação original nem dados financeiros.
 
 O [modelo conceitual](../05-modelo-de-dominio/modelo-de-dominio.md) mantém a origem das entidades. Não impor modelo físico ou migration nesta revisão. Campos/aliases e relações ainda ausentes são decisões de OPEN-15/19 e das OPEN locais.
 

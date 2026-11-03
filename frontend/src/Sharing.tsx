@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { api, errorText, money, shortDate, type Lang } from './api';
+import { api, errorText, money, shortDate, useIdempotencyKey, type Lang } from './api';
 
 type Overview = {
   active: { id: string; partner_name: string; since: string | null } | null;
@@ -21,6 +21,7 @@ export function Sharing({ token, lang }: { token: string; lang: Lang }) {
   const [split, setSplit] = useState<'equal' | 'custom'>('equal');
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
+  const settlement = useIdempotencyKey();
 
   const load = useCallback(async () => {
     try {
@@ -66,8 +67,11 @@ export function Sharing({ token, lang }: { token: string; lang: Lang }) {
   };
   const settle = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); const form = event.currentTarget;
-    void run(() => api(token, '/sharing/settlements', { method: 'POST', headers: { 'Idempotency-Key': crypto.randomUUID() },
-      body: JSON.stringify({ amount: new FormData(form).get('settle-amount'), link_id: balance?.link_id }) }), pt ? 'Acerto registrado.' : 'Settlement recorded.', form);
+    void run(async () => {
+      await api(token, '/sharing/settlements', { method: 'POST', headers: settlement.headers(),
+        body: JSON.stringify({ amount: new FormData(form).get('settle-amount'), link_id: balance?.link_id }) });
+      settlement.reset();
+    }, pt ? 'Acerto registrado.' : 'Settlement recorded.', form);
   };
 
   const sharedIds = new Set(balance?.items.map(item => item.expense_id) ?? []);
@@ -110,7 +114,7 @@ export function Sharing({ token, lang }: { token: string; lang: Lang }) {
           <strong className={balance.direction === 'i_owe_partner' ? 'negative' : 'positive'}>{money(balance.amount, lang)}</strong>
           <small>{balance.direction === 'settled' ? (pt ? 'Tudo acertado' : 'All settled') : balance.direction === 'partner_owes_me' ? `${balance.partner_name} ${pt ? 'deve a você' : 'owes you'}` : `${pt ? 'Você deve a' : 'You owe'} ${balance.partner_name}`}</small>
         </div></div>
-        {balance.direction === 'i_owe_partner' && <form onSubmit={settle} className="inline-fields">
+        {balance.direction === 'i_owe_partner' && <form onSubmit={settle} onChange={settlement.reset} className="inline-fields">
           <div className="field"><label htmlFor="settle-amount">{pt ? 'Registrar acerto (R$)' : 'Record settlement (BRL)'}</label><input id="settle-amount" name="settle-amount" type="number" min="0.01" max={balance.amount} step="0.01" required /></div>
           <div className="actions"><button type="submit">{pt ? 'Registrar' : 'Record'}</button></div>
         </form>}

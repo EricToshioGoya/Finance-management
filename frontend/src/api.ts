@@ -1,4 +1,6 @@
 // Utilitários compartilhados pelas telas autenticadas.
+import { useRef } from 'react';
+
 export type Lang = 'pt' | 'en';
 
 const locale = (lang: Lang) => (lang === 'pt' ? 'pt-BR' : 'en-US');
@@ -50,8 +52,17 @@ export async function api<T>(token: string, path: string, options: RequestInit =
   return (response.status === 204 ? undefined : await response.json()) as T;
 }
 
-/** Cabeçalho de idempotência exigido nas criações de lançamento (C-16). */
-export const idempotent = () => ({ 'Idempotency-Key': crypto.randomUUID() });
+/**
+ * Chave de idempotência por envio (C-16, RNF-24): a mesma chave é reutilizada em clique duplo
+ * e em reenvio após falha de rede; só é descartada após sucesso ou quando o formulário muda.
+ */
+export function useIdempotencyKey() {
+  const key = useRef<string | null>(null);
+  return {
+    headers: () => ({ 'Idempotency-Key': (key.current ??= crypto.randomUUID()) }),
+    reset: () => { key.current = null; },
+  };
+}
 
 /** Mensagem de erro amigável e bilíngue a partir do código retornado pela API. */
 export function errorText(cause: unknown, lang: Lang) {
