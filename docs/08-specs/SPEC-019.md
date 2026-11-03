@@ -151,6 +151,10 @@ Testes são planejados, não implementados ou executados nesta revisão. Os exem
 
 [Registro central](questoes-abertas.md). Antes de implementar, registrar decisão e refletir alterações de comportamento na baseline e nesta Spec; se não houver decisão, conservar o bloqueio explícito.
 
+### Correções da varredura de QA (2026-11-03)
+
+Período da exportação: datas entre 1900-01-01 e 2100-12-31, ano entre 1900 e 2100 e no máximo 120 competências por arquivo; fora disso, 400 `invalid_period` ou `period_too_long` (antes, `year=0` gerava erro 500). Decisão técnica de limite de intervalo, parcial para OPEN-21/OPEN-29. Teste `test_SPEC_019_R02_R04_*` em `backend/tests/test_qa_2026_11_correcoes.py`; ver [registro da varredura](../09-qualidade/evidencias/qa-pre-comercializacao-2026-11-03.md).
+
 ## 14. Definition of Done da Spec
 
 - [ ] Mapa e recorte revisados pelo grupo, com evidência real.

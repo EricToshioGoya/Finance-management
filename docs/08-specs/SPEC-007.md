@@ -161,6 +161,10 @@ Testes automatizados em `backend/tests/test_spec004_007_008_010_013_020_024.py`,
 
 [Registro central](questoes-abertas.md). Antes de implementar, registrar decisão e refletir alterações de comportamento na baseline e nesta Spec; se não houver decisão, conservar o bloqueio explícito.
 
+### Correções da varredura de QA (2026-11-03)
+
+Código de indicador fora do catálogo (`selic`, `cdi`, `ipca`) devolve 404 `indicator_not_found`; 503 `indicator_unavailable` fica restrito a código conhecido ainda sem cache (C-08). Teste `test_SPEC_007_R02_*` em `backend/tests/test_qa_2026_11_correcoes.py`; ver [registro da varredura](../09-qualidade/evidencias/qa-pre-comercializacao-2026-11-03.md).
+
 ## 14. Definition of Done da Spec
 
 - [ ] Mapa e recorte revisados pelo grupo, com evidência real.

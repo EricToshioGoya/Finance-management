@@ -95,6 +95,8 @@ O pedido atual autoriza gerar todas as Specs no lote. Não equivale a aprovaçã
 | OPEN-31 | Compartilhamento/mobile: convites e visibilidade após rompimento, conflitos de edição/arredondamento/acertos; política de sincronização offline e isolamento local | SPEC-044, SPEC-045, SPEC-006, SPEC-056 a SPEC-059; RNF-22/24 | Aberto; parcial: recorte aprovado pelo responsável em 2026-10-31 — SPEC-044, 045 |
 | OPEN-32 | Verificação operacional transversal: ambiente de carga/disponibilidade, serviço de monitoramento, backup/restore, acesso a chaves e proteção de branch; não criar Spec isolada por RNF | RNF-08/12/14/16 aplicáveis nas entregas; complementar OPEN-06/09 | Aberto |
 | OPEN-33 | Confirmar o recorte Must have antigo versus RF-68 a RF-74 e calendário; priorizar módulos opcionais sem confundir catálogo completo com promessa do semestre | Mapa completo; complementar OPEN-08 | Aberto |
+| OPEN-34 | Bloqueio por conta (SPEC-001-R11) permite a terceiros bloquear uma conta alheia por 15 minutos com cinco senhas erradas; decidir mitigação (desafio adicional, bloqueio por par conta+cliente, notificação ao titular) sem violar RF-02 | RF-02, SPEC-001; RNF-13 | Aberto; risco registrado na varredura de QA de 2026-11-03, comportamento atual mantido |
+| OPEN-35 | Cadastro responde `email_exists` (409), o que revela se um e-mail tem conta; decidir resposta neutra com aviso por e-mail ou aceitar o risco com o rate limit atual | RF-01, SPEC-001, SPEC-015; OPEN-16, OPEN-17 | Aberto; risco registrado na varredura de QA de 2026-11-03, comportamento atual mantido |
 
 Os números 5 falhas/15min, 24h/30min/60s, 12 meses CVM e 15 dias de exclusão já constam da baseline. Contradições sobre aprovação/semântica são OPEN-19; os valores não foram substituídos por novos padrões. Fluxos sem decisão não estão liberados por terem documento preenchido.
 
@@ -134,3 +136,15 @@ As políticas abaixo foram propostas pelo agente de codificação e aprovadas pe
 - SPEC-050/051/052 (OPEN-05/08/11/26/30): grupo mínimo de 30; três conquistas cosméticas; tour de quatro etapas com roteiro por perfil.
 - SPEC-061/040 (OPEN-17/26/05/21): canais opt-in com despachante HTTPS configurável; resumo mensal opt-in, um envio por mês, falha registrada.
 - SPEC-062 (OPEN-11/21): perfis do quiz, contas sem perfil à parte, filtro por cadastro no fuso de São Paulo.
+
+## Varredura de QA pré-comercialização — 2026-11-03
+
+O responsável solicitou corrigir todos os achados da varredura. Decisões técnicas adotadas, registradas nas Specs afetadas (seção 13) e no [registro da varredura](../09-qualidade/evidencias/qa-pre-comercializacao-2026-11-03.md):
+
+- OPEN-21 (parcial): datas de lançamento e competências entre 1900-01-01 e 2100-12-31; consultas e exportações por período limitadas a 120 competências (SPEC-019, SPEC-022, SPEC-059).
+- OPEN-02 (parcial): identidade do cliente para o rate limit é o IP da conexão; `X-Forwarded-For` só vale vindo de proxy listado em `FINNOVA_TRUSTED_PROXIES`; o limite cobre todas as escritas sob `/api/v1` (SPEC-001).
+- OPEN-25 (parcial): webhook sem seguir redirecionamentos e com IP validado fixado na conexão (SPEC-042).
+- OPEN-32 (parcial): controle de admissão de requisições simultâneas, pool de conexões configurável, novas tentativas na inicialização e logs JSON por requisição e por erro não tratado; monitoramento externo e escala horizontal continuam pendentes.
+
+OPEN-34 e OPEN-35 exigem decisão de produto e não foram alteradas por esta entrega.
+

@@ -154,6 +154,10 @@ Testes automatizados em `backend/tests/test_spec059_006_expenses_and_editing.py`
 
 [Registro central](questoes-abertas.md). Antes de implementar, registrar decisão e refletir alterações de comportamento na baseline e nesta Spec; se não houver decisão, conservar o bloqueio explícito.
 
+### Correções da varredura de QA (2026-11-03)
+
+Datas de lançamento (despesas, receitas, bônus, metas e financiamento) aceitas entre 1900-01-01 e 2100-12-31 (422 fora disso); antes, parcelas após 9999-12 geravam erro 500. Descrição só com espaços é recusada na criação e na edição (R03). Reenvio concorrente com a mesma `Idempotency-Key` devolve o lançamento já gravado em vez de 503 (RNF-24). Testes `test_SPEC_059_R01_R02_*` e `test_SPEC_059_R02_R03_*` em `backend/tests/test_qa_2026_11_correcoes.py`; ver [registro da varredura](../09-qualidade/evidencias/qa-pre-comercializacao-2026-11-03.md).
+
 ## 14. Definition of Done da Spec
 
 - [ ] Mapa e recorte revisados pelo grupo, com evidência real.
