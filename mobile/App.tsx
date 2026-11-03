@@ -1,9 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
 import * as SecureStore from 'expo-secure-store';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { api, ApiError, newIdempotencyKey } from './src/api';
-import { currentCompetence, money, today } from './src/format';
+import { currentCompetence, money, parseAmount, today } from './src/format';
 
 // Cliente móvel mínimo (RNF-05): login, resumo do mês, lançamento de despesa e notificações,
 // usando a mesma API /api/v1 do cliente web. O token de acesso fica no armazenamento seguro.
@@ -135,6 +135,10 @@ function ExpenseForm({ token }: { token: string }) {
   const [source, setSource] = useState('');
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  // C-16/RNF-24: a mesma chave vale para toque duplo e reenvio após falha; muda só com novos dados.
+  const pendingKey = useRef<string | null>(null);
+  const edit = <T,>(setter: (value: T) => void) => (value: T) => { pendingKey.current = null; setter(value); };
   useEffect(() => {
     void Promise.all([
       api<Category[]>('/auth/categories', token),
@@ -145,31 +149,38 @@ function ExpenseForm({ token }: { token: string }) {
     }).catch(cause => setError(describe(cause)));
   }, [token]);
   async function submit() {
+    if (busy) return;
     setError(''); setStatus('');
+    const value = parseAmount(amount);
+    if (value === null) { setError('Informe um valor válido, por exemplo 1.234,56.'); return; }
+    const key = (pendingKey.current ??= newIdempotencyKey());
+    setBusy(true);
     try {
       await api('/auth/financial/expenses', token, {
-        method: 'POST', headers: { 'Idempotency-Key': newIdempotencyKey() }, // C-16: reenvio não duplica
+        method: 'POST', headers: { 'Idempotency-Key': key },
         body: JSON.stringify({
-          description, amount: amount.replace(',', '.'), category_key: category, occurred_on: today(),
+          description, amount: value, category_key: category, occurred_on: today(),
           account_id: source.startsWith('a:') ? source.slice(2) : null, credit_card_id: source.startsWith('c:') ? source.slice(2) : null,
         }),
       });
+      pendingKey.current = null;
       setDescription(''); setAmount(''); setStatus('Despesa registrada.');
     } catch (cause) { setError(describe(cause)); }
+    finally { setBusy(false); }
   }
   return <View>
     <Text style={styles.sectionTitle}>Nova despesa (hoje)</Text>
     <Text style={styles.label}>Descrição</Text>
-    <TextInput style={styles.input} value={description} onChangeText={setDescription} maxLength={100} accessibilityLabel="Descrição" />
+    <TextInput style={styles.input} value={description} onChangeText={edit(setDescription)} maxLength={100} accessibilityLabel="Descrição" />
     <Text style={styles.label}>Valor (R$)</Text>
-    <TextInput style={styles.input} value={amount} onChangeText={setAmount} keyboardType="decimal-pad" accessibilityLabel="Valor em reais" />
+    <TextInput style={styles.input} value={amount} onChangeText={edit(setAmount)} keyboardType="decimal-pad" accessibilityLabel="Valor em reais" />
     <Text style={styles.label}>Categoria</Text>
-    <Chips options={categories.map(item => ({ id: item.key, name: item.name }))} selected={category} onSelect={setCategory} />
+    <Chips options={categories.map(item => ({ id: item.key, name: item.name }))} selected={category} onSelect={edit(setCategory)} />
     <Text style={styles.label}>Pago com</Text>
-    <Chips options={sources} selected={source} onSelect={setSource} />
+    <Chips options={sources} selected={source} onSelect={edit(setSource)} />
     {!!error && <Text style={styles.error} accessibilityRole="alert">{error}</Text>}
     {!!status && <Text style={styles.positive}>{status}</Text>}
-    <Pressable style={styles.button} onPress={() => void submit()} disabled={!description || !amount || !category || !source} accessibilityRole="button"><Text style={styles.buttonText}>Registrar</Text></Pressable>
+    <Pressable style={styles.button} onPress={() => void submit()} disabled={busy || !description || !amount || !category || !source} accessibilityRole="button" accessibilityState={{ busy, disabled: busy }}><Text style={styles.buttonText}>{busy ? 'Registrando…' : 'Registrar'}</Text></Pressable>
   </View>;
 }
 
