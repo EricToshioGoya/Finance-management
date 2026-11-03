@@ -18,74 +18,73 @@ Revisão documental: 2026-10-09, baseada em `reorganizacao-docs`. IDs anteriores
 
 | ID | Módulo | Requisito | Prioridade | Status |
 |---|---|---|---|---|
-| RF-01 | Conta e Acesso | Cadastro de usuário | Must have | ☐ |
-| RF-02 | Conta e Acesso | Login e autenticação | Must have | ☐ |
-| RF-03 | Conta e Acesso | Quiz de perfil de investidor | Should have | ☐ |
-| RF-04 | Conta e Acesso | Onboarding guiado | Should have | ☐ |
-| RF-05 | Conta e Acesso | Exclusão de conta e dados | Should have | ☐ |
-| RF-06 | Administração Financeira | Cadastro de receita recorrente mensal | Must have | ☐ |
-| RF-07 | Administração Financeira | Cadastro de receita pontual | Must have | ☐ |
-| RF-08 | Administração Financeira | Cadastro de bônus e PLR | Must have | ☐ |
-| RF-09 | Administração Financeira | Cadastro de despesas por categoria | Must have | ☐ |
+| RF-01 | Conta e Acesso | Cadastro de usuário | Must have | Implementado (SPEC-001) |
+| RF-02 | Conta e Acesso | Login e autenticação | Must have | Implementado (SPEC-001) |
+| RF-03 | Conta e Acesso | Quiz de perfil de investidor | Should have | Implementado (SPEC-003) |
+| RF-04 | Conta e Acesso | Onboarding guiado | Should have | Implementado (SPEC-052) |
+| RF-05 | Conta e Acesso | Exclusão de conta e dados | Should have | Implementado (SPEC-018) |
+| RF-06 | Administração Financeira | Cadastro de receita recorrente mensal | Must have | Implementado (SPEC-056) |
+| RF-07 | Administração Financeira | Cadastro de receita pontual | Must have | Implementado (SPEC-057) |
+| RF-08 | Administração Financeira | Cadastro de bônus e PLR | Must have | Implementado (SPEC-058) |
+| RF-09 | Administração Financeira | Cadastro de despesas por categoria | Must have | Implementado (SPEC-059) |
 | RF-10 | Administração Financeira | Categorias padrão e personalizadas de gastos | Must have | Implementado na SPEC-055 |
-| RF-11 | Administração Financeira | Edição e exclusão de lançamentos | Must have | ☐ |
-| RF-12 | Administração Financeira | Cadastro de contas bancárias e cartões de crédito | Must have | ☐ |
-| RF-13 | Administração Financeira | Controle de fatura de cartão de crédito | Should have | ☐ |
-| RF-14 | Administração Financeira | Meta geral de renda e de gasto | Should have | ☐ |
-| RF-15 | Administração Financeira | Meta de gasto por categoria | Should have | ☐ |
-| RF-16 | Administração Financeira | Dashboard — gastos por categoria (pizza) | Should have | ☐ |
-| RF-17 | Administração Financeira | Dashboard — evolução de saldo (linha) | Should have | ☐ |
-| RF-18 | Administração Financeira | Dashboard — comparativo renda vs. gasto mensal (barras) | Should have | ☐ |
-| RF-19 | Administração Financeira | Dashboard — progresso de metas | Should have | ☐ |
-| RF-20 | Simulador de Investimentos | Simulação de investimento em renda fixa | Must have | ☐ |
-| RF-21 | Simulador de Investimentos | Simulação de investimento em renda variável | Must have | ☐ |
-| RF-25 | Simulador de Investimentos | Comparador de cenários de investimento | Must have | ☐ |
-| RF-26 | Simulador de Investimentos | Projeção de objetivo financeiro | Should have | ☐ |
-| RF-22 | Simulador de Investimentos | Calculadora de juros compostos (motor genérico) | Must have | ☐ |
-| RF-23 | Simulador de Investimentos | Integração com indicadores oficiais (Selic, CDI, IPCA, Tesouro Direto) | Must have | ☐ |
-| RF-24 | Simulador de Investimentos | Cotação de ações e FIIs via fonte de mercado | Should have | ☐ |
-| RF-27 | Simulador de Investimentos | Métricas de risco e retorno (volatilidade, Sharpe simplificado) | Could have | ☐ |
-| RF-28 | Simulador de Investimentos | Simulação em moeda estrangeira (câmbio) | Could have | ☐ |
-| RF-29 | Relatórios de Empresas | Busca de empresa (ticker, CNPJ ou razão social) | Should have | ☐ |
-| RF-30 | Relatórios de Empresas | Listagem de documentos oficiais (metadados) | Should have | ☐ |
-| RF-31 | Relatórios de Empresas | Acesso ao documento completo via link externo | Should have | ☐ |
-| RF-32 | Relatórios de Empresas | Indicadores financeiros extraídos de dados abertos da CVM | Could have | ☐ |
-| RF-33 | Relatórios de Empresas | Retenção e expurgo automático dos dados sincronizados (12 meses) | Should have | ☐ |
-| RF-34 | Relatórios de Empresas | Watchlist de empresas | Could have | ☐ |
-| RF-35 | Patrimônio | Consolidação de patrimônio (ativos e passivos) | Should have | ☐ |
-| RF-36 | Patrimônio | Evolução do patrimônio líquido | Could have | ☐ |
-| RF-37 | Patrimônio | Mapa de calor patrimonial (ativos em verde, passivos em cores quentes) | Should have | ☐ |
-| RF-38 | Patrimônio | Alocação da carteira por classe de ativo | Could have | ☐ |
-| RF-39 | Patrimônio | Simulação de stress financeiro (perda de renda) | Could have | ☐ |
-| RF-40 | Patrimônio | Metas nomeadas (objetivos financeiros) | Could have | ☐ |
-| RF-41 | Score de Saúde Financeira | Cálculo do score de saúde financeira | Should have | ☐ |
-| RF-42 | Score de Saúde Financeira | Exibição e histórico do score | Could have | ☐ |
-| RF-43 | Conteúdo Educacional | Central de conteúdo educacional | Could have | ☐ |
-| RF-44 | Conteúdo Educacional | Ajuda contextual (tooltips educativos) | Could have | ☐ |
-| RF-45 | Compras Financiadas | Simulação de compra financiada | Could have | ☐ |
-| RF-46 | Compras Financiadas | Comparador: financiar vs. investir e comprar depois | Could have | ☐ |
-| RF-47 | Compras Financiadas | Registro do financiamento como passivo | Could have | ☐ |
-| RF-48 | Notificações | Notificações e alertas | Should have | ☐ |
-| RF-49 | Notificações | Canal de envio (in-app, push, e-mail) | Could have | ☐ |
-| RF-50 | Exportação de Dados | Exportação de dados pessoais (CSV/PDF) | Should have | ☐ |
-| RF-51 | Notificações | Relatório mensal automático | Could have | ☐ |
-| RF-52 | API Pública | API pública documentada | Could have | ☐ |
-| RF-53 | API Pública | Webhooks para eventos do usuário | Could have | ☐ |
-| RF-54 | Painel Administrativo | Controle de acesso administrativo | Should have | ☐ |
-| RF-55 | Painel Administrativo | Listagem e busca de usuários | Should have | ☐ |
-| RF-56 | Painel Administrativo | Dashboard: distribuição de perfil de investidor | Could have | ☐ |
-| RF-57 | Painel Administrativo | Dashboard: uso por módulo/aba | Could have | ☐ |
-| RF-58 | Painel Administrativo | Dashboard: usuários mais recorrentes (engajamento) | Could have | ☐ |
-| RF-59 | Painel Administrativo | Registro de eventos de uso | Should have | ☐ |
-| RF-60 | Contas Compartilhadas | Vínculo de conta compartilhada entre dois usuários | Could have | ☐ |
-| RF-61 | Contas Compartilhadas | Divisão de despesas compartilhadas | Could have | ☐ |
-| RF-62 | Aposentadoria e Previdência | Simulação de aposentadoria | Could have | ☐ |
-| RF-63 | Aposentadoria e Previdência | Comparador de modalidades de previdência (PGBL x VGBL x carteira própria) | Could have | ☐ |
-| RF-64 | Impostos | Estimativa de IR devido sobre operações simuladas | Could have | ☐ |
-| RF-65 | Impostos | Exportação de informe de rendimentos consolidado | Could have | ☐ |
-| RF-66 | Score de Saúde Financeira | Benchmark anônimo com usuários do mesmo perfil | Could have | ☐ |
-| RF-67 | Gamificação | Badges/conquistas por metas atingidas | Could have | ☐ |
-
+| RF-11 | Administração Financeira | Edição e exclusão de lançamentos | Must have | Implementado (SPEC-006) |
+| RF-12 | Administração Financeira | Cadastro de contas bancárias e cartões de crédito | Must have | Implementado (SPEC-005) |
+| RF-13 | Administração Financeira | Controle de fatura de cartão de crédito | Should have | Implementado (SPEC-020); pagamento de fatura pendente (OPEN-12) |
+| RF-14 | Administração Financeira | Meta geral de renda e de gasto | Should have | Implementado (SPEC-021) |
+| RF-15 | Administração Financeira | Meta de gasto por categoria | Should have | Implementado (SPEC-021) |
+| RF-16 | Administração Financeira | Dashboard — gastos por categoria (pizza) | Should have | Implementado (SPEC-022) |
+| RF-17 | Administração Financeira | Dashboard — evolução de saldo (linha) | Should have | Implementado (SPEC-022) |
+| RF-18 | Administração Financeira | Dashboard — comparativo renda vs. gasto mensal (barras) | Should have | Implementado (SPEC-022) |
+| RF-19 | Administração Financeira | Dashboard — progresso de metas | Should have | Implementado (SPEC-021) |
+| RF-20 | Simulador de Investimentos | Simulação de investimento em renda fixa | Must have | Implementado (SPEC-004, SPEC-008) |
+| RF-21 | Simulador de Investimentos | Simulação de investimento em renda variável | Must have | Implementado (SPEC-009) |
+| RF-25 | Simulador de Investimentos | Comparador de cenários de investimento | Must have | Implementado (SPEC-010) |
+| RF-26 | Simulador de Investimentos | Projeção de objetivo financeiro | Should have | Implementado (SPEC-024) |
+| RF-22 | Simulador de Investimentos | Calculadora de juros compostos (motor genérico) | Must have | Implementado (SPEC-002, SPEC-013) |
+| RF-23 | Simulador de Investimentos | Integração com indicadores oficiais (Selic, CDI, IPCA, Tesouro Direto) | Must have | Implementado (SPEC-007) |
+| RF-24 | Simulador de Investimentos | Cotação de ações e FIIs via fonte de mercado | Should have | Implementado com catálogo local (SPEC-023); provedor de mercado pendente |
+| RF-27 | Simulador de Investimentos | Métricas de risco e retorno (volatilidade, Sharpe simplificado) | Could have | Implementado (SPEC-025) |
+| RF-28 | Simulador de Investimentos | Simulação em moeda estrangeira (câmbio) | Could have | Implementado (SPEC-026) |
+| RF-29 | Relatórios de Empresas | Busca de empresa (ticker, CNPJ ou razão social) | Should have | Implementado (SPEC-012) |
+| RF-30 | Relatórios de Empresas | Listagem de documentos oficiais (metadados) | Should have | Implementado (SPEC-012) |
+| RF-31 | Relatórios de Empresas | Acesso ao documento completo via link externo | Should have | Implementado (SPEC-012) |
+| RF-32 | Relatórios de Empresas | Indicadores financeiros extraídos de dados abertos da CVM | Could have | Implementado (SPEC-053) |
+| RF-33 | Relatórios de Empresas | Retenção e expurgo automático dos dados sincronizados (12 meses) | Should have | Implementado (SPEC-054) |
+| RF-34 | Relatórios de Empresas | Watchlist de empresas | Could have | Implementado (SPEC-027) |
+| RF-35 | Patrimônio | Consolidação de patrimônio (ativos e passivos) | Should have | Implementado (SPEC-028) |
+| RF-36 | Patrimônio | Evolução do patrimônio líquido | Could have | Implementado (SPEC-029) |
+| RF-37 | Patrimônio | Mapa de calor patrimonial (ativos em verde, passivos em cores quentes) | Should have | Implementado (SPEC-030) |
+| RF-38 | Patrimônio | Alocação da carteira por classe de ativo | Could have | Implementado (SPEC-031) |
+| RF-39 | Patrimônio | Simulação de stress financeiro (perda de renda) | Could have | Implementado (SPEC-032) |
+| RF-40 | Patrimônio | Metas nomeadas (objetivos financeiros) | Could have | Implementado (SPEC-033) |
+| RF-41 | Score de Saúde Financeira | Cálculo do score de saúde financeira | Should have | Implementado (SPEC-034) |
+| RF-42 | Score de Saúde Financeira | Exibição e histórico do score | Could have | Implementado (SPEC-034) |
+| RF-43 | Conteúdo Educacional | Central de conteúdo educacional | Could have | Implementado (SPEC-035) |
+| RF-44 | Conteúdo Educacional | Ajuda contextual (tooltips educativos) | Could have | Implementado (SPEC-013, SPEC-035) |
+| RF-45 | Compras Financiadas | Simulação de compra financiada | Could have | Implementado (SPEC-036) |
+| RF-46 | Compras Financiadas | Comparador: financiar vs. investir e comprar depois | Could have | Implementado (SPEC-037) |
+| RF-47 | Compras Financiadas | Registro do financiamento como passivo | Could have | Implementado (SPEC-038) |
+| RF-48 | Notificações | Notificações e alertas | Should have | Implementado (SPEC-039) |
+| RF-49 | Notificações | Canal de envio (in-app, push, e-mail) | Could have | Implementado tecnicamente (SPEC-061); provedor de push/e-mail pendente (OPEN-17) |
+| RF-50 | Exportação de Dados | Exportação de dados pessoais (CSV/PDF) | Should have | Implementado (SPEC-019) |
+| RF-51 | Notificações | Relatório mensal automático | Could have | Implementado (SPEC-040) |
+| RF-52 | API Pública | API pública documentada | Could have | Implementado (SPEC-041) |
+| RF-53 | API Pública | Webhooks para eventos do usuário | Could have | Implementado (SPEC-042) |
+| RF-54 | Painel Administrativo | Controle de acesso administrativo | Should have | Implementado (SPEC-011) |
+| RF-55 | Painel Administrativo | Listagem e busca de usuários | Should have | Implementado (SPEC-011) |
+| RF-56 | Painel Administrativo | Dashboard: distribuição de perfil de investidor | Could have | Implementado (SPEC-062) |
+| RF-57 | Painel Administrativo | Dashboard: uso por módulo/aba | Could have | Implementado (SPEC-043) |
+| RF-58 | Painel Administrativo | Dashboard: usuários mais recorrentes (engajamento) | Could have | Implementado (SPEC-043) |
+| RF-59 | Painel Administrativo | Registro de eventos de uso | Should have | Implementado (SPEC-060) |
+| RF-60 | Contas Compartilhadas | Vínculo de conta compartilhada entre dois usuários | Could have | Implementado (SPEC-044) |
+| RF-61 | Contas Compartilhadas | Divisão de despesas compartilhadas | Could have | Implementado (SPEC-045) |
+| RF-62 | Aposentadoria e Previdência | Simulação de aposentadoria | Could have | Implementado (SPEC-046) |
+| RF-63 | Aposentadoria e Previdência | Comparador de modalidades de previdência (PGBL x VGBL x carteira própria) | Could have | Implementado (SPEC-047) |
+| RF-64 | Impostos | Estimativa de IR devido sobre operações simuladas | Could have | Implementado (SPEC-004, SPEC-048) |
+| RF-65 | Impostos | Exportação de informe de rendimentos consolidado | Could have | Implementado (SPEC-049) |
+| RF-66 | Score de Saúde Financeira | Benchmark anônimo com usuários do mesmo perfil | Could have | Implementado (SPEC-050) |
+| RF-67 | Gamificação | Badges/conquistas por metas atingidas | Could have | Implementado (SPEC-051) |
 | RF-68 | Conta e Acesso | Editar dados do perfil | Must have | Implementado na SPEC-014 |
 | RF-69 | Conta e Acesso | Confirmar titularidade do e-mail | Must have | Implementado tecnicamente (SPEC-015); entrega operacional pendente |
 | RF-70 | Conta e Acesso | Recuperar senha esquecida | Must have | Implementado na SPEC-016 |
@@ -1086,9 +1085,9 @@ ConteudoEducacional (id, termo, categoria, texto, nivel[iniciante|avancado])
 
 ContaCompartilhada  (id, usuario_a_id, usuario_b_id, criada_em, status[pendente|ativa|desfeita])
   1─N DespesaCompartilhada (id, conta_compartilhada_id, despesa_id, usuario_pagou_id, divisao[igual|percentual], percentual_pagador)
-  1─N AcertoConta     (id, conta_compartilhada_id, usuario_pagou_id, valor, criado_em)
+  1─N AcertoContas    (id, conta_compartilhada_id, usuario_pagou_id, valor, criado_em)
 
-Badge (id, usuario_id, tipo, conquistada_em)
+Conquista (id, usuario_id, tipo, conquistada_em)
 ```
 
 > `Simulacao.tipo` é estendido para incluir `aposentadoria` (RF-62), `previdencia_comparador` (RF-63) e `ir_estimativa` (RF-64) — reaproveita a tabela genérica existente, sem novas entidades específicas por simulação.
@@ -1167,8 +1166,8 @@ Badge (id, usuario_id, tipo, conquistada_em)
 | Tesouro Direto | Programa de venda de títulos públicos federais a pessoas físicas |
 | FII | Fundo de Investimento Imobiliário |
 | IR | Imposto de Renda incidente sobre o rendimento de aplicações financeiras |
-| Renda fixa (dashboard) | Renda recorrente e previsível do usuário (ex.: salário) |
-| Renda variável (dashboard) | Renda não recorrente ou de valor incerto (ex.: freelas, comissões) |
+| Receita recorrente (antes "renda fixa" do dashboard) | Entrada recorrente e previsível do usuário (ex.: salário); classe `ReceitaRecorrente` (RF-06) |
+| Receita pontual (antes "renda variável" do dashboard) | Entrada não recorrente ou de valor incerto (ex.: freelas, comissões); classe `ReceitaPontual` (RF-07) |
 | Renda fixa (investimento) | Investimento cuja regra de remuneração é conhecida no momento da aplicação |
 | Renda variável (investimento) | Investimento cujo retorno não é previsível, sujeito à oscilação de mercado |
 | SGS | Sistema Gerenciador de Séries Temporais do Banco Central; API oficial de indicadores econômicos (Selic, CDI, IPCA, entre outros) |
@@ -1216,13 +1215,17 @@ Nomes usados em código, specs e documentação, alinhados às classes de `/docs
 | Termo | Classe | Definição |
 |---|---|---|
 | Usuário | `Usuario` | Pessoa cadastrada que usa a plataforma; dona dos lançamentos e simulações |
+| Preferência do usuário | `PreferenciaUsuario` | Idioma, tema e canais de notificação de um titular; no máximo um conjunto por usuário, com padrões na ausência (RF-72) |
 | Conta | `Conta` | Conta bancária ou carteira do usuário, com saldo inicial e saldo atual |
 | Cartão | `Cartao` | Cartão de crédito do usuário, com limite, fechamento e vencimento |
 | Categoria | `Categoria` | Classificação de despesas; **padrão** (comum a todos, sem dono) ou **personalizada** (de um usuário) |
 | Lançamento | `Renda` ou `Despesa` | Registro de entrada ou saída de dinheiro informado pelo usuário |
-| Renda | `Renda` | Entrada de dinheiro do usuário: renda fixa, renda variável ou bônus/PLR |
+| Renda | `Renda` | Entrada de dinheiro do usuário: receita recorrente, receita pontual ou bônus/PLR |
+| Receita recorrente | `ReceitaRecorrente` | Renda mensal recorrente (ex.: salário), considerada em todas as competências vigentes (RF-06) |
+| Receita pontual | `ReceitaPontual` | Renda de um único mês e valor variável (ex.: freela, comissão) (RF-07) |
+| Bônus/PLR | `BonusPLR` | Bonificação ou PLR mensal ou anual, somada à renda do mês em que é recebida (RF-08) |
 | Despesa | `Despesa` | Saída de dinheiro, ligada a exatamente uma categoria; **recorrente** ou **pontual** |
-| Renda total do mês | `Renda` (`calcularContribuicaoMensal()`) | Soma das contribuições mensais da renda fixa, da renda variável do mês e do bônus/PLR recebido no mês (RB-05) |
+| Renda total do mês | `Renda` (`calcularContribuicaoMensal()`) | Soma das contribuições mensais das receitas recorrentes, das receitas pontuais do mês e do bônus/PLR recebido no mês (RB-05) |
 | Simulação | `Simulacao` | Projeção educativa de um investimento, guardada com seus parâmetros; de renda fixa ou de renda variável no V1 |
 | Indicador oficial | `IndicadorOficial` | Taxa oficial (Selic, CDI, IPCA ou título do Tesouro Direto) guardada em cache com data de referência |
 | Indicador financeiro | `IndicadorFinanceiro` | Número extraído das demonstrações de uma empresa aberta (CVM); não confundir com indicador oficial |
@@ -1243,6 +1246,8 @@ Nomes usados em código, specs e documentação, alinhados às classes de `/docs
 | Tour de primeiro acesso | `EstadoTour` | Estado do roteiro guiado por titular: não iniciado, em andamento, concluído ou pulado (RF-04) |
 | Resumo mensal | `ResumoMensal` | PDF do mês anterior enviado a quem optou; um por titular e competência (RF-51) |
 | Tentativa de entrega | `TentativaEntrega` | Resultado mínimo de envio externo (canal, status, instante), sem conteúdo nem destino (RF-49) |
+
+**Aliases históricos (OPEN-19, decisão do responsável em 2026-11-03):** o glossário prevalece sobre nomes anteriores. `IndicadorMercadoCache` e `IndicadorFinanceiroCache` → `IndicadorOficial`; `AcertoConta` → `AcertoContas`; `Badge` → `Conquista`; `PreferenciasUsuario` → `PreferenciaUsuario`; "renda fixa"/"renda variável" no sentido de salário e renda extra → receita recorrente/receita pontual (os textos de RF-06, RF-07, RB-05 e das Specs derivadas que ainda usam o nome antigo devem ser lidos com esse significado). Nos investimentos, renda fixa/variável mantém o sentido de produto financeiro. `docs/modelo-dominio.md` e `docs/uml/` são histórico e conservam os nomes antigos.
 
 
 ### 1.19 Complemento — ciclo de vida da conta (2026-10-22)
@@ -1303,16 +1308,16 @@ Solicitado pelo usuário após análise das branches. Requisitos novos não sign
 
 **Critérios de aceite:**
 
-- [ ] Preservar contratos da SPEC-001/ADR-005; recusar replay, token expirado e sessão revogada; logout atual não encerra outros dispositivos. Implementado na SPEC-001; novas regras de confirmação e manutenção da conta continuam pendentes.
+- [ ] Preservar contratos da SPEC-001/ADR-005; recusar replay, token expirado e sessão revogada; logout atual não encerra outros dispositivos. Implementado na SPEC-001; as regras de confirmação e manutenção da conta foram implementadas nas SPEC-014 a SPEC-017.
 
-**Estado de integração:** RF-01/RF-02/RF-74 possuem implementação inicial; RF-02 inclui bloqueio por conta de cinco falhas por quinze minutos. RF-05/RF-50, painel administrativo, quiz e módulos financeiros permanecem sem implementação. RNF-14 exige evidência de restauração em ambiente isolado; workflow existente não comprova backup nem bloqueio remoto de merge.
+**Estado de integração:** RF-01/RF-02/RF-74 possuem implementação inicial; RF-02 inclui bloqueio por conta de cinco falhas por quinze minutos. Atualização em 2026-11-03: RF-05 (SPEC-018), RF-50 (SPEC-019), painel administrativo (SPEC-011, SPEC-043, SPEC-060, SPEC-062), quiz (SPEC-003) e módulos financeiros estão implementados; ver a tabela 1.1 e o [mapa de Specs](../08-specs/mapa-specs.md). RNF-14 exige evidência de restauração em ambiente isolado; workflow existente não comprova backup nem bloqueio remoto de merge.
 
 ## 10. Consolidação de conta e acesso — 2026-10-22
 
-RF-68 a RF-73 foram adicionados por solicitação do usuário; são requisitos para desenvolvimento, sem aprovação formal do grupo. RF-68/RF-72 têm implementação técnica na SPEC-014, RF-69 na SPEC-015 e RF-73 na SPEC-017; os demais continuam pendentes salvo indicação explícita. RF-01 e RF-02 têm implementação funcional web na SPEC-001. O bloqueio de 5 falhas/15 minutos foi concluído no complemento de 2026-10-23, preservando o rate limit de RNF-13. Evidências e limites: [registro da SPEC-001](../09-qualidade/implementacao-SPEC-001.md). RF-05 (exclusão) e RF-50 (exportação) continuam pendentes.
+RF-68 a RF-73 foram adicionados por solicitação do usuário; são requisitos para desenvolvimento, sem aprovação formal do grupo. RF-68/RF-72 têm implementação técnica na SPEC-014, RF-69 na SPEC-015 e RF-73 na SPEC-017; os demais continuam pendentes salvo indicação explícita. RF-01 e RF-02 têm implementação funcional web na SPEC-001. O bloqueio de 5 falhas/15 minutos foi concluído no complemento de 2026-10-23, preservando o rate limit de RNF-13. Evidências e limites: [registro da SPEC-001](../09-qualidade/implementacao-SPEC-001.md). RF-05 (exclusão) e RF-50 (exportação) foram implementados depois, nas SPEC-018 e SPEC-019.
 
 RF-05 deve revogar sessões ao confirmar a exclusão, impedir novos acessos e tratar vínculos pessoais, tokens, auditoria e backups conforme OPEN-05. RF-50 exige reautenticação, arquivo isolado por titular, link temporário sem acesso público, erro sem vazamento e auditoria sem conteúdo financeiro. Formatos CSV/PDF existentes são preservados; neutralizar fórmulas em CSV.
 
-O PostgreSQL entregue persiste somente identidade, sessões, refresh e contadores. Modelo financeiro é planejamento: cada módulo deverá entregar migration, restrições, isolamento por titular e testes de integridade antes de ser considerado implementado. [Matriz de cobertura](../09-qualidade/cobertura-funcional.md).
+Em 2026-10-22, o PostgreSQL persistia somente identidade, sessões, refresh e contadores. Desde então, cada módulo financeiro entregou migration (007 a 039), restrições, isolamento por titular e testes de integridade. [Matriz de cobertura](../09-qualidade/cobertura-funcional.md).
 
 SPEC-015 implementa os tempos de RF-69: token opaco de uso único por 24h, reenvio mínimo de 60s, digest/finalidade/validade no PostgreSQL e contas pendentes sem bloqueio de login. O OpenAPI contém rotas de solicitar e confirmar e-mail. Serviço de e-mail, política para contas existentes, fila/outbox, retenção e evidência operacional continuam em OPEN-17.

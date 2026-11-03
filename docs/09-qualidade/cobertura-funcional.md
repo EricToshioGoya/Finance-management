@@ -1,10 +1,10 @@
 # Cobertura funcional consolidada
 
-Atualizada em 2026-10-31 após a integração do código do grupo e a implementação das 12 Specs restantes.
+Atualizada em 2026-10-31 após a integração do código do grupo e a implementação das 12 Specs restantes; status de CI revisado em 2026-11-03.
 
-SPEC-019: CSV/PDF protegido por sessão, período e isolamento de titular em implementação isolada; [contrato e limites](implementacao-SPEC-019.md). O estado final depende da CI do PR próprio.
+SPEC-019: CSV/PDF protegido por sessão, período e isolamento de titular em implementação isolada; [contrato e limites](implementacao-SPEC-019.md). Código incorporado à `main`; suíte verde na verificação de 2026-11-03.
 
-SPEC-018: implementação isolada com política confirmada em 2026-10-28. [Contrato e evidências](implementacao-SPEC-018.md). Aprovação final depende dos checks atuais; a tabela histórica não substitui este registro.
+SPEC-018: implementação isolada com política confirmada em 2026-10-28. [Contrato e evidências](implementacao-SPEC-018.md). Código incorporado à `main`; suíte verde na verificação de 2026-11-03. A tabela histórica não substitui este registro.
 
 | Capacidade | Código atual | Próxima evidência |
 |---|---|---|

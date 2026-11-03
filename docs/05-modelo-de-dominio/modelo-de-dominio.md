@@ -24,7 +24,7 @@ Revisão de `requisitos.md` (RF-01 a RF-67) destacando os substantivos que repre
 | Painel Administrativo | Administrador, Dashboard de uso |
 | Contas Compartilhadas | Conta compartilhada, Despesa compartilhada, Acerto de contas |
 | Aposentadoria/Previdência/Impostos | Simulação de aposentadoria, PGBL, VGBL, Estimativa de IR, Informe de rendimentos |
-| Gamificação | Badge/Conquista |
+| Gamificação | Conquista |
 
 ---
 
@@ -57,8 +57,8 @@ Revisão de `requisitos.md` (RF-01 a RF-67) destacando os substantivos que repre
 | `ConteudoEducacional` | Fornecer verbetes explicativos e ajuda contextual | RF-43, RF-44 |
 | `ContaCompartilhada` | Vincular dois usuários e controlar o ciclo de vida do vínculo | RF-60 |
 | `DespesaCompartilhada` | Registrar a divisão de uma `Despesa` entre os dois usuários vinculados | RF-61, RB-24 |
-| `AcertoConta` | Registrar um pagamento entre os dois usuários que reduz o saldo pendente | RF-61, RB-24 |
-| `Badge` | Representar uma conquista obtida pelo usuário | RF-67 |
+| `AcertoContas` | Registrar um pagamento entre os dois usuários que reduz o saldo pendente | RF-61, RB-24 |
+| `Conquista` | Representar uma conquista obtida pelo usuário | RF-67 |
 
 > **Nota de design:** `Simulacao` concentra vários tipos de cálculo (renda fixa, variável, aposentadoria, IR, stress test); no refinamento para V2, é candidata a adotar o padrão **Strategy** (uma `EstrategiaDeSimulacao` por tipo), evitando um único método `executar()` com múltiplos `if/switch` por `tipo`.
 
@@ -77,7 +77,7 @@ Exemplo de exportação com Graphviz instalado: `dot -Tpng diagrama-de-dominio.d
 - `Usuario` é o titular dos dados pessoais. Isso não significa carregar todos os módulos como um único agregado transacional; contas, simulações e outros conceitos mantêm responsabilidades próprias.
 - `Renda`, `Meta` e `PatrimonioItem` são classes abstratas com especializações (generalização/herança), reduzindo duplicação de regra entre subtipos.
 - `Despesa` pode ser debitada de uma `Conta` ou de um `Cartao`, pertence a uma `Categoria`, e pode ser referenciada por uma `DespesaCompartilhada`.
-- `ContaCompartilhada` vincula exatamente 2 `Usuario`, agrupa `DespesaCompartilhada` e registra `AcertoConta` (RF-60/61).
+- `ContaCompartilhada` vincula exatamente 2 `Usuario`, agrupa `DespesaCompartilhada` e registra `AcertoContas` (RF-60/61).
 - `CompraFinanciada`, ao ser confirmada como real, gera um `Passivo` (RB-16).
 - `EmpresaAberta` publica `DocumentoCVM` e reporta `IndicadorFinanceiro`; `Watchlist` liga `Usuario` a `EmpresaAberta`.
 
@@ -103,8 +103,8 @@ Exemplo de exportação com Graphviz instalado: `dot -Tpng diagrama-de-dominio.d
 | AuditLog | RF-54 | RB-19, RB-21 |
 | EventoUso | RF-55 a RF-59 | RB-22, RB-23 |
 | ConteudoEducacional | RF-43, RF-44 | — |
-| ContaCompartilhada / DespesaCompartilhada / AcertoConta | RF-60, RF-61 | RB-24 |
-| Badge | RF-67 | — |
+| ContaCompartilhada / DespesaCompartilhada / AcertoContas | RF-60, RF-61 | RB-24 |
+| Conquista | RF-67 | — |
 
 
 ## 5. Multiplicidades e invariantes em texto
@@ -120,30 +120,30 @@ Exemplo de exportação com Graphviz instalado: `dot -Tpng diagrama-de-dominio.d
 | PatrimonioItem — Ativo/Passivo | Ativo e Passivo especializam PatrimonioItem. Projeção em Simulacao não cria item real (RB-13) |
 | CompraFinanciada — Passivo | Compra apenas simulada gera 0 passivos; ao registrar financiamento real pode gerar 1 passivo, sem operação de dinheiro pelo FinNova (RB-16) |
 | ContaCompartilhada — Usuario | Cada vínculo liga exatamente 2 usuários distintos, com aceite; usuário pode ter 0..N vínculos |
-| ContaCompartilhada — DespesaCompartilhada/AcertoConta | Cada vínculo registra 0..N divisões/acertos; cada divisão/acerto pertence a 1 vínculo |
+| ContaCompartilhada — DespesaCompartilhada/AcertoContas | Cada vínculo registra 0..N divisões/acertos; cada divisão/acerto pertence a 1 vínculo |
 | DespesaCompartilhada — Despesa | Divisão referencia 1 despesa; uma despesa tem 0..1 divisão neste modelo de dois usuários |
-| EmpresaAberta — DocumentoCVM/IndicadorFinanceiro | Empresa publica 0..N documentos e reporta 0..N indicadores; cada documento/indicador é de 1 empresa. AcertoConta não publica documento CVM |
+| EmpresaAberta — DocumentoCVM/IndicadorFinanceiro | Empresa publica 0..N documentos e reporta 0..N indicadores; cada documento/indicador é de 1 empresa. AcertoContas não publica documento CVM |
 | Watchlist — Usuario/EmpresaAberta | Cada vínculo referencia 1 usuário e 1 empresa; cada lado admite 0..N vínculos |
-| Usuario — Badge | Usuário conquista 0..N badges; cada conquista é de 1 usuário. Badge não agrupa despesas compartilhadas |
+| Usuario — Conquista | Usuário obtém 0..N conquistas; cada conquista é de 1 usuário. Conquista não agrupa despesas compartilhadas |
 
 ## 6. Separação de conceitos
 
 - `ReceitaRecorrente` e `ReceitaPontual` substituem os nomes ambíguos RendaFixa/RendaVariavel do salário. Renda fixa/variável continuam nomes de investimentos simulados.
 - `MotorJurosCompostos` recebe parâmetros e devolve `ResultadoCalculo`, conforme SPEC-002. `Simulacao` é o registro rastreável do resultado, não o motor nem uma tabela dentro do domínio.
-- `IndicadorMercadoCache` guarda código, fonte, valor, unidade, periodicidade, data de referência e última verificação da fonte (RF-23, RB-11). É distinto de `IndicadorFinanceiro`, que vem da contabilidade de uma EmpresaAberta (RF-32).
+- `IndicadorOficial` guarda código, fonte, valor, unidade, periodicidade, data de referência e última verificação da fonte (RF-23, RB-11). É distinto de `IndicadorFinanceiro`, que vem da contabilidade de uma EmpresaAberta (RF-32).
 - Eventos, auditoria, notificações e webhooks são conceitos de suporte; transmissão, assinatura, ORM e transporte pertencem aos serviços/adaptadores da arquitetura.
 - Não foram adicionados estados pendente/pago ao lançamento da baseline: essa mudança seria nova decisão de comportamento. O modelo de estados anexado representa a execução da simulação.
 
 
 ## Complemento de identidade, preferências e persistência
 
-RF-68 a RF-74 ampliam as responsabilidades de `Usuario`: manter nome/e-mail, estado de verificação do endereço e preferências de idioma/tema/canais. Mudança de e-mail mantém um endereço pendente até confirmação; não substitui imediatamente a identidade de acesso. `PreferenciasUsuario` é objeto de valor associado a um titular. A migration 005 persiste o endereço pendente cifrado e a preferência por titular. Estados de e-mail: pendente → verificado; troca mantém endereço anterior até conclusão. A migration 006 acrescenta o token de recuperação com digest, expiração, consumo e invalidação.
+RF-68 a RF-74 ampliam as responsabilidades de `Usuario`: manter nome/e-mail, estado de verificação do endereço e preferências de idioma/tema/canais. Mudança de e-mail mantém um endereço pendente até confirmação; não substitui imediatamente a identidade de acesso. `PreferenciaUsuario` é objeto de valor associado a um titular. A migration 005 persiste o endereço pendente cifrado e a preferência por titular. Estados de e-mail: pendente → verificado; troca mantém endereço anterior até conclusão. A migration 006 acrescenta o token de recuperação com digest, expiração, consumo e invalidação.
 
-Sessões, digests de refresh e tokens temporários de confirmação/recuperação pertencem à infraestrutura de identidade, não são ativos financeiros. Persistência atual: users, auth_sessions, refresh_tokens, auth_rate_buckets e password_reset_tokens. A migration 004 acrescenta instante de criação e índice de sessão por titular; a migration 003 inclui estado de verificação e tokens de confirmação com finalidade, digest, emissão, expiração, uso e invalidação; a 006 adiciona recuperação com validade de 30 minutos; nunca armazena token bruto. Revogação de todas as sessões acompanha recuperação/alteração de senha em transação. As tabelas financeiras do modelo continuam propostas, sem migrations entregues. Diagramas financeiros anteriores permanecem limitados ao seu recorte; estados e atributos de conta deste complemento devem integrar o próximo refinamento visual.
+Sessões, digests de refresh e tokens temporários de confirmação/recuperação pertencem à infraestrutura de identidade, não são ativos financeiros. Persistência atual: users, auth_sessions, refresh_tokens, auth_rate_buckets e password_reset_tokens. A migration 004 acrescenta instante de criação e índice de sessão por titular; a migration 003 inclui estado de verificação e tokens de confirmação com finalidade, digest, emissão, expiração, uso e invalidação; a 006 adiciona recuperação com validade de 30 minutos; nunca armazena token bruto. Revogação de todas as sessões acompanha recuperação/alteração de senha em transação. As tabelas financeiras foram entregues depois pelas migrations 007 a 039 (ver seção 8 e `backend/migrations/versions/`). Diagramas financeiros anteriores permanecem limitados ao seu recorte; estados e atributos de conta deste complemento devem integrar o próximo refinamento visual.
 
 ## Complemento de categorias — SPEC-055
 
-As nove categorias padrão são um catálogo determinístico, sem titular e sem alteração global. A migration 007 guarda apenas a visibilidade de cada padrão por titular; assim ocultar `Lazer` não afeta outro usuário nem remove futuras referências históricas. Categorias pessoais têm titular, nome cifrado, chave de busca HMAC composta pelo titular e nome normalizado, cor hexadecimal e estado ativo. O recorte atual não cria despesas: a regra de exatamente uma categoria será consumida pelas Specs de lançamentos, sem permitir remoção de categoria nesta unidade.
+As nove categorias padrão são um catálogo determinístico, sem titular e sem alteração global. A migration 007 guarda apenas a visibilidade de cada padrão por titular; assim ocultar `Lazer` não afeta outro usuário nem remove futuras referências históricas. Categorias pessoais têm titular, nome cifrado, chave de busca HMAC composta pelo titular e nome normalizado, cor hexadecimal e estado ativo. Este recorte não criava despesas; a regra de exatamente uma categoria foi aplicada depois pela SPEC-059 (migration 011), sem permitir remoção de categoria.
 
 ## 7. Extensão de conta: proposta de persistência e invariantes
 
@@ -154,7 +154,7 @@ As nove categorias padrão são um catálogo determinístico, sem titular e sem 
 | TokenAcaoConta | 0..N por usuário, digest, finalidade, expiração e consumo; confirmação/recuperação não compartilham token | RF-69, RF-70 |
 | Sessão técnica | 0..N por usuário; expiração/revogação e família de refresh no banco | RF-73, RF-71 |
 
-São propostas lógicas para migrations futuras, exceto a sessão técnica já existente. Senha permanece hash em infraestrutura; envio de e-mail é adaptador, não método de entidade com I/O. Consumo de token e alteração de credencial são atômicos. Exportação é filtrada pelo titular; exclusão revoga sessões/tokens e trata dados relacionados conforme OPEN-05. Diagramas históricos em `docs/uml` não representam migrations executadas; o diagrama específico de conta acompanha esta extensão.
+Foram propostas lógicas na época; hoje estão persistidas pelas migrations 003 a 006 (confirmação, sessões, preferências e recuperação). Senha permanece hash em infraestrutura; envio de e-mail é adaptador, não método de entidade com I/O. Consumo de token e alteração de credencial são atômicos. Exportação é filtrada pelo titular; exclusão revoga sessões/tokens e trata dados relacionados conforme OPEN-05. Diagramas históricos em `docs/uml` não representam migrations executadas; o diagrama específico de conta acompanha esta extensão.
 
 
 ### Contrato do motor implementado

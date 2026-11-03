@@ -1,7 +1,7 @@
 # Arquitetura — FinNova
 
 - **Status:** rascunho
-- **Última atualização:** 2026-10-18
+- **Última atualização:** 2026-11-03 (status, stack e pendências alinhados ao código; política de cache vencido alinhada à C-08)
 - **Decisões registradas:** `docs/07-arquitetura/adrs/` (ADR-001 a ADR-009)
 
 Este é o documento 2 do projeto: visão arquitetural, drivers, decisões técnicas, descrição da arquitetura e justificativas. O documento 1 (requisitos e modelagem) é formado por `docs/01-visao/`, `docs/02-personas/`, `docs/03-requisitos/`, `docs/04-casos-de-uso/` e `docs/05-modelo-de-dominio/modelo-de-dominio.md`.
@@ -40,7 +40,7 @@ Escolhas concretas em resposta aos drivers. **Critério para ADR: reversibilidad
 | DA-02 | Cálculos financeiros | Cálculo em funções puras na camada de domínio, com `Decimal` e taxa equivalente composta; testes unitários sem banco nem HTTP. | **ADR-002** — mover a regra de camada reescreve cálculo e testes. |
 | DA-03 | Simulação rápida e resiliente | Indicadores lidos apenas do cache local (`IndicadorOficial`), atualizado 1 vez por dia por rotina agendada. A simulação é síncrona (requisição e resposta), sem fila, porque o cálculo roda em memória e cabe no P95 de 3s. Na falha da fonte, usa o último valor com aviso. Provedores oficiais, agenda e contratos em ADR-009. | **ADR-003** e **ADR-009** — muda integração e dados. |
 | DA-04 | Dados da CVM | Apenas metadados e números estruturados; documento completo acessado por link oficial; expurgo automático após 12 meses. | **ADR-004** — muda armazenamento e política legal. |
-| DA-05 | Segurança de acesso | JWT assinado com sessão persistida e revogável no servidor; senha com hash e salt (Bcrypt ou Argon2); bloqueio das tentativas de login para o e-mail por 15 minutos após 5 falhas consecutivas e rate limit de 100 requisições por minuto por cliente; papel verificado no backend, na camada de aplicação, em toda rota administrativa. | **ADR-005** — trocar o mecanismo de sessão afeta todos os clientes e rotas. |
+| DA-05 | Segurança de acesso | JWT assinado com sessão persistida e revogável no servidor; senha com hash e salt (Argon2id, ADR-007); bloqueio das tentativas de login para o e-mail por 15 minutos após 5 falhas consecutivas e rate limit de 100 requisições por minuto por cliente; papel verificado no backend, na camada de aplicação, em toda rota administrativa. | **ADR-005** (sessão, renovação e logout substituídos pelo **ADR-007**) — trocar o mecanismo de sessão afeta todos os clientes e rotas. |
 | DA-06 | Posse dos dados | Negar por padrão: toda leitura e alteração de dado financeiro é filtrada pelo `usuario_id` do token dentro da própria consulta do repositório, nunca por verificação posterior. Categorias padrão (sem dono) são somente leitura. Exportação e exclusão completas por usuário. | **ADR-005** — mudar a política depois exige revisar todas as consultas. |
 | DA-07 | Regras em qualquer canal | A camada de domínio é o ponto único de validação das regras de negócio, alcançável pela API, pelos clientes e pelas rotinas. Pydantic valida apenas formato; nenhuma regra fica em router, schema ou trigger de banco. | Não — já coberta por ADR-001 e ADR-002. |
 | DA-08 | Saldo e dashboards imediatos | Saldo, renda total do mês (RB-05) e dashboards são calculados sob demanda a partir dos lançamentos, sem valores materializados; consultas de agregação apoiadas por índice em (`usuario_id`, `data`). Revisar se ultrapassar o P95 de 3s. | Não — materializar depois é uma otimização local, sem migrar os dados de origem. |
@@ -54,7 +54,7 @@ Escolhas concretas em resposta aos drivers. **Critério para ADR: reversibilidad
 
 | Estilo | Avaliação para o FinNova |
 |---|---|
-| **Monolítico modular em camadas (escolhido)** | Atende o backend único (RNF-05) com uma equipe de duas pessoas (Eric Toshio Goya e Arthur Sá) e um MVP curto; deploy e testes simples; baixa latência entre módulos. Custo: exige disciplina para não acoplar módulos, mitigada pela regra de dependência (seção 6) e pela divisão por abas. |
+| **Monolítico modular em camadas (escolhido)** | Atende o backend único (RNF-05) com equipe reduzida (projeto individual de Eric Toshio Goya, conforme `docs/combinados.md`; a estimativa original considerava duas pessoas) e um MVP curto; deploy e testes simples; baixa latência entre módulos. Custo: exige disciplina para não acoplar módulos, mitigada pela regra de dependência (seção 6) e pela divisão por abas. |
 | Microsserviços | Descartado: alto custo operacional e de distribuição de dados, sem necessidade de escalar módulos de forma independente no MVP (ADR-001). |
 | MVC | Não é alternativa ao estilo do backend: é um padrão da camada de apresentação. Os routers FastAPI fazem o papel de controller e os clientes React fazem o de view. |
 
@@ -91,7 +91,7 @@ flowchart LR
 | Cliente web | React + TypeScript + Vite | Interface desktop e responsiva; i18n e tema desde o início (RNF-19, RNF-20) |
 | Cliente mobile | React Native (Expo) | Interface mobile; modo offline com sincronização (RNF-22, pós-MVP) |
 | Backend | FastAPI + Pydantic + SQLAlchemy/Alembic | API REST `/api/v1`, regras de negócio, autenticação JWT e autorização por papel |
-| Rotinas agendadas | Executadas junto ao backend (tecnologia a definir) | Sincronizar indicadores (RF-23), sincronizar CVM (RF-30, RF-32) e expurgar dados com mais de 12 meses (RF-33) |
+| Rotinas agendadas | Tarefas no `lifespan` do FastAPI e execução manual por `python -m app.jobs.<rotina>` (ADR-009) | Sincronizar indicadores (RF-23), sincronizar CVM (RF-30, RF-32) e expurgar dados com mais de 12 meses (RF-33) |
 | Banco de dados | PostgreSQL | Persistência de dados do usuário, cache de indicadores e metadados da CVM |
 
 ### Stack e restrições técnicas
@@ -107,11 +107,11 @@ Fonte única das escolhas de tecnologia do projeto (antes na visão, seção 3).
 | Banco de dados | PostgreSQL |
 | Infra / deploy | Docker + GitHub Actions (CI/CD) + Railway/Render (ou AWS) |
 | Autenticação | JWT (access + refresh token) |
-| Testes | pytest + coverage (backend), Vitest/Jest (frontend); obrigatórios nas regras de cálculo financeiro |
+| Testes | pytest + coverage (backend), Playwright (frontend, E2E na CI) e `node --test` (mobile); obrigatórios nas regras de cálculo financeiro |
 | Documentação de API | OpenAPI/Swagger (gerado automaticamente pelo FastAPI) |
 | Versionamento de API | Prefixo de versão desde o início (ex.: `/api/v1`) |
-| Observabilidade | Logging estruturado + monitoramento de erros (ex.: Sentry) |
-| Notificações | Firebase Cloud Messaging (push) + serviço de e-mail transacional (ex.: SES/SendGrid) |
+| Observabilidade | Logging estruturado + monitoramento de erros (ex.: Sentry). Implementado: logs das rotinas de sincronização; serviço de monitoramento pendente (OPEN-32) |
+| Notificações | Firebase Cloud Messaging (push) + serviço de e-mail transacional (ex.: SES/SendGrid). Implementado: adaptador HTTPS neutro de provedor (SPEC-061); escolha do provedor em OPEN-17 |
 | Restrição | Backend único (FastAPI) atendendo web e mobile via API REST compartilhada |
 
 ---
@@ -140,7 +140,7 @@ tests/
 └── integration/      # API + banco
 ```
 
-Cada camada é subdividida pelos módulos da visão (conta e acesso, administração financeira, simulador etc.), o que permite adicionar um módulo novo sem alterar os existentes (RNF-06). A estrutura será confirmada no plano da primeira spec implementada.
+Cada camada é subdividida pelos módulos da visão (conta e acesso, administração financeira, simulador etc.), o que permite adicionar um módulo novo sem alterar os existentes (RNF-06). A árvore acima é a proposta original; a estrutura implementada é `backend/app/{domain,application,infrastructure,presentation}` e `backend/tests` (seções 12 e 13).
 
 ---
 
@@ -198,8 +198,8 @@ Containers Docker; pipeline de CI/CD no GitHub Actions; hospedagem em Railway ou
 
 | Tema | Impacto | Onde será registrado |
 |---|---|---|
-| Provedor de cotações de ações e FIIs | Bloqueia RF-24 | ADR futuro |
-| Tecnologia das rotinas agendadas | RF-23, RF-30, RF-33 | ADR futuro |
+| Provedor de cotações de ações e FIIs | RF-24 entregue pela SPEC-023 apenas com catálogo local versionado (PETR4 e MXRF11, validade de 24h); a defasagem de 15 minutos do RNF-09 exige provedor real | ADR futuro |
+| Tecnologia das rotinas agendadas | Decidida: `lifespan` do FastAPI e execução por linha de comando; agendador externo adiado até a hospedagem (OPEN-32) | ADR-009 |
 | Política técnica de sessão implementada | Access de 15min, refresh rotativo, sessão absoluta de 7 dias; revisão formal pendente | ADR-007; OPEN-01 |
 | Política de arredondamento do motor | 50 dígitos Decimal, HALF_UP somente no consumo; adotada tecnicamente na SPEC-002 | ADR-002, OPEN-03 |
 | Prazo de retenção das chaves de idempotência | DA-10 | Plano da spec do RF-09 |
@@ -208,19 +208,19 @@ Containers Docker; pipeline de CI/CD no GitHub Actions; hospedagem em Railway ou
 
 ## Manutenção da conta e serviços complementares
 
-RF-68 a RF-74 usam a mesma API/camadas e PostgreSQL. Envio transacional de e-mail é adaptador externo com fila/outbox persistida, retentativas limitadas e chave idempotente; falha de entrega não confirma endereço nem altera senha. Tokens temporários são aleatórios, vinculados à finalidade/titular, guardados como digest, expiram e são consumidos atomicamente uma única vez. Confirmação: 24h; recuperação: 30min; reenvio: mínimo 60s. A confirmação de e-mail foi implementada pela SPEC-015; recuperação, alteração, preferências e operação de entrega continuam pendentes.
+RF-68 a RF-74 usam a mesma API/camadas e PostgreSQL. Envio transacional de e-mail é adaptador externo com fila/outbox persistida, retentativas limitadas e chave idempotente; falha de entrega não confirma endereço nem altera senha. Tokens temporários são aleatórios, vinculados à finalidade/titular, guardados como digest, expiram e são consumidos atomicamente uma única vez. Confirmação: 24h; recuperação: 30min; reenvio: mínimo 60s. A confirmação de e-mail foi implementada pela SPEC-015, perfil e preferências pela SPEC-014, recuperação e alteração de senha pela SPEC-016 e sessões pela SPEC-017; a operação de entrega (provedor de e-mail) continua pendente (OPEN-17).
 
-Recuperação/alteração de senha revoga todas as sessões. Alteração do e-mail exige reautenticação e confirmação antes de substituir o atual; preferências e sessões são filtradas pelo titular no servidor. Fluxos financeiros exigirão e-mail verificado; login atual ainda aceita contas sem confirmação. Provedor, credenciais e configuração operacional estão em OPEN-17. Backups exigem restauração isolada e aplicação das exclusões antes de disponibilizar dados recuperados (OPEN-05).
+Recuperação/alteração de senha revoga todas as sessões. Alteração do e-mail exige reautenticação e confirmação antes de substituir o atual; preferências e sessões são filtradas pelo titular no servidor. Fluxos financeiros exigem e-mail verificado (erro `email_not_verified`); o login aceita contas sem confirmação. Provedor, credenciais e configuração operacional estão em OPEN-17. Backups exigem restauração isolada e aplicação das exclusões antes de disponibilizar dados recuperados (OPEN-05).
 
 ## 12. Reconciliação e extensão de conta — 2026-10-22
 
 Os drivers DA-01 a DA-11 da main foram preservados. Nesta consolidação, o ADR de implementação antes também chamado ADR-005 passa a [ADR-007](adrs/ADR-007-autenticacao-spec001.md); o ADR-005 anterior permanece histórico. Prevalece para a sessão entregue o contrato do ADR-007: Argon2id, JWT de 15 minutos validado contra sessão PostgreSQL, refresh opaco rotacionado e logout revogável. A alternativa sem estado nas seções anteriores está substituída. O bloqueio por conta de RF-02 foi implementado separadamente do rate limit, conforme complemento do ADR-007 em 2026-10-23.
 
-A implementação usa `backend/app` e `frontend`, não a árvore `src/finnova` proposta acima. OpenAPI documenta somente operações existentes; web responsiva está disponível, Expo permanece planejado. As referências de fluxo atuais são UC-08 para cálculo, UC-09 para renda fixa e UC-06 para despesa; números antigos das seções anteriores são históricos. SPEC-002 é motor puro, sem infraestrutura de cache ou UI.
+A implementação usa `backend/app` e `frontend`, não a árvore `src/finnova` proposta acima. OpenAPI documenta somente operações existentes; web responsiva está disponível; o cliente Expo mínimo foi entregue em `mobile/` (seção 13). As referências de fluxo atuais são UC-08 para cálculo, UC-09 para renda fixa e UC-06 para despesa; números antigos das seções anteriores são históricos. SPEC-002 é motor puro, sem infraestrutura de cache ou UI.
 
 RF-68 a RF-73 exigem aplicação de conta e adaptador de e-mail transacional, tokens com digest/finalidade/expiração, consumo atômico e migrations. A SPEC-015 oferece adaptador HTTPS configurável, mas nenhum provedor, remetente ou domínio foi configurado. Filas/retries não podem duplicar consumo nem revelar existência de conta. Preferências devem persistir por titular. Recuperação/troca de senha e exclusão revogam todas as sessões. Exportação usa armazenamento temporário com autorização e expiração. Retenção/backups em OPEN-05 e configuração de e-mail em OPEN-17.
 
-RF-23 usa cache somente dentro de sua validade; ausência/vencimento exige erro de taxa oficial ou hipótese manual explícita. Não incorporar resultado simulado ao patrimônio real. A previsão de infraestrutura e os diagramas não comprovam implementação financeira.
+RF-23 usa o cache local: dentro de 24h o valor é atual; após 24h ou na falha da fonte, o último valor é usado com aviso de defasagem (C-08, ADR-003 revisado em 2026-11-03); somente a ausência de valor exige erro de taxa oficial ou hipótese manual explícita. Não incorporar resultado simulado ao patrimônio real. A previsão de infraestrutura e os diagramas não comprovam implementação financeira.
 
 
 ## Reconciliação da implementação de identidade
