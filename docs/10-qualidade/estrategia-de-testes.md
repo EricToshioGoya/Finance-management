@@ -1,7 +1,7 @@
 # Estratégia de Testes e Qualidade — FinNova
 
 - **Status:** rascunho
-- **Última atualização:** 2026-10-19
+- **Última atualização:** 2026-11-07
 - **Modelo de qualidade:** `docs/10-qualidade/modelo-de-qualidade.md` (características ISO, métricas e custo do defeito)
 
 ---
@@ -19,11 +19,14 @@ A maior parte dos testes fica na base, onde são rápidos e baratos; quanto mais
 
 | Nível | Proporção | Alvo | Ferramenta | Quando roda |
 |---|---|---|---|---|
-| Unitário (base) | Maioria dos testes | Domínio puro: entidades, regras de negócio e motores de cálculo | pytest + pytest-cov | Todo commit e PR |
+| Unitário (base) | Maioria dos testes | Domínio puro: entidades, regras de negócio e motores de cálculo | pytest + pytest-cov, sem banco (`backend/tests/unit`) | Todo commit e PR; gate de cobertura ≥ 80% do domínio |
 | Integração | Menos que unitários | API + banco: endpoints, persistência, autenticação, autorização, posse dos dados, idempotência e fuso | pytest + cliente HTTP do FastAPI + PostgreSQL em Docker | Todo PR |
 | Frontend | Por fluxo de interface | Navegação, formulários, acessibilidade (axe WCAG AA) e layout responsivo | Playwright + @axe-core/playwright | Local com API HTTPS; CI executa lint e build |
-| Ponta a ponta (topo) | Poucos, só o fluxo principal | Cadastro → login → despesa → simulação | A definir | Antes da entrega final |
-| Desempenho | Cenários do RNF-04 | P95 < 3s em simulações e dashboards | Locust (proposta) | Antes da entrega final e quando o fluxo central mudar |
+| Ponta a ponta (topo) | Poucos, só o fluxo principal | Cadastro → login → sessão → logout e fluxos de interface das Specs | Playwright contra API HTTPS e PostgreSQL (job `e2e`) | Todo PR |
+| Desempenho | Cenários do RNF-04 | P95 < 3s em simulações e dashboards | `scripts/carga.py` | Antes da entrega final e quando o fluxo central mudar |
+| Recuperação | RNF-14 | Backup restaurado em banco isolado com as mesmas linhas da origem | `scripts/backup.sh` e `scripts/verificar-restauracao.sh` | Antes da entrega final e quando houver migration |
+
+**Distribuição atual (2026-11-07):** 196 casos unitários (36%) e 352 de integração no backend, 12 testes Playwright e 9 testes do mobile. Antes desta revisão eram 118 unitários (26%). A integração ainda é maioria porque grande parte das regras está na camada de aplicação (`application/auth.py`); mover regras para `app/domain` é o caminho para inverter a proporção (ver seção 11).
 
 **Anti-padrão evitado — "casquinha de sorvete":** muitos testes manuais ou de interface e poucos unitários. Uma regra de negócio é testada no nível unitário; os testes de ponta a ponta só confirmam que as partes se conectam.
 
@@ -49,7 +52,7 @@ Aprendizados de falhas reais aplicados ao FinNova:
 |---|---|---|---|
 | Isolamento entre usuários | Usuário ver dados de outra conta | Para cada endpoint com dado financeiro, o usuário B tenta ler, alterar e excluir um recurso do usuário A e recebe "não encontrado", sem dado algum | DA-06, ADR-005, RNF-02 |
 | Autorização por papel | Usuário comum acessar rota administrativa | Toda rota `/api/v1/admin/*` recusa um usuário sem papel de administrador | DA-05, RNF-21 |
-| Idempotência | Lançamento duplicado por clique duplo ou reenvio | Duas criações com a mesma chave de idempotência geram um único lançamento e a mesma resposta | DA-10, RNF-24 |
+| Idempotência | Lançamento duplicado por clique duplo ou reenvio | Duas criações com a mesma chave, em sequência e em paralelo (barreira de threads), geram um único lançamento e a mesma resposta | DA-10, RNF-24 |
 | Fuso e virada de período | Despesa no mês errado; bloqueio liberado antes da hora | Relógio congelado em 31/10 às 23h30 (horário de Brasília), que já é 1/11 em UTC: a despesa conta em outubro; bloqueio e expiração respeitam a janela em UTC | DA-11, RNF-25, ADR-006 |
 | Fonte externa indisponível | Simulação com taxa zerada ou erro | Com a fonte simulada fora do ar, a simulação usa o último valor com aviso | RF-23, ADR-003 |
 
@@ -59,7 +62,7 @@ Nenhum teste automatizado chama serviço externo real (`CLAUDE.md` C-17).
 
 | Integração | Dublê nos testes |
 |---|---|
-| API SGS (Banco Central) e Tesouro Transparente | Respostas gravadas e respostas de erro simuladas no cliente HTTP (proposta: respx) |
+| API SGS (Banco Central) e Tesouro Transparente | Transporte injetável falso (`FakeTransport`) com respostas no formato das fontes e erros simulados |
 | Dados Abertos da CVM | Arquivos CSV de exemplo versionados em `tests/` |
 | Push (FCM) e e-mail transacional | Implementação falsa que registra as mensagens, verificada pelo teste |
 | Relógio | Relógio injetado e congelado no teste (ADR-006) |
@@ -76,7 +79,7 @@ Nenhum teste automatizado chama serviço externo real (`CLAUDE.md` C-17).
 |---|---|
 | Lint | Sem erros: `ruff check` e `ruff format --check` no backend; `tsc --noEmit` e ESLint no frontend (CI) |
 | Testes | 100% passando, incluindo as suítes da seção 4 |
-| Cobertura | ≥ 80% no pacote de domínio de cálculo financeiro (RNF-07) |
+| Cobertura | ≥ 80% de `app/domain` só com testes unitários sem banco (RNF-07) e ≥ 90% do backend com a suíte completa |
 | Segurança | Sem vulnerabilidade alta nas dependências (`docs/09-seguranca/seguranca-ssdlc.md`) |
 
 ## 8. Definição de pronto
@@ -105,6 +108,8 @@ O código gerado por agente segue as mesmas regras, com atenção redobrada a:
 ## 11. Questões em aberto
 
 - **Carga do teste de desempenho:** o RNF-04 define o P95, mas não o número de usuários simultâneos a simular.
+- **Proporção da pirâmide:** `application/auth.py` (cerca de 3.000 linhas) concentra regras testáveis só com banco. A extração para `app/domain` exige PRs de refatoração próprios (seção 10) e ainda não foi planejada.
+- **`npm audit` do mobile:** continua não bloqueante; as vulnerabilidades altas e críticas estão no ferramental do Expo SDK.
 
 ## Situação atual (2026-10-31)
 
@@ -113,3 +118,13 @@ O código gerado por agente segue as mesmas regras, com atenção redobrada a:
 - CI: `.github/workflows/ci.yml` executa backend, frontend, mobile, segurança (Bandit, `pip-audit`, `npm audit`), E2E Playwright com API HTTPS e PostgreSQL, e verificador documental em cada PR.
 - Carga (RNF-04): `scripts/carga.py` mede o P95 de simulação e dashboard; evidência em [`docs/09-qualidade/evidencias/rnf04-carga-2026-10-31.md`](../09-qualidade/evidencias/rnf04-carga-2026-10-31.md) (P95 ≤ 0,57 s).
 - Pendente: restauração de backup (RNF-14) e medição em ambiente de produção (OPEN-32).
+
+## Situação atual (2026-11-07)
+
+Revisão contra o material de Qualidade de Software (ISO/IEC 9126/25010, custo do defeito, pirâmide de testes e casos reais):
+
+- **Concorrência (caso de checkout duplicado):** novo teste com dois envios simultâneos da mesma `Idempotency-Key` revelou que a despesa respondia 503 no segundo envio; corrigido para devolver o registro gravado (SPEC-059).
+- **Observabilidade:** cabeçalho `X-Request-ID`, log JSON por requisição e 500 genérico com pilha registrada, sem senha, token ou e-mail (SPEC-060-R07 a R09).
+- **Recuperação:** procedimento de backup e restauração verificado localmente ([evidência](../09-qualidade/evidencias/rnf14-restauracao-2026-11-07.md)).
+- **Pirâmide:** testes unitários para `cartao`, `market_metrics`, `foreign_currency`, `education`, `identity` e `expansion`; gate de cobertura unitária do domínio na CI.
+- **Processo:** template de PR (checklist e declaração de IA, C-13) e template de defeito com a fase em que foi encontrado.

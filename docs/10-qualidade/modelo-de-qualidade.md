@@ -1,7 +1,7 @@
 # Modelo de Qualidade — FinNova
 
 - **Status:** rascunho
-- **Última atualização:** 2026-10-19
+- **Última atualização:** 2026-11-07
 - **Referência:** ISO/IEC 9126, substituída pela ISO/IEC 25010 (norma de referência, não de certificação)
 
 Mapeia as características de qualidade da norma para os requisitos do FinNova e para a forma de verificação. Serve para mostrar o que já está coberto, o que é lacuna aceita e como cada característica será medida. A execução dos testes está em `estrategia-de-testes.md`.
@@ -17,21 +17,21 @@ Mapeia as características de qualidade da norma para os requisitos do FinNova e
 | | Interoperabilidade | RF-23 (SGS e Tesouro), RF-30 e RF-32 (CVM), RNF-15 (OpenAPI) | Testes de integração com dublês das fontes externas (estratégia, seção 5) |
 | | Segurança de acesso | RNF-01, RNF-13, RNF-21, ADR-005 (DA-05, DA-06) | Suíte de isolamento entre usuários e de autorização por papel; análise estática de segurança |
 | | Conformidade | RNF-02 (LGPD), RB-12 (CVM) | Testes de exportação e exclusão (RF-05, RF-50); checklist de segurança no PR |
-| **Confiabilidade** | Maturidade | Sem requisito no MVP | Acompanhar erros não tratados em produção (RNF-12) a partir da implantação |
-| | Tolerância a falhas | RF-23 (último valor com aviso), ADR-003, RNF-24 (idempotência), RNF-22 (offline) | Testes com fonte externa indisponível e com reenvio do mesmo lançamento |
-| | Recuperabilidade | RNF-14 (backup com RPO de 24h e RTO de 4h) | Teste de restauração do backup antes da entrega |
+| **Confiabilidade** | Maturidade | RNF-12, SPEC-060-R08 | Erro não tratado é registrado em log JSON com request id e pilha; a contagem em produção depende do serviço de monitoramento (OPEN-32) |
+| | Tolerância a falhas | RF-23 (último valor com aviso), ADR-003, RNF-24 (idempotência), RNF-22 (offline) | Testes com fonte externa indisponível, com reenvio do mesmo lançamento e com dois envios simultâneos da mesma chave (`test_rnf24_concorrencia_idempotencia.py`) |
+| | Recuperabilidade | RNF-14 (backup com RPO de 24h e RTO de 4h) | `scripts/backup.sh` e `scripts/verificar-restauracao.sh` (restauração isolada com comparação de linhas); [evidência local](../09-qualidade/evidencias/rnf14-restauracao-2026-11-07.md) |
 | | Consistência temporal | RNF-25, ADR-006 (UTC e America/Sao_Paulo) | Testes com relógio congelado em virada de mês e de dia |
 | **Usabilidade** | Inteligibilidade | RF-43, RF-44 (conteúdo e ajuda contextual) | Revisão com as personas (`docs/02-personas/personas.md`) |
 | | Apreensibilidade | RF-04 (onboarding) | Revisão com as personas |
 | | Operacionalidade | RNF-03 (lançamento em até 3 passos) | Teste ponta a ponta do registro de despesa |
 | | Atratividade | RNF-19 (tema claro e escuro) | Revisão visual |
-| | Conformidade | RNF-11 (WCAG 2.1 AA), RNF-20 (i18n) | Verificação automática de acessibilidade no frontend (ferramenta a definir) |
+| | Conformidade | RNF-11 (WCAG 2.1 AA), RNF-20 (i18n) | `@axe-core/playwright` (WCAG 2.1 AA) nos testes Playwright do job `e2e` da CI |
 | **Eficiência** | Comportamento em relação ao tempo | RNF-04 (P95 < 3s), RNF-09 (defasagem de 24h) | Teste de desempenho (estratégia, seção 2) |
 | | Utilização de recursos | Sem requisito no MVP | Avaliar com dados de monitoramento quando houver ambiente de produção |
-| **Manutenibilidade** | Analisabilidade | RNF-12 (logs estruturados), ADRs | Revisão de PR e logs com identificação da requisição |
+| **Manutenibilidade** | Analisabilidade | RNF-12 (logs estruturados), ADRs | Logs JSON com cabeçalho `X-Request-ID` (SPEC-060-R07 a R09); template de defeito pede o request id como evidência |
 | | Modificabilidade | RNF-06, ADR-001 (módulos por aba) | Regra de dependência entre camadas verificada na revisão |
 | | Estabilidade | RNF-16 (CI bloqueia merge) | Suíte de regressão completa em todo PR |
-| | Testabilidade | RNF-07, ADR-002 (domínio puro) | Cobertura ≥ 80% no domínio de cálculo; testes unitários sem banco |
+| | Testabilidade | RNF-07, ADR-002 (domínio puro) | CI exige cobertura ≥ 80% de `app/domain` só com testes unitários executados sem banco (atual: 98,9%) |
 | **Portabilidade** | Adaptabilidade | RNF-05 (mesmo backend para web e mobile) | Testes de integração da API, independentes do cliente |
 | | Capacidade de instalação | Stack com Docker (`arquitetura.md`, seção 5) | Subir o ambiente do zero a partir do README |
 | | Coexistência e capacidade de substituir | Sem requisito no MVP | Não se aplica |
@@ -40,7 +40,8 @@ Mapeia as características de qualidade da norma para os requisitos do FinNova e
 
 ### Lacunas registradas
 
-- **Maturidade** e **Utilização de recursos** não têm requisito mensurável no MVP; serão avaliadas com dados reais após a implantação.
+- **Maturidade** e **Utilização de recursos** não têm medição em produção: os logs estruturados existem, mas o serviço de monitoramento e os alertas dependem do ambiente de produção (OPEN-32).
+- **Recuperabilidade** tem procedimento verificado apenas localmente; o agendamento diário (RPO de 24 h) depende do ambiente de produção (OPEN-32).
 - **Coexistência** e **Capacidade de substituir** não se aplicam ao escopo atual.
 
 ---
@@ -65,8 +66,8 @@ Por isso o FinNova concentra a prevenção nas primeiras fases: requisitos em EA
 | Métrica | Meta | Fonte | Origem |
 |---|---|---|---|
 | Testes passando | 100% em todo PR | CI | RNF-16 |
-| Cobertura do domínio de cálculo | ≥ 80% | pytest-cov | RNF-07 |
+| Cobertura do domínio de cálculo | ≥ 80% só com testes unitários (gate da CI) e ≥ 90% do backend inteiro | pytest-cov | RNF-07 |
 | Cláusulas `SHALL` com teste | 100% das cláusulas implementadas | Revisão do PR | `CLAUDE.md` C-02 |
 | Tempo de resposta de simulações e dashboards | P95 < 3s | Teste de desempenho | RNF-04 |
-| Defeitos por fase | Registrar a fase em que cada defeito foi encontrado | Issues com o rótulo `bug` e a fase | Custo do defeito (seção 2) |
+| Defeitos por fase | Registrar a fase em que cada defeito foi encontrado | Template `.github/ISSUE_TEMPLATE/bug.md` (rótulo `bug` e campo de fase) | Custo do defeito (seção 2) |
 | Disponibilidade | ≥ 99,5% no mês | Monitoramento após a implantação | RNF-08 |
