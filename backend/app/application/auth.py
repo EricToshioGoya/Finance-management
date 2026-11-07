@@ -1428,7 +1428,26 @@ class AuthService:
         """A derived export view; it never becomes an authoritative balance."""
         if self.db.get(UserRecord, user_id) is None:
             raise AuthError("invalid_session")
-        entries: list[dict[str, object]] = []
+        entries = [
+            *self._expense_entries(user_id, start, end),
+            *self._one_time_income_entries(user_id, start, end),
+            *self._recurring_income_entries(user_id, start, end),
+            *self._bonus_entries(user_id, start, end),
+        ]
+        return sorted(entries, key=lambda item: (item["date"], item["type"], item["description"]))
+
+    def _statement_entry(
+        self, occurred_on: date, kind: str, record, category: str, amount: Decimal
+    ) -> dict[str, object]:
+        return {
+            "date": occurred_on,
+            "type": kind,
+            "description": self.security.decrypt(record.description_encrypted),
+            "category": category,
+            "amount": amount,
+        }
+
+    def _expense_entries(self, user_id: uuid.UUID, start: date, end: date):
         for record in self.db.scalars(
             select(ExpenseRecord).where(ExpenseRecord.user_id == user_id)
         ):
@@ -1440,15 +1459,11 @@ class AuthService:
                 ]
             for occurred_on in dates:
                 if start <= occurred_on <= end:
-                    entries.append(
-                        {
-                            "date": occurred_on,
-                            "type": "despesa",
-                            "description": self.security.decrypt(record.description_encrypted),
-                            "category": record.category_key,
-                            "amount": -record.amount,
-                        }
+                    yield self._statement_entry(
+                        occurred_on, "despesa", record, record.category_key, -record.amount
                     )
+
+    def _one_time_income_entries(self, user_id: uuid.UUID, start: date, end: date):
         for record in self.db.scalars(
             select(OneTimeIncomeRecord).where(
                 OneTimeIncomeRecord.user_id == user_id,
@@ -1456,43 +1471,28 @@ class AuthService:
                 OneTimeIncomeRecord.occurred_on <= end,
             )
         ):
-            entries.append(
-                {
-                    "date": record.occurred_on,
-                    "type": "receita",
-                    "description": self.security.decrypt(record.description_encrypted),
-                    "category": "receita",
-                    "amount": record.amount,
-                }
+            yield self._statement_entry(
+                record.occurred_on, "receita", record, "receita", record.amount
             )
+
+    def _recurring_income_entries(self, user_id: uuid.UUID, start: date, end: date):
         for record in self.db.scalars(
             select(RecurringIncomeRecord).where(RecurringIncomeRecord.user_id == user_id)
         ):
             for month in self._month_starts(max(start, record.starts_on), end):
                 occurred_on = month.replace(day=min(record.starts_on.day, 28))
-                entries.append(
-                    {
-                        "date": occurred_on,
-                        "type": "receita",
-                        "description": self.security.decrypt(record.description_encrypted),
-                        "category": "receita recorrente",
-                        "amount": record.amount,
-                    }
+                yield self._statement_entry(
+                    occurred_on, "receita", record, "receita recorrente", record.amount
                 )
+
+    def _bonus_entries(self, user_id: uuid.UUID, start: date, end: date):
         for record in self.db.scalars(select(BonusRecord).where(BonusRecord.user_id == user_id)):
             for month in self._month_starts(max(start, record.starts_on), end):
                 if record.periodicity == "monthly" or record.reference_month == month.month:
                     occurred_on = month.replace(day=min(record.starts_on.day, 28))
-                    entries.append(
-                        {
-                            "date": occurred_on,
-                            "type": "receita",
-                            "description": self.security.decrypt(record.description_encrypted),
-                            "category": "bônus",
-                            "amount": record.amount,
-                        }
+                    yield self._statement_entry(
+                        occurred_on, "receita", record, "bônus", record.amount
                     )
-        return sorted(entries, key=lambda item: (item["date"], item["type"], item["description"]))
 
     @staticmethod
     def month_bounds(competence: date) -> tuple[date, date]:

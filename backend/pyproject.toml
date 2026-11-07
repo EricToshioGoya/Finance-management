@@ -21,4 +21,8 @@ target-version = "py312"
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B"]
+# C90/PLR09: complexidade e tamanho de função (dívida técnica, docs/10-qualidade/divida-tecnica.md).
+select = ["E", "F", "I", "UP", "B", "C90", "SIM", "PLR0912", "PLR0915"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
