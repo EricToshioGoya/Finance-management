@@ -1,5 +1,6 @@
 # ruff: noqa
 import asyncio
+import logging
 import sqlite3
 import time
 import uuid
@@ -59,6 +60,7 @@ from app.infrastructure.email_delivery import (
     UnconfiguredEmailConfirmationDelivery,
     WebhookEmailConfirmationDelivery,
 )
+from app.infrastructure.observabilidade import REQUEST_ID_HEADER, configurar_logs, request_id
 from app.infrastructure.models import (
     NotificationDeliveryRecord,
     PushDeviceRecord,
@@ -245,6 +247,12 @@ RATE_LIMITED_PREFIXES = (
 bearer = HTTPBearer(auto_error=False)
 
 
+def route_path(request: Request) -> str:
+    """Rota declarada (ex.: /expenses/{expense_id}); evita registrar valores da URL."""
+    route = request.scope.get("route")
+    return getattr(route, "path", request.url.path)
+
+
 def create_app(
     settings: Settings | None = None, email_delivery: EmailConfirmationDelivery | None = None
 ) -> FastAPI:
@@ -252,6 +260,7 @@ def create_app(
     engine = create_engine(settings.database_url.get_secret_value(), pool_pre_ping=True)
     sessions = sessionmaker(engine, expire_on_commit=False)
     security = Security(settings.data_key.get_secret_value())
+    access_log = configurar_logs().getChild("http")
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -512,6 +521,44 @@ def create_app(
             "default-src 'self'; script-src 'self'; style-src 'self'; "
             "img-src 'self' data:; connect-src 'self'; object-src 'none'; "
             "frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        )
+        return response
+
+    # Registrado por último: envolve as proteções e registra também as recusas (RNF-12).
+    @app.middleware("http")
+    async def observability(request: Request, call_next):
+        rid = request_id(request.headers.get(REQUEST_ID_HEADER))
+        start = time.perf_counter()
+        try:
+            response = await call_next(request)
+        except Exception as error:
+            # SPEC-060-R08: erro não tratado vira 500 genérico e é registrado com a pilha.
+            access_log.error(
+                "unhandled_error",
+                exc_info=error,
+                extra={
+                    "request_id": rid,
+                    "method": request.method,
+                    "path": route_path(request),
+                    "status": 500,
+                    "error_type": type(error).__name__,
+                },
+            )
+            response = JSONResponse(
+                {"detail": "internal_error", "request_id": rid}, status_code=500
+            )
+            response.headers["Cache-Control"] = "no-store"
+        response.headers[REQUEST_ID_HEADER] = rid
+        access_log.log(
+            logging.WARNING if response.status_code >= 500 else logging.INFO,
+            "request",
+            extra={
+                "request_id": rid,
+                "method": request.method,
+                "path": route_path(request),
+                "status": response.status_code,
+                "duration_ms": round((time.perf_counter() - start) * 1000, 1),
+            },
         )
         return response
 
