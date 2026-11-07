@@ -117,6 +117,8 @@ def comparar_previdencia(
         aliquota_progressiva is None or not Decimal("0") <= aliquota_progressiva <= Decimal("27.5")
     ):
         raise ErroCalculo("aliquota_progressiva", "aliquota_progressiva_obrigatoria")
+    # Validado acima: só é usada no regime progressivo, em que não é None.
+    progressiva = aliquota_progressiva if aliquota_progressiva is not None else Decimal("0")
     taxa_mensal = converter_taxa(taxa_anual, "anual", "mensal") / HUNDRED  # C-04
     # Cada aporte é uma "parcela" com o próprio tempo de acumulação (aporte no fim do mês).
     parcelas = [(valor_inicial, prazo_meses)] if valor_inicial > 0 else []
@@ -134,7 +136,7 @@ def comparar_previdencia(
                 aliquota = (
                     aliquota_previdencia_regressiva(meses)
                     if regime == "regressive"
-                    else aliquota_progressiva
+                    else progressiva
                 )
                 # PGBL tributa o valor total resgatado; VGBL apenas o rendimento.
                 base = final if modalidade == "pgbl" else rendimento
