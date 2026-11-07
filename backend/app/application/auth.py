@@ -359,6 +359,29 @@ class AuthService:
         self.db.add(AuditLogRecord(user_id=user_id, action=action, occurred_at=self.clock()))
         self.db.commit()
 
+    def _commit_or_conflict(self, code: str) -> None:
+        """Grava; violação de unicidade vira 409 com o código informado."""
+        try:
+            self.db.commit()
+        except IntegrityError as exc:
+            self.db.rollback()
+            raise AuthError(code, 409) from exc
+
+    def _commit_or_existing(self, model, **filters):
+        """Grava; em conflito de unicidade (envio paralelo, RNF-24) devolve o registro já gravado.
+
+        Retorna None quando a gravação ocorreu; o registro existente quando houve conflito.
+        """
+        try:
+            self.db.commit()
+        except IntegrityError:
+            self.db.rollback()
+            existing = self.db.scalar(select(model).filter_by(**filters))
+            if existing is None:
+                raise
+            return existing
+        return None
+
     def register(self, name: str, email: str, password: str) -> User:
         email = normalize_email(email)
         lookup = self.security.lookup(email)
@@ -376,11 +399,7 @@ class AuthService:
             role="usuario",
         )
         self.db.add(record)
-        try:
-            self.db.commit()
-        except IntegrityError as exc:
-            self.db.rollback()
-            raise AuthError("email_exists", 409) from exc
+        self._commit_or_conflict("email_exists")
         return self.public_user(record)
 
     def request_email_confirmation(self, user_id: uuid.UUID) -> None:
@@ -470,11 +489,7 @@ class AuthService:
         user.email_verified_at = now
         if self.is_initial_admin(user):
             user.role = "administrador"
-        try:
-            self.db.commit()
-        except IntegrityError as exc:
-            self.db.rollback()
-            raise AuthError("email_exists", 409) from exc
+        self._commit_or_conflict("email_exists")
         return True
 
     def update_profile(
@@ -541,11 +556,7 @@ class AuthService:
                     expires_at=now + timedelta(hours=24),
                 )
             )
-        try:
-            self.db.commit()
-        except IntegrityError as exc:
-            self.db.rollback()
-            raise AuthError("email_exists", 409) from exc
+        self._commit_or_conflict("email_exists")
         return self.profile(user_id)
 
     def update_preferences(
@@ -897,11 +908,7 @@ class AuthService:
             color=color.upper(),
         )
         self.db.add(record)
-        try:
-            self.db.commit()
-        except IntegrityError as exc:
-            self.db.rollback()
-            raise AuthError("category_exists", 409) from exc
+        self._commit_or_conflict("category_exists")
         return {
             "key": f"personal:{record.id}",
             "name": name,
@@ -1090,18 +1097,10 @@ class AuthService:
             idempotency_key=idempotency_key,
         )
         self.db.add(record)
-        try:
-            self.db.commit()
-        except IntegrityError:
-            self.db.rollback()
-            existing = self.db.scalar(
-                select(RecurringIncomeRecord).where(
-                    RecurringIncomeRecord.user_id == user_id,
-                    RecurringIncomeRecord.idempotency_key == idempotency_key,
-                )
-            )
-            if existing is None:
-                raise
+        existing = self._commit_or_existing(
+            RecurringIncomeRecord, user_id=user_id, idempotency_key=idempotency_key
+        )
+        if existing is not None:
             return self.recurring_income_output(existing)
         return self.recurring_income_output(record)
 
@@ -1190,18 +1189,10 @@ class AuthService:
             idempotency_key=idempotency_key,
         )
         self.db.add(record)
-        try:
-            self.db.commit()
-        except IntegrityError:
-            self.db.rollback()
-            existing = self.db.scalar(
-                select(OneTimeIncomeRecord).where(
-                    OneTimeIncomeRecord.user_id == user_id,
-                    OneTimeIncomeRecord.idempotency_key == idempotency_key,
-                )
-            )
-            if existing is None:
-                raise
+        existing = self._commit_or_existing(
+            OneTimeIncomeRecord, user_id=user_id, idempotency_key=idempotency_key
+        )
+        if existing is not None:
             return self.one_time_income_output(existing)
         return self.one_time_income_output(record)
 
@@ -1285,17 +1276,10 @@ class AuthService:
             idempotency_key=idempotency_key,
         )
         self.db.add(record)
-        try:
-            self.db.commit()
-        except IntegrityError:
-            self.db.rollback()
-            existing = self.db.scalar(
-                select(BonusRecord).where(
-                    BonusRecord.user_id == user_id, BonusRecord.idempotency_key == idempotency_key
-                )
-            )
-            if existing is None:
-                raise
+        existing = self._commit_or_existing(
+            BonusRecord, user_id=user_id, idempotency_key=idempotency_key
+        )
+        if existing is not None:
             return self.bonus_output(existing)
         return self.bonus_output(record)
 
@@ -2265,18 +2249,10 @@ class AuthService:
             request_digest=digest,
         )
         self.db.add(record)
-        try:
-            self.db.commit()
-        except IntegrityError:
-            self.db.rollback()
-            existing = self.db.scalar(
-                select(ConfirmedFinancingRecord).where(
-                    ConfirmedFinancingRecord.user_id == user_id,
-                    ConfirmedFinancingRecord.idempotency_key == idempotency_key,
-                )
-            )
-            if existing is None:
-                raise
+        existing = self._commit_or_existing(
+            ConfirmedFinancingRecord, user_id=user_id, idempotency_key=idempotency_key
+        )
+        if existing is not None:
             if existing.request_digest != digest:
                 raise AuthError("financing_idempotency_conflict", 409) from None
             return self.confirmed_financing_output(existing)
@@ -2663,19 +2639,10 @@ class AuthService:
             for index, amount in enumerate(amounts)
         ]
         self.db.add_all(records)
-        try:
-            self.db.commit()
-        except IntegrityError:
-            # Envio paralelo com a mesma chave (RNF-24): devolve o registro já gravado.
-            self.db.rollback()
-            existing = self.db.scalar(
-                select(ExpenseRecord).where(
-                    ExpenseRecord.user_id == user_id,
-                    ExpenseRecord.idempotency_key == idempotency_key,
-                )
-            )
-            if existing is None:
-                raise
+        existing = self._commit_or_existing(
+            ExpenseRecord, user_id=user_id, idempotency_key=idempotency_key
+        )
+        if existing is not None:
             return self.expense_output(existing)
         return self.expense_output(records[0])
 
