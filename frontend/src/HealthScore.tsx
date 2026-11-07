@@ -137,7 +137,7 @@ export function HealthScore({ token, lang }: { token: string; lang: 'pt' | 'en' 
     {score && !loading && <>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'center' }}>
         <div style={{ display: 'grid', placeItems: 'center', width: 176, height: 176,
-          borderRadius: '50%', background: `conic-gradient(#17816e ${scoreNumber}%, #b7c2cc 0)` }}>
+          borderRadius: '50%', background: `conic-gradient(var(--primary) ${scoreNumber}%, var(--border) 0)` }}>
           <div style={{ background: 'var(--surface, #fff)', color: 'var(--text, #152633)',
             display: 'grid', placeContent: 'center', borderRadius: '50%',
             width: 143, height: 143, textAlign: 'center' }}>
@@ -167,11 +167,11 @@ export function HealthScore({ token, lang }: { token: string; lang: 'pt' | 'en' 
             {[0, 25, 50, 75, 100].map(value => <line key={value}
               x1="0" x2="100" y1={95 - value * .9} y2={95 - value * .9}
               stroke="currentColor" strokeOpacity=".13" strokeWidth=".4" />)}
-            <polyline fill="none" stroke="#16806c" strokeWidth="1.5"
+            <polyline fill="none" style={{ stroke: 'var(--primary)' }} strokeWidth="1.5"
               vectorEffect="non-scaling-stroke" points={polyline} />
             {points.map((point, index) => <circle key={history[index].competence}
               cx={point.x} cy={95 - point.value * .9} r="1.5"
-              fill="#16806c" vectorEffect="non-scaling-stroke" />)}
+              style={{ fill: 'var(--primary)' }} vectorEffect="non-scaling-stroke" />)}
           </svg>
           <div className="indicator-table-wrap" tabIndex={0}>
             <table><caption>{pt ? 'Histórico do score por competência' : 'Health score history by month'}</caption>

@@ -143,11 +143,11 @@ export function InvestmentAllocation({ token, lang }: { token: string; lang: 'pt
           <div style={{ display: 'grid', gridTemplateColumns: '72px 1fr 68px', gap: 8, alignItems: 'center' }}>
             <span>{pt ? 'Atual' : 'Actual'}</span>
             <div style={{ background: 'rgba(120,120,120,.15)', height: 13, borderRadius: 3, overflow: 'hidden' }}>
-              <div style={{ width: `${row.actual_percent ?? 0}%`, height: '100%', background: '#16806c' }} />
+              <div style={{ width: `${row.actual_percent ?? 0}%`, height: '100%', background: 'var(--primary)' }} />
             </div><span>{row.actual_percent === null ? '—' : row.actual_percent + '%'}</span>
             <span>{pt ? 'Alvo' : 'Target'}</span>
             <div style={{ background: 'rgba(120,120,120,.15)', height: 13, borderRadius: 3, overflow: 'hidden' }}>
-              <div style={{ width: `${row.target_percent ?? 0}%`, height: '100%', background: '#2563eb' }} />
+              <div style={{ width: `${row.target_percent ?? 0}%`, height: '100%', background: 'var(--chart-target)' }} />
             </div><span>{row.target_percent === null ? '—' : row.target_percent + '%'}</span>
           </div>
         </div>)}

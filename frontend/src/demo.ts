@@ -88,7 +88,7 @@ export async function demoRequest(path: string, options?: RequestInit): Promise<
       if (!active.email_verified) return { status: 403, detail: 'email_not_verified' };
       const name = String(data.name || '').trim();
       if (!name || active.categories.some(item => item.name.toLowerCase() === name.toLowerCase())) return { status: 409, detail: 'category_exists' };
-      const category: Category = { key: `personal:${active.categories.length}`, name, color: String(data.color || '#173F35').toUpperCase(), kind: 'personal', active: true };
+      const category: Category = { key: `personal:${active.categories.length}`, name, color: String(data.color || '#3B5BDB').toUpperCase(), kind: 'personal', active: true };
       active.categories.push(category);
       return { status: 201, body: category };
     }

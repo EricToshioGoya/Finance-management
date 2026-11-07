@@ -629,7 +629,7 @@ function App() {
               </ul>
               <form onSubmit={submitCategory} aria-busy={busy}>
                 <div className="field"><label htmlFor="category-name">{t.categoryName}</label><input id="category-name" name="category-name" maxLength={60} required disabled={busy}/></div>
-                <div className="field"><label htmlFor="category-color">{t.categoryColor}</label><input id="category-color" name="category-color" type="color" defaultValue="#173F35" disabled={busy}/></div>
+                <div className="field"><label htmlFor="category-color">{t.categoryColor}</label><input id="category-color" name="category-color" type="color" defaultValue="#3B5BDB" disabled={busy}/></div>
                 <button type="submit" disabled={busy}>{busy ? t.waiting : t.createCategory}</button>
               </form>
             </section>
@@ -663,7 +663,7 @@ function App() {
           {marketQuote && <div className="market-reference">
             <p className="indicator-note">{t.marketLocalReference}</p>
             <p><strong>{marketQuote.ticker}</strong> · {marketQuote.asset_kind === 'stock' ? t.marketStock : t.marketFii}</p>
-            <p className="market-price">{money(marketQuote.price, lang)} <small>{Number(marketQuote.daily_change_percent) >= 0 ? '+' : ''}{marketQuote.daily_change_percent}%</small></p>
+            <p className="market-price">{money(marketQuote.price, lang)} <small className={Number(marketQuote.daily_change_percent) >= 0 ? 'positive' : 'negative'}>{Number(marketQuote.daily_change_percent) >= 0 ? '+' : ''}{marketQuote.daily_change_percent}%</small></p>
             <p><small>{t.referenceDate} {formatSessionInstant(marketQuote.referenced_at)} · {t.marketValidUntil} {formatSessionInstant(marketQuote.fresh_until)}</small></p>
             <ul className="market-history" aria-label={t.marketHistory}>{marketQuote.history.map(point => <li key={point.quoted_on}>{point.quoted_on}: {money(point.close_price, lang)}</li>)}</ul>
           </div>}
