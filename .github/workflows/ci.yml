@@ -41,6 +41,7 @@ jobs:
           echo "FINNOVA_DATA_KEY=$(uv run --frozen python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')" >> "$GITHUB_ENV"
       - run: uv run --frozen ruff check .
       - run: uv run --frozen ruff format --check .
+      - run: uv run --frozen mypy
       # Base da pirâmide (ADR-002, RNF-07): domínio testado sem banco, cobertura ≥ 80% só com unitários.
       - name: Testes unitários do domínio (sem banco)
         run: env -u FINNOVA_DATABASE_URL uv run --frozen pytest -q tests/unit --cov=app/domain --cov-fail-under=80
@@ -64,6 +65,28 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
       - run: npm run lint
       - run: npm run build
+
+  # Revisão em camadas: avisos de tamanho do PR e varredura de segredos (C-10).
+  revisao:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Até 400 linhas por revisão (lockfiles excluídos); aviso, não bloqueia.
+      - name: Tamanho do PR
+        if: github.event_name == 'pull_request'
+        run: |
+          linhas=$(git diff --numstat "origin/${{ github.base_ref }}...HEAD" -- . ':!*.lock' ':!*package-lock.json' \
+            | awk '{s += $1 + $2} END {print s + 0}')
+          echo "Linhas alteradas: $linhas"
+          if [ "$linhas" -gt 400 ]; then
+            echo "::warning::PR com $linhas linhas (limite recomendado: 400). Considere dividir a tarefa em vários PRs."
+          fi
+      - name: Segredos no histórico do PR
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   documentacao:
     runs-on: ubuntu-latest

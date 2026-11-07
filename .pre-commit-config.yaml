@@ -1,0 +1,42 @@
+# Camada 1 da revisão antes de cada commit (docs/combinados.md, seção 2).
+# Instalação: uvx pre-commit install  |  Execução manual: uvx pre-commit run --all-files
+# Hooks locais usam as versões travadas do projeto (uv --frozen, npm); nada é baixado à parte.
+repos:
+  - repo: local
+    hooks:
+      - id: backend-ruff
+        name: backend — ruff check e format
+        entry: bash -c 'cd backend && uv run --frozen ruff check . && uv run --frozen ruff format --check .'
+        language: system
+        files: ^backend/
+        pass_filenames: false
+      - id: backend-mypy
+        name: backend — tipos do domínio (mypy)
+        entry: bash -c 'cd backend && uv run --frozen mypy'
+        language: system
+        files: ^backend/app/
+        pass_filenames: false
+      - id: backend-unitarios
+        name: backend — testes unitários sem banco
+        entry: bash -c 'cd backend && env -u FINNOVA_DATABASE_URL uv run --frozen pytest -q tests/unit'
+        language: system
+        files: ^backend/
+        pass_filenames: false
+      - id: frontend-lint
+        name: frontend — tsc e ESLint
+        entry: bash -c 'cd frontend && npm run lint'
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+      - id: mobile-testes
+        name: mobile — tipos e testes
+        entry: bash -c 'cd mobile && npm run typecheck && npm test'
+        language: system
+        files: ^mobile/
+        pass_filenames: false
+      - id: documentacao
+        name: documentação — verificador e C-02
+        entry: bash -c 'python scripts/verificar-documentacao.py && python scripts/verificar-c02.py --estrito'
+        language: system
+        files: ^(docs/|backend/tests/|frontend/tests/|mobile/src/)
+        pass_filenames: false
