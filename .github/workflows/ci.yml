@@ -41,6 +41,9 @@ jobs:
           echo "FINNOVA_DATA_KEY=$(uv run --frozen python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')" >> "$GITHUB_ENV"
       - run: uv run --frozen ruff check .
       - run: uv run --frozen ruff format --check .
+      # Base da pirâmide (ADR-002, RNF-07): domínio testado sem banco, cobertura ≥ 80% só com unitários.
+      - name: Testes unitários do domínio (sem banco)
+        run: env -u FINNOVA_DATABASE_URL uv run --frozen pytest -q tests/unit --cov=app/domain --cov-fail-under=80
       - run: uv run --frozen alembic upgrade head
       - run: uv run --frozen pytest -q --cov=app --cov-fail-under=90
 
