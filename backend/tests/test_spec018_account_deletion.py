@@ -154,9 +154,8 @@ def test_restore_without_journal_fails_closed(client, app, tmp_path):
         }
     )
     restored = create_app(settings)
-    with pytest.raises(OSError, match="Missing independent"):
-        with TestClient(restored):
-            pass
+    with pytest.raises(OSError, match="Missing independent"), TestClient(restored):
+        pass
     restored.state.engine.dispose()
 
 

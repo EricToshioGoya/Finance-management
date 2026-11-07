@@ -24,6 +24,10 @@ Regras simples e explícitas para evitar retrabalho e manter o histórico rastre
   - [ ] A spec e a documentação em `/docs` foram atualizadas no mesmo PR?
   - [ ] O PR está vinculado à issue (`Closes #N`) e declara o uso de agente de IA?
 - Comentários do professor em issues e PRs são respondidos na própria thread.
+- A revisão segue três camadas: (1) ferramentas determinísticas na CI e no pre-commit (formato, lint, tipos, testes, segurança); (2) revisor IA, quando usado, com cada comentário aceito ou rejeitado com motivo no PR; (3) revisão humana da intenção, da aderência à spec, do design e do risco. O merge é sempre decisão humana.
+- PRs têm até 400 linhas alteradas (a CI avisa acima disso); uma tarefa maior, inclusive executada por agente, vira vários PRs.
+- Código gerado por agente passa pelo checklist "Riscos de código de agente" do template de PR; o diff é lido inteiro e teste verde não é tratado como prova de correção.
+- Dívida técnica é registrada em `docs/10-qualidade/divida-tecnica.md` e como issue (template "Dívida técnica"); refatoração entra em PR próprio, sem mudança de comportamento.
 
 ## 3. Integração
 
