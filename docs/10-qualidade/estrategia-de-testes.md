@@ -108,7 +108,7 @@ O código gerado por agente segue as mesmas regras, com atenção redobrada a:
 ## 11. Questões em aberto
 
 - **Carga do teste de desempenho:** o RNF-04 define o P95, mas não o número de usuários simultâneos a simular.
-- **Proporção da pirâmide:** `application/auth.py` (cerca de 3.000 linhas) concentra regras testáveis só com banco. A extração para `app/domain` exige PRs de refatoração próprios (seção 10) e ainda não foi planejada.
+- **Proporção da pirâmide:** `application/auth.py` concentra regras testáveis só com banco. A extração segue o plano dos itens DT-03 e DT-07 do [catálogo de dívida técnica](divida-tecnica.md), em PRs de refatoração próprios (seção 10).
 - **`npm audit` do mobile:** continua não bloqueante; as vulnerabilidades altas e críticas estão no ferramental do Expo SDK.
 
 ## Situação atual (2026-10-31)
