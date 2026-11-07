@@ -2663,7 +2663,20 @@ class AuthService:
             for index, amount in enumerate(amounts)
         ]
         self.db.add_all(records)
-        self.db.commit()
+        try:
+            self.db.commit()
+        except IntegrityError:
+            # Envio paralelo com a mesma chave (RNF-24): devolve o registro já gravado.
+            self.db.rollback()
+            existing = self.db.scalar(
+                select(ExpenseRecord).where(
+                    ExpenseRecord.user_id == user_id,
+                    ExpenseRecord.idempotency_key == idempotency_key,
+                )
+            )
+            if existing is None:
+                raise
+            return self.expense_output(existing)
         return self.expense_output(records[0])
 
     def list_expenses(self, user_id: uuid.UUID) -> list[dict[str, object]]:
