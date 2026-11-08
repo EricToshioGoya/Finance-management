@@ -132,7 +132,7 @@ export function AdminEngagement({ token, lang }: { token: string; lang: Lang }) 
 }
 
 type Distribution = { total_users: number; profiled_users: number; without_profile: number; items: { profile: string; count: number; percentage: string }[]; generated_at: string };
-const profileColors: Record<string, string> = { conservador: '#2f8f6b', moderado: '#c27c0e', arrojado: '#a0451f' };
+const profileColors: Record<string, string> = { conservador: '#3b5bdb', moderado: '#d97706', arrojado: '#a0451f' };
 const profileNames: Record<string, [string, string]> = { conservador: ['Conservador', 'Conservative'], moderado: ['Moderado', 'Moderate'], arrojado: ['Arrojado', 'Aggressive'] };
 
 /** Distribuição de perfis de investidor no painel administrativo (SPEC-062). */

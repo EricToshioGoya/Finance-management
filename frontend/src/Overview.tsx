@@ -56,7 +56,7 @@ export function Overview({ token, lang }: { token: string; lang: Lang }) {
     const large = angle - start > Math.PI ? 1 : 0;
     const point = (a: number) => `${80 + 70 * Math.sin(a)},${80 - 70 * Math.cos(a)}`;
     const d = slices.length === 1 ? 'M80,10 A70,70 0 1 1 79.99,10 Z' : `M80,80 L${point(start)} A70,70 0 ${large} 1 ${point(angle)} Z`;
-    return { key, value, share, d, color: category(key)?.color ?? '#8a9a90' };
+    return { key, value, share, d, color: category(key)?.color ?? '#94a3b8' };
   });
   const peak = Math.max(1, ...months.flatMap(item => [Number(item.total), Number(item.expenses)]));
 
@@ -88,7 +88,7 @@ export function Overview({ token, lang }: { token: string; lang: Lang }) {
               return <g key={item.competence}>
                 <rect x={x} y={170 - h1} width="20" height={h1} rx="3" className="bar-income"><title>{money(item.total, lang)}</title></rect>
                 <rect x={x + 22} y={170 - h2} width="20" height={h2} rx="3" className="bar-expense"><title>{money(item.expenses, lang)}</title></rect>
-                <text x={x + 21} y="188" textAnchor="middle" fontSize="10" fill={Number(item.expenses) > Number(item.total) ? '#a02220' : 'currentColor'} fontWeight={Number(item.expenses) > Number(item.total) ? 700 : 400}>{monthLabel(item.competence, lang)}</text>
+                <text x={x + 21} y="188" textAnchor="middle" fontSize="10" style={{ fill: Number(item.expenses) > Number(item.total) ? 'var(--negative)' : 'currentColor' }} fontWeight={Number(item.expenses) > Number(item.total) ? 700 : 400}>{monthLabel(item.competence, lang)}</text>
               </g>;
             })}
           </svg>

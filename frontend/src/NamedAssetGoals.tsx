@@ -172,7 +172,7 @@ export function NamedAssetGoals({ token, lang }: { token: string; lang: 'pt' | '
         aria-valuenow={Math.max(0, Math.min(100, Number(goal.progress_percent)))}
         style={{ height: 15, background: 'rgba(120,120,120,.2)', borderRadius: 5, overflow: 'hidden' }}>
         <div style={{ width: Math.max(0, Math.min(100, Number(goal.progress_percent))) + '%',
-          height: '100%', background: '#16806c' }} />
+          height: '100%', background: 'var(--primary)' }} />
       </div>
       <p>{goal.progress_percent}% {pt ? 'do alvo' : 'of target'};{' '}
         {pt ? 'faltam' : 'remaining'} {money(goal.remaining_amount, lang)}.</p>

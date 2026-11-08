@@ -9,9 +9,9 @@ type Point = {
 };
 type Series = 'total_assets' | 'total_liabilities' | 'net_worth';
 const series: { key: Series; pt: string; en: string; color: string }[] = [
-  { key: 'total_assets', pt: 'Ativos', en: 'Assets', color: '#16806c' },
-  { key: 'total_liabilities', pt: 'Passivos', en: 'Liabilities', color: '#b45309' },
-  { key: 'net_worth', pt: 'Patrimônio líquido', en: 'Net worth', color: '#2563eb' },
+  { key: 'total_assets', pt: 'Ativos', en: 'Assets', color: 'var(--primary)' },
+  { key: 'total_liabilities', pt: 'Passivos', en: 'Liabilities', color: 'var(--warning-fill)' },
+  { key: 'net_worth', pt: 'Patrimônio líquido', en: 'Net worth', color: 'var(--text)' },
 ];
 const money = (value: string | number, lang: 'pt' | 'en') =>
   new Intl.NumberFormat(lang === 'pt' ? 'pt-BR' : 'en-US', {
@@ -92,8 +92,8 @@ export function NetWorthHistory({ token, lang }: { token: string; lang: 'pt' | '
           <text x="48" y={210 - tick * 175} textAnchor="end" fill="currentColor" fontSize="11">{Math.round(low + tick * (high - low)).toLocaleString(pt ? 'pt-BR' : 'en-US')}</text>
         </g>)}
         {series.filter(item => visible.includes(item.key)).map(item => <g key={item.key}>
-          <polyline fill="none" stroke={item.color} strokeWidth="3" points={points.map((point, index) => `${x(index)},${y(Number(point[item.key]))}`).join(' ')} />
-          {points.map((point, index) => <circle key={point.competence} cx={x(index)} cy={y(Number(point[item.key]))} r="4" fill={item.color}><title>{point.competence.slice(0, 7)}: {money(point[item.key], lang)}</title></circle>)}
+          <polyline fill="none" style={{ stroke: item.color }} strokeWidth="3" points={points.map((point, index) => `${x(index)},${y(Number(point[item.key]))}`).join(' ')} />
+          {points.map((point, index) => <circle key={point.competence} cx={x(index)} cy={y(Number(point[item.key]))} r="4" style={{ fill: item.color }}><title>{point.competence.slice(0, 7)}: {money(point[item.key], lang)}</title></circle>)}
         </g>)}
         {points.map((point, index) => <text key={point.competence} x={x(index)} y="231" textAnchor="middle" fill="currentColor" fontSize="11">{point.competence.slice(0, 7)}</text>)}
       </svg>

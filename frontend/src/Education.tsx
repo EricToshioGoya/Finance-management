@@ -31,7 +31,7 @@ export function ContextualHelp({
       onClick={() => setOpen(previous => !previous)}
       style={{ padding: '2px 9px', minWidth: 28 }}>?</button>
     {open && <span role="region" aria-live="polite"
-      style={{ display: 'block', padding: 10, marginTop: 6, border: '1px solid #83909b',
+      style={{ display: 'block', padding: 10, marginTop: 6, border: '1px solid var(--border-strong)',
         borderRadius: 7, maxWidth: 380 }}>
       {article ? <><strong>{article.title}</strong><p>{article.body}</p>
         {article.fallback && <small>{lang === 'pt' ? 'Tradução indisponível' :
@@ -90,7 +90,7 @@ export function EducationCenter({
         'No matching article. Try another term.'}
     </p>}
     {!loading && !error && <div>{articles.map(article => <article key={article.key}
-      style={{ paddingBlock: 8, borderBottom: '1px solid #83909b' }}>
+      style={{ paddingBlock: 8, borderBottom: '1px solid var(--border)' }}>
       <h4>{article.title}</h4>
       <p>{article.body}</p>
       {article.fallback && <small role="status">{pt ? 'Idioma alternativo utilizado' :
