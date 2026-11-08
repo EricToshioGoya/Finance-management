@@ -35,31 +35,11 @@ def simulate_stress(
     Emergency is a one-time debit at month 0; optional spending cut persists.
     Beyond 120 months the runway is unknown, never claimed infinite.
     """
-    if average_expenses <= 0 or average_income < 0 or reserve < 0:
-        raise ValueError("invalid_financial_baseline")
-    if minimum_reserve_months < 3 or minimum_reserve_months > 6:
-        raise ValueError("invalid_reserve_threshold")
-    if scenario.months < 1 or scenario.months > 120:
-        raise ValueError("invalid_stress_duration")
-    if not Decimal("0") <= scenario.reduction_percent <= Decimal("100"):
-        raise ValueError("invalid_income_reduction")
-    if not Decimal("0") <= scenario.expense_cut_percent <= Decimal("100"):
-        raise ValueError("invalid_expense_cut")
-    if scenario.emergency_amount < 0:
-        raise ValueError("invalid_emergency_amount")
-
+    _validate(reserve, average_income, average_expenses, scenario, minimum_reserve_months)
     monthly_outflow = average_expenses * (
         Decimal("1") - scenario.expense_cut_percent / Decimal("100")
     )
-    reduced_income = average_income
-    if scenario.kind == "income_loss":
-        reduced_income = Decimal("0")
-    elif scenario.kind == "income_reduction":
-        reduced_income = average_income * (
-            Decimal("1") - scenario.reduction_percent / Decimal("100")
-        )
-    elif scenario.kind != "emergency_expense":
-        raise ValueError("invalid_stress_kind")
+    reduced_income = _income_during_shock(average_income, scenario)
 
     available = reserve - (
         scenario.emergency_amount if scenario.kind == "emergency_expense" else Decimal("0")
@@ -77,21 +57,9 @@ def simulate_stress(
             "horizon_reached": False,
         }
 
-    elapsed = Decimal("0")
-    exhausted = False
-    for month in range(1, HORIZON + 1):
-        income = reduced_income if month <= scenario.months else average_income
-        deficit = monthly_outflow - income
-        if deficit > 0:
-            if deficit >= available:
-                elapsed += available / deficit
-                available = Decimal("0")
-                exhausted = True
-                break
-            available -= deficit
-        else:
-            available += -deficit
-        elapsed += 1
+    elapsed, available, exhausted = _run_reserve(
+        available, monthly_outflow, reduced_income, average_income, scenario.months
+    )
 
     return {
         "months_supported": _money(elapsed) if exhausted else None,
@@ -101,3 +69,54 @@ def simulate_stress(
         "falls_below_threshold": (exhausted and elapsed < minimum_reserve_months),
         "horizon_reached": not exhausted,
     }
+
+
+def _validate(
+    reserve: Decimal,
+    average_income: Decimal,
+    average_expenses: Decimal,
+    scenario: StressScenario,
+    minimum_reserve_months: int,
+) -> None:
+    if average_expenses <= 0 or average_income < 0 or reserve < 0:
+        raise ValueError("invalid_financial_baseline")
+    if minimum_reserve_months < 3 or minimum_reserve_months > 6:
+        raise ValueError("invalid_reserve_threshold")
+    if scenario.months < 1 or scenario.months > 120:
+        raise ValueError("invalid_stress_duration")
+    if not Decimal("0") <= scenario.reduction_percent <= Decimal("100"):
+        raise ValueError("invalid_income_reduction")
+    if not Decimal("0") <= scenario.expense_cut_percent <= Decimal("100"):
+        raise ValueError("invalid_expense_cut")
+    if scenario.emergency_amount < 0:
+        raise ValueError("invalid_emergency_amount")
+
+
+def _income_during_shock(average_income: Decimal, scenario: StressScenario) -> Decimal:
+    if scenario.kind == "income_loss":
+        return Decimal("0")
+    if scenario.kind == "income_reduction":
+        return average_income * (Decimal("1") - scenario.reduction_percent / Decimal("100"))
+    if scenario.kind != "emergency_expense":
+        raise ValueError("invalid_stress_kind")
+    return average_income
+
+
+def _run_reserve(
+    available: Decimal,
+    monthly_outflow: Decimal,
+    reduced_income: Decimal,
+    average_income: Decimal,
+    shock_months: int,
+) -> tuple[Decimal, Decimal, bool]:
+    """Consome a reserva mês a mês até esgotar ou atingir o horizonte (fração no último mês)."""
+    elapsed = Decimal("0")
+    for month in range(1, HORIZON + 1):
+        income = reduced_income if month <= shock_months else average_income
+        deficit = monthly_outflow - income
+        # A reserva é sempre positiva aqui; déficit maior ou igual a ela a esgota no mês.
+        if deficit >= available:
+            return elapsed + available / deficit, Decimal("0"), True
+        available -= deficit
+        elapsed += 1
+    return elapsed, available, False

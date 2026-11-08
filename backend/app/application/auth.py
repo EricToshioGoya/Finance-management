@@ -14,6 +14,8 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.application.errors import AuthError
+from app.application.rendas import OperacoesRenda
 from app.config import Settings
 from app.domain.cartao import competencia_da_fatura, dividir_parcelas, somar_meses
 from app.domain.financeiro import aporte_necessario
@@ -65,20 +67,6 @@ from app.infrastructure.security import Security, token_digest
 
 # RNF-09: indicador oficial com verificação mais antiga que 24h é exibido com aviso (C-08).
 INDICATOR_MAX_AGE = timedelta(hours=24)
-
-
-class AuthError(Exception):
-    def __init__(
-        self,
-        code: str,
-        status: int = 401,
-        retry_after: int | None = None,
-        manual_entry_permitted: bool = False,
-    ):
-        self.code = code
-        self.status = status
-        self.retry_after = retry_after
-        self.manual_entry_permitted = manual_entry_permitted
 
 
 class SessionNotFoundError(AuthError):
@@ -177,7 +165,7 @@ PROFILE_GUIDANCE = {
 }
 
 
-class AuthService:
+class AuthService(OperacoesRenda):
     def __init__(
         self,
         db: Session,
@@ -359,6 +347,29 @@ class AuthService:
         self.db.add(AuditLogRecord(user_id=user_id, action=action, occurred_at=self.clock()))
         self.db.commit()
 
+    def _commit_or_conflict(self, code: str) -> None:
+        """Grava; violação de unicidade vira 409 com o código informado."""
+        try:
+            self.db.commit()
+        except IntegrityError as exc:
+            self.db.rollback()
+            raise AuthError(code, 409) from exc
+
+    def _commit_or_existing(self, model, **filters):
+        """Grava; em conflito de unicidade (envio paralelo, RNF-24) devolve o registro já gravado.
+
+        Retorna None quando a gravação ocorreu; o registro existente quando houve conflito.
+        """
+        try:
+            self.db.commit()
+        except IntegrityError:
+            self.db.rollback()
+            existing = self.db.scalar(select(model).filter_by(**filters))
+            if existing is None:
+                raise
+            return existing
+        return None
+
     def register(self, name: str, email: str, password: str) -> User:
         email = normalize_email(email)
         lookup = self.security.lookup(email)
@@ -376,11 +387,7 @@ class AuthService:
             role="usuario",
         )
         self.db.add(record)
-        try:
-            self.db.commit()
-        except IntegrityError as exc:
-            self.db.rollback()
-            raise AuthError("email_exists", 409) from exc
+        self._commit_or_conflict("email_exists")
         return self.public_user(record)
 
     def request_email_confirmation(self, user_id: uuid.UUID) -> None:
@@ -470,11 +477,7 @@ class AuthService:
         user.email_verified_at = now
         if self.is_initial_admin(user):
             user.role = "administrador"
-        try:
-            self.db.commit()
-        except IntegrityError as exc:
-            self.db.rollback()
-            raise AuthError("email_exists", 409) from exc
+        self._commit_or_conflict("email_exists")
         return True
 
     def update_profile(
@@ -541,11 +544,7 @@ class AuthService:
                     expires_at=now + timedelta(hours=24),
                 )
             )
-        try:
-            self.db.commit()
-        except IntegrityError as exc:
-            self.db.rollback()
-            raise AuthError("email_exists", 409) from exc
+        self._commit_or_conflict("email_exists")
         return self.profile(user_id)
 
     def update_preferences(
@@ -897,11 +896,7 @@ class AuthService:
             color=color.upper(),
         )
         self.db.add(record)
-        try:
-            self.db.commit()
-        except IntegrityError as exc:
-            self.db.rollback()
-            raise AuthError("category_exists", 409) from exc
+        self._commit_or_conflict("category_exists")
         return {
             "key": f"personal:{record.id}",
             "name": name,
@@ -1033,363 +1028,6 @@ class AuthService:
         self.db.commit()
         return self.card_output(card)
 
-    def recurring_income_output(self, record: RecurringIncomeRecord) -> dict[str, object]:
-        return {
-            "id": record.id,
-            "description": self.security.decrypt(record.description_encrypted),
-            "amount": record.amount,
-            "account_id": record.account_id,
-            "starts_on": record.starts_on,
-        }
-
-    def list_recurring_incomes(self, user_id: uuid.UUID) -> list[dict[str, object]]:
-        if self.db.get(UserRecord, user_id) is None:
-            raise AuthError("invalid_session")
-        return [
-            self.recurring_income_output(record)
-            for record in self.db.scalars(
-                select(RecurringIncomeRecord)
-                .where(RecurringIncomeRecord.user_id == user_id)
-                .order_by(RecurringIncomeRecord.starts_on, RecurringIncomeRecord.id)
-            )
-        ]
-
-    def create_recurring_income(
-        self,
-        user_id: uuid.UUID,
-        description: str,
-        amount: Decimal,
-        account_id: uuid.UUID | None,
-        starts_on: date | None,
-        idempotency_key: str,
-    ) -> dict[str, object]:
-        self.require_category_owner(user_id)
-        existing = self.db.scalar(
-            select(RecurringIncomeRecord)
-            .where(
-                RecurringIncomeRecord.user_id == user_id,
-                RecurringIncomeRecord.idempotency_key == idempotency_key,
-            )
-            .with_for_update()
-        )
-        if existing is not None:
-            self.db.rollback()
-            return self.recurring_income_output(existing)
-        if account_id is not None and self.db.get(AccountRecord, account_id) is None:
-            self.db.rollback()
-            raise AuthError("account_not_found", 404)
-        if account_id is not None and self.db.get(AccountRecord, account_id).user_id != user_id:
-            self.db.rollback()
-            raise AuthError("account_not_found", 404)
-        record = RecurringIncomeRecord(
-            user_id=user_id,
-            account_id=account_id,
-            description_encrypted=self.security.encrypt(description),
-            amount=amount,
-            starts_on=starts_on or self.local_today(),
-            idempotency_key=idempotency_key,
-        )
-        self.db.add(record)
-        try:
-            self.db.commit()
-        except IntegrityError:
-            self.db.rollback()
-            existing = self.db.scalar(
-                select(RecurringIncomeRecord).where(
-                    RecurringIncomeRecord.user_id == user_id,
-                    RecurringIncomeRecord.idempotency_key == idempotency_key,
-                )
-            )
-            if existing is None:
-                raise
-            return self.recurring_income_output(existing)
-        return self.recurring_income_output(record)
-
-    def update_recurring_income(
-        self, user_id: uuid.UUID, income_id: uuid.UUID, values: dict[str, object]
-    ) -> dict[str, object]:
-        record = self.db.scalar(
-            select(RecurringIncomeRecord)
-            .where(RecurringIncomeRecord.id == income_id, RecurringIncomeRecord.user_id == user_id)
-            .with_for_update()
-        )
-        if record is None:
-            raise AuthError("recurring_income_not_found", 404)
-        if values.get("description") is not None:
-            record.description_encrypted = self.security.encrypt(str(values["description"]))
-        for key in ("amount", "starts_on"):
-            if values.get(key) is not None:
-                setattr(record, key, values[key])
-        self.db.commit()
-        return self.recurring_income_output(record)
-
-    def delete_recurring_income(self, user_id: uuid.UUID, income_id: uuid.UUID) -> None:
-        record = self.db.scalar(
-            select(RecurringIncomeRecord)
-            .where(RecurringIncomeRecord.id == income_id, RecurringIncomeRecord.user_id == user_id)
-            .with_for_update()
-        )
-        if record is None:
-            raise AuthError("recurring_income_not_found", 404)
-        self.db.delete(record)
-        self.db.commit()
-
-    def one_time_income_output(self, record: OneTimeIncomeRecord) -> dict[str, object]:
-        return {
-            "id": record.id,
-            "description": self.security.decrypt(record.description_encrypted),
-            "amount": record.amount,
-            "account_id": record.account_id,
-            "occurred_on": record.occurred_on,
-        }
-
-    def list_one_time_incomes(self, user_id: uuid.UUID) -> list[dict[str, object]]:
-        if self.db.get(UserRecord, user_id) is None:
-            raise AuthError("invalid_session")
-        return [
-            self.one_time_income_output(record)
-            for record in self.db.scalars(
-                select(OneTimeIncomeRecord)
-                .where(OneTimeIncomeRecord.user_id == user_id)
-                .order_by(OneTimeIncomeRecord.occurred_on, OneTimeIncomeRecord.id)
-            )
-        ]
-
-    def create_one_time_income(
-        self,
-        user_id: uuid.UUID,
-        description: str,
-        amount: Decimal,
-        account_id: uuid.UUID | None,
-        occurred_on: date,
-        idempotency_key: str,
-    ) -> dict[str, object]:
-        self.require_category_owner(user_id)
-        existing = self.db.scalar(
-            select(OneTimeIncomeRecord)
-            .where(
-                OneTimeIncomeRecord.user_id == user_id,
-                OneTimeIncomeRecord.idempotency_key == idempotency_key,
-            )
-            .with_for_update()
-        )
-        if existing is not None:
-            self.db.rollback()
-            return self.one_time_income_output(existing)
-        if account_id is not None:
-            account = self.db.get(AccountRecord, account_id)
-            if account is None or account.user_id != user_id:
-                self.db.rollback()
-                raise AuthError("account_not_found", 404)
-        record = OneTimeIncomeRecord(
-            user_id=user_id,
-            account_id=account_id,
-            description_encrypted=self.security.encrypt(description),
-            amount=amount,
-            occurred_on=occurred_on,
-            idempotency_key=idempotency_key,
-        )
-        self.db.add(record)
-        try:
-            self.db.commit()
-        except IntegrityError:
-            self.db.rollback()
-            existing = self.db.scalar(
-                select(OneTimeIncomeRecord).where(
-                    OneTimeIncomeRecord.user_id == user_id,
-                    OneTimeIncomeRecord.idempotency_key == idempotency_key,
-                )
-            )
-            if existing is None:
-                raise
-            return self.one_time_income_output(existing)
-        return self.one_time_income_output(record)
-
-    def update_one_time_income(
-        self, user_id: uuid.UUID, income_id: uuid.UUID, values: dict[str, object]
-    ) -> dict[str, object]:
-        record = self.db.scalar(
-            select(OneTimeIncomeRecord)
-            .where(OneTimeIncomeRecord.id == income_id, OneTimeIncomeRecord.user_id == user_id)
-            .with_for_update()
-        )
-        if record is None:
-            raise AuthError("one_time_income_not_found", 404)
-        if values.get("description") is not None:
-            record.description_encrypted = self.security.encrypt(str(values["description"]))
-        for key in ("amount", "occurred_on"):
-            if values.get(key) is not None:
-                setattr(record, key, values[key])
-        self.db.commit()
-        return self.one_time_income_output(record)
-
-    def delete_one_time_income(self, user_id: uuid.UUID, income_id: uuid.UUID) -> None:
-        record = self.db.scalar(
-            select(OneTimeIncomeRecord)
-            .where(OneTimeIncomeRecord.id == income_id, OneTimeIncomeRecord.user_id == user_id)
-            .with_for_update()
-        )
-        if record is None:
-            raise AuthError("one_time_income_not_found", 404)
-        self.db.delete(record)
-        self.db.commit()
-
-    def bonus_output(self, record: BonusRecord) -> dict[str, object]:
-        return {
-            "id": record.id,
-            "description": self.security.decrypt(record.description_encrypted),
-            "amount": record.amount,
-            "periodicity": record.periodicity,
-            "starts_on": record.starts_on,
-            "reference_month": record.reference_month,
-        }
-
-    def list_bonuses(self, user_id: uuid.UUID) -> list[dict[str, object]]:
-        if self.db.get(UserRecord, user_id) is None:
-            raise AuthError("invalid_session")
-        return [
-            self.bonus_output(record)
-            for record in self.db.scalars(
-                select(BonusRecord)
-                .where(BonusRecord.user_id == user_id)
-                .order_by(BonusRecord.starts_on, BonusRecord.id)
-            )
-        ]
-
-    def create_bonus(
-        self,
-        user_id: uuid.UUID,
-        description: str,
-        amount: Decimal,
-        periodicity: str,
-        starts_on: date | None,
-        reference_month: int | None,
-        idempotency_key: str,
-    ) -> dict[str, object]:
-        self.require_category_owner(user_id)
-        existing = self.db.scalar(
-            select(BonusRecord)
-            .where(BonusRecord.user_id == user_id, BonusRecord.idempotency_key == idempotency_key)
-            .with_for_update()
-        )
-        if existing is not None:
-            self.db.rollback()
-            return self.bonus_output(existing)
-        record = BonusRecord(
-            user_id=user_id,
-            description_encrypted=self.security.encrypt(description),
-            amount=amount,
-            periodicity=periodicity,
-            starts_on=starts_on or self.local_today(),
-            reference_month=reference_month,
-            idempotency_key=idempotency_key,
-        )
-        self.db.add(record)
-        try:
-            self.db.commit()
-        except IntegrityError:
-            self.db.rollback()
-            existing = self.db.scalar(
-                select(BonusRecord).where(
-                    BonusRecord.user_id == user_id, BonusRecord.idempotency_key == idempotency_key
-                )
-            )
-            if existing is None:
-                raise
-            return self.bonus_output(existing)
-        return self.bonus_output(record)
-
-    def update_bonus(
-        self, user_id: uuid.UUID, bonus_id: uuid.UUID, values: dict[str, object]
-    ) -> dict[str, object]:
-        record = self.db.scalar(
-            select(BonusRecord)
-            .where(BonusRecord.id == bonus_id, BonusRecord.user_id == user_id)
-            .with_for_update()
-        )
-        if record is None:
-            raise AuthError("bonus_not_found", 404)
-        periodicity = values.get("periodicity") or record.periodicity
-        reference_month = values.get("reference_month")
-        if reference_month is None:
-            reference_month = record.reference_month
-        if periodicity == "annual" and reference_month is None:
-            raise AuthError("reference_month_required", 400)
-        if periodicity == "monthly":
-            reference_month = None
-        if values.get("description") is not None:
-            record.description_encrypted = self.security.encrypt(str(values["description"]))
-        for key in ("amount", "starts_on"):
-            if values.get(key) is not None:
-                setattr(record, key, values[key])
-        record.periodicity, record.reference_month = str(periodicity), reference_month
-        self.db.commit()
-        return self.bonus_output(record)
-
-    def delete_bonus(self, user_id: uuid.UUID, bonus_id: uuid.UUID) -> None:
-        record = self.db.scalar(
-            select(BonusRecord)
-            .where(BonusRecord.id == bonus_id, BonusRecord.user_id == user_id)
-            .with_for_update()
-        )
-        if record is None:
-            raise AuthError("bonus_not_found", 404)
-        self.db.delete(record)
-        self.db.commit()
-
-    def income_summary(self, user_id: uuid.UUID, competence: date) -> dict[str, Decimal | str]:
-        if self.db.get(UserRecord, user_id) is None:
-            raise AuthError("invalid_session")
-        month_start = competence.replace(day=1)
-        next_month = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
-        monthly_recurring = sum(
-            (
-                record.amount
-                for record in self.db.scalars(
-                    select(RecurringIncomeRecord).where(
-                        RecurringIncomeRecord.user_id == user_id,
-                        RecurringIncomeRecord.starts_on < next_month,
-                    )
-                )
-            ),
-            Decimal("0"),
-        )
-        one_time = sum(
-            (
-                record.amount
-                for record in self.db.scalars(
-                    select(OneTimeIncomeRecord).where(
-                        OneTimeIncomeRecord.user_id == user_id,
-                        OneTimeIncomeRecord.occurred_on >= month_start,
-                        OneTimeIncomeRecord.occurred_on < next_month,
-                    )
-                )
-            ),
-            Decimal("0"),
-        )
-        bonus = sum(
-            (
-                record.amount
-                for record in self.db.scalars(
-                    select(BonusRecord).where(BonusRecord.user_id == user_id)
-                )
-                if (record.periodicity == "monthly" and record.starts_on <= month_start)
-                or (
-                    record.periodicity == "annual"
-                    and record.starts_on.year == month_start.year
-                    and record.reference_month == month_start.month
-                )
-            ),
-            Decimal("0"),
-        )
-        return {
-            "competence": month_start.strftime("%Y-%m"),
-            "recurring_income": monthly_recurring,
-            "one_time_income": one_time,
-            "bonus": bonus,
-            "total": monthly_recurring + one_time + bonus,
-        }
-
     def balance_summary(self, user_id: uuid.UUID, competence: date) -> dict[str, Decimal | str]:
         summary = self.income_summary(user_id, competence)
         month_start = competence.replace(day=1)
@@ -1428,7 +1066,26 @@ class AuthService:
         """A derived export view; it never becomes an authoritative balance."""
         if self.db.get(UserRecord, user_id) is None:
             raise AuthError("invalid_session")
-        entries: list[dict[str, object]] = []
+        entries = [
+            *self._expense_entries(user_id, start, end),
+            *self._one_time_income_entries(user_id, start, end),
+            *self._recurring_income_entries(user_id, start, end),
+            *self._bonus_entries(user_id, start, end),
+        ]
+        return sorted(entries, key=lambda item: (item["date"], item["type"], item["description"]))
+
+    def _statement_entry(
+        self, occurred_on: date, kind: str, record, category: str, amount: Decimal
+    ) -> dict[str, object]:
+        return {
+            "date": occurred_on,
+            "type": kind,
+            "description": self.security.decrypt(record.description_encrypted),
+            "category": category,
+            "amount": amount,
+        }
+
+    def _expense_entries(self, user_id: uuid.UUID, start: date, end: date):
         for record in self.db.scalars(
             select(ExpenseRecord).where(ExpenseRecord.user_id == user_id)
         ):
@@ -1440,15 +1097,11 @@ class AuthService:
                 ]
             for occurred_on in dates:
                 if start <= occurred_on <= end:
-                    entries.append(
-                        {
-                            "date": occurred_on,
-                            "type": "despesa",
-                            "description": self.security.decrypt(record.description_encrypted),
-                            "category": record.category_key,
-                            "amount": -record.amount,
-                        }
+                    yield self._statement_entry(
+                        occurred_on, "despesa", record, record.category_key, -record.amount
                     )
+
+    def _one_time_income_entries(self, user_id: uuid.UUID, start: date, end: date):
         for record in self.db.scalars(
             select(OneTimeIncomeRecord).where(
                 OneTimeIncomeRecord.user_id == user_id,
@@ -1456,43 +1109,28 @@ class AuthService:
                 OneTimeIncomeRecord.occurred_on <= end,
             )
         ):
-            entries.append(
-                {
-                    "date": record.occurred_on,
-                    "type": "receita",
-                    "description": self.security.decrypt(record.description_encrypted),
-                    "category": "receita",
-                    "amount": record.amount,
-                }
+            yield self._statement_entry(
+                record.occurred_on, "receita", record, "receita", record.amount
             )
+
+    def _recurring_income_entries(self, user_id: uuid.UUID, start: date, end: date):
         for record in self.db.scalars(
             select(RecurringIncomeRecord).where(RecurringIncomeRecord.user_id == user_id)
         ):
             for month in self._month_starts(max(start, record.starts_on), end):
                 occurred_on = month.replace(day=min(record.starts_on.day, 28))
-                entries.append(
-                    {
-                        "date": occurred_on,
-                        "type": "receita",
-                        "description": self.security.decrypt(record.description_encrypted),
-                        "category": "receita recorrente",
-                        "amount": record.amount,
-                    }
+                yield self._statement_entry(
+                    occurred_on, "receita", record, "receita recorrente", record.amount
                 )
+
+    def _bonus_entries(self, user_id: uuid.UUID, start: date, end: date):
         for record in self.db.scalars(select(BonusRecord).where(BonusRecord.user_id == user_id)):
             for month in self._month_starts(max(start, record.starts_on), end):
                 if record.periodicity == "monthly" or record.reference_month == month.month:
                     occurred_on = month.replace(day=min(record.starts_on.day, 28))
-                    entries.append(
-                        {
-                            "date": occurred_on,
-                            "type": "receita",
-                            "description": self.security.decrypt(record.description_encrypted),
-                            "category": "bônus",
-                            "amount": record.amount,
-                        }
+                    yield self._statement_entry(
+                        occurred_on, "receita", record, "bônus", record.amount
                     )
-        return sorted(entries, key=lambda item: (item["date"], item["type"], item["description"]))
 
     @staticmethod
     def month_bounds(competence: date) -> tuple[date, date]:
@@ -2265,18 +1903,10 @@ class AuthService:
             request_digest=digest,
         )
         self.db.add(record)
-        try:
-            self.db.commit()
-        except IntegrityError:
-            self.db.rollback()
-            existing = self.db.scalar(
-                select(ConfirmedFinancingRecord).where(
-                    ConfirmedFinancingRecord.user_id == user_id,
-                    ConfirmedFinancingRecord.idempotency_key == idempotency_key,
-                )
-            )
-            if existing is None:
-                raise
+        existing = self._commit_or_existing(
+            ConfirmedFinancingRecord, user_id=user_id, idempotency_key=idempotency_key
+        )
+        if existing is not None:
             if existing.request_digest != digest:
                 raise AuthError("financing_idempotency_conflict", 409) from None
             return self.confirmed_financing_output(existing)
@@ -2663,7 +2293,11 @@ class AuthService:
             for index, amount in enumerate(amounts)
         ]
         self.db.add_all(records)
-        self.db.commit()
+        existing = self._commit_or_existing(
+            ExpenseRecord, user_id=user_id, idempotency_key=idempotency_key
+        )
+        if existing is not None:
+            return self.expense_output(existing)
         return self.expense_output(records[0])
 
     def list_expenses(self, user_id: uuid.UUID) -> list[dict[str, object]]:

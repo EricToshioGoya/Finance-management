@@ -82,6 +82,7 @@ Convenções:
 - Frontend (em `frontend/`): `npm run lint`, `npm run build` e `npm test` (Playwright; exige a API HTTPS ativa).
 - Mobile (em `mobile/`): `npm run typecheck`, `npm test` e `npx expo start`.
 - Documentação: `python scripts/verificar-documentacao.py` após qualquer mudança em `docs/`.
+- Pre-commit (camada 1 da revisão): `uvx pre-commit install` uma vez; `uvx pre-commit run --all-files` para rodar tudo.
 - Testes de backend nomeiam a cláusula: `test_SPEC_NNN_Rxx_...` (C-02).
 
 ---

@@ -1,6 +1,6 @@
 # SPEC-060: Coletar eventos e auditar ações sensíveis
 
-**Estado:** implementação técnica autorizada nesta sessão em 2026-10-28; revisão formal do grupo pendente. O recorte e as decisões adotadas estão registrados na seção 13 e no [registro de implementação](../09-qualidade/implementacao-SPEC-060.md). Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI).
+**Estado:** implementação técnica autorizada nesta sessão em 2026-10-28; revisão formal do grupo pendente. O recorte e as decisões adotadas estão registrados na seção 13 e no [registro de implementação](../09-qualidade/implementacao-SPEC-060.md). Cobertura por cláusula (C-02) concluída em 2026-11-01: cada cláusula `SHALL` é citada por ao menos um teste (`python scripts/verificar-c02.py --estrito`, obrigatório na CI). Em 2026-11-07, o recorte de observabilidade (RNF-12) foi acrescentado como SPEC-060-R07 a R09: identificador de requisição, registro de erro não tratado e logs estruturados sem segredo; testes em `backend/tests/test_spec060_observabilidade.py`. O envio a um serviço de monitoramento externo e os alertas continuam em OPEN-32.
 
 ## 1. Identificação
 
@@ -63,6 +63,9 @@ Cada cláusula local é referenciada na tabela de testes; funcionalidades opcion
 | SPEC-060-R04 | WHEN o fluxo de coletar eventos e auditar ações sensíveis alcançar o comportamento de RF-59/C02 THE SYSTEM SHALL atender ao comportamento: o evento deve conter apenas: usuário (id), módulo, ação e timestamp — nunca conteúdo financeiro sensível (RB-23). | CA-004 |
 | SPEC-060-R05 | WHEN o fluxo de coletar eventos e auditar ações sensíveis alcançar o comportamento de RF-59/C03 THE SYSTEM SHALL atender ao comportamento: a política de privacidade do sistema deve informar que dados de uso agregados são coletados para fins de melhoria do produto e vistos, de forma agregada, por administradores (transparência LGPD). | CA-005 |
 | SPEC-060-R06 | WHEN o fluxo de coletar eventos e auditar ações sensíveis alcançar o comportamento de RF-59/C04 THE SYSTEM SHALL atender ao comportamento: solicitar a exclusão desses dados de uso junto com a exclusão de conta (RF-05). | CA-006 |
+| SPEC-060-R07 | WHEN qualquer requisição HTTP for respondida THE SYSTEM SHALL devolver o cabeçalho `X-Request-ID` (reaproveitando o do cliente quando tiver de 8 a 64 caracteres alfanuméricos ou hífen) e registrar uma linha de log JSON com identificador, método, rota declarada, status e duração. | CA-007; RNF-12 |
+| SPEC-060-R08 | IF ocorrer erro não tratado durante a requisição THEN THE SYSTEM SHALL responder 500 com corpo genérico contendo apenas `internal_error` e o identificador, e registrar o erro com nível ERROR, tipo e pilha. | CA-008; RNF-12 |
+| SPEC-060-R09 | WHILE registrar logs de requisição THE SYSTEM SHALL omitir corpo, cabeçalhos e query string, de modo que senha, token e e-mail nunca apareçam no log. | CA-009; RNF-01, RNF-12, C-06 |
 
 ## 6. Regras e invariantes
 
@@ -130,6 +133,12 @@ RNFs são associados ao comportamento e verificados na implementação/operaçã
 
 - **CA-006** — **Dado** titular autenticado; para operações financeiras, e-mail verificado conforme RF-69, entradas válidas e política aprovada de RF-59/C04, **Quando** exercitar esse comportamento no fluxo desta Spec, **Então** verificar: O usuário deve poder solicitar a exclusão desses dados de uso junto com a exclusão de conta (RF-05).
 
+- **CA-007** — **Dado** qualquer requisição à API, inclusive uma recusada pelas proteções, **Quando** a resposta for enviada, **Então** verificar: o cabeçalho `X-Request-ID` está presente e uma linha JSON com o mesmo identificador, método, rota, status e duração é registrada.
+
+- **CA-008** — **Dado** um erro inesperado dentro do processamento, **Quando** a requisição terminar, **Então** verificar: resposta 500 `{"detail": "internal_error", "request_id": ...}` sem detalhe interno, e log ERROR com tipo e pilha do erro.
+
+- **CA-009** — **Dado** cadastro, login e consulta autenticada com e-mail na query string, **Quando** inspecionar os logs gerados, **Então** verificar: nenhuma linha contém a senha, o token, o e-mail ou o cabeçalho `Authorization`.
+
 ## 12. Casos de teste derivados
 
 | Teste | Cláusula / critério / invariantes | Execução mínima planejada |
@@ -140,6 +149,9 @@ RNFs são associados ao comportamento e verificados na implementação/operaçã
 | T-004 | SPEC-060-R04; CA-004 | RF-59/C02: preparar entradas e limites da baseline, executar comportamento e conferir assertion: O evento deve conter apenas: usuário (id), módulo, ação e timestamp — nunca conteúdo financeiro sensível (RB-23). |
 | T-005 | SPEC-060-R05; CA-005 | RF-59/C03: preparar entradas e limites da baseline, executar comportamento e conferir assertion: A política de privacidade do sistema deve informar que dados de uso agregados são coletados para fins de melhoria do produto e vistos, de forma agregada, por administradores (transparência LGPD). |
 | T-006 | SPEC-060-R06; CA-006 | RF-59/C04: preparar entradas e limites da baseline, executar comportamento e conferir assertion: O usuário deve poder solicitar a exclusão desses dados de uso junto com a exclusão de conta (RF-05). |
+| T-008 | SPEC-060-R07; CA-007 | `test_SPEC_060_R07_*`: identificador gerado, propagado e recusado quando inválido; log JSON do pedido HTTP sem TLS recusado. |
+| T-009 | SPEC-060-R08; CA-008 | `test_SPEC_060_R08_*`: falha forçada no cadastro gera 500 genérico e log ERROR com pilha. |
+| T-010 | SPEC-060-R09; CA-009 | `test_SPEC_060_R09_*`: logs de cadastro, login e consulta não contêm senha, token, e-mail nem cabeçalho de autorização. |
 | T-007 | INV-001, INV-002, INV-003; RNF-01, RNF-02, RNF-05, RNF-06, RNF-11, RNF-12, RNF-13, RNF-14, RNF-15, RNF-16, RNF-17, RNF-18, RNF-20, RNF-25 | Executar métodos da seção 10, fronteiras, acesso cruzado/erros aplicáveis e inspeção de efeitos. Fixtures sintéticas, relógio injetado e dublês de fonte externa; evidência por requisito. |
 
 Testes são planejados, não implementados ou executados nesta revisão. Os exemplos não fecham fórmulas, calendários ou regras ainda em OPEN. Cada teste futuro deve citar a cláusula desta Spec e o requisito correspondente.
@@ -147,6 +159,7 @@ Testes são planejados, não implementados ou executados nesta revisão. Os exem
 ## 13. Questões em Aberto
 
 - **Decisão técnica autorizada em 2026-10-28:** eventos aceitam somente usuário, módulo, ação e instante; são gravados em tarefa de fundo. Falha não tem retry automático e não muda o resultado da ação do usuário. Na exclusão de conta, `usuario_id` de eventos/auditoria é tornado nulo; registros não carregam conteúdo financeiro, senha ou token. Rotas de leitura/edição da trilha não são publicadas. Isso resolve OPEN-05/15/19/26 somente para este recorte técnico; retenção legal/operacional, dashboards administrativos, fila/retry e notificações continuam abertos para as Specs correspondentes.
+- **Observabilidade adicionada em 2026-11-07 (RNF-12):** o identificador de requisição e os logs JSON ficam em `backend/app/infrastructure/observabilidade.py`, com saída em stderr. A escolha do serviço de monitoramento externo, os alertas e a retenção dos logs continuam em OPEN-32; não foi adotado provedor externo (dependência estrutural exige ADR).
 
 [Registro central](questoes-abertas.md). Antes de implementar, registrar decisão e refletir alterações de comportamento na baseline e nesta Spec; se não houver decisão, conservar o bloqueio explícito.
 

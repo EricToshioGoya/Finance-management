@@ -1,5 +1,6 @@
 # ruff: noqa
 import asyncio
+import logging
 import sqlite3
 import time
 import uuid
@@ -53,12 +54,14 @@ from app.domain.financing import simulate_financing
 from app.domain.financing_comparison import compare_financing_and_investing
 from app.domain.foreign_currency import calcular_projecao_moeda_estrangeira
 from app.domain.juros_compostos import ErroCalculo, MotorJurosCompostos, arredondar_moeda
+from app.domain.identity import User
 from app.infrastructure.account_deletion import DeletionJournal
 from app.infrastructure.email_delivery import (
     EmailConfirmationDelivery,
     UnconfiguredEmailConfirmationDelivery,
     WebhookEmailConfirmationDelivery,
 )
+from app.infrastructure.observabilidade import REQUEST_ID_HEADER, configurar_logs, request_id
 from app.infrastructure.models import (
     NotificationDeliveryRecord,
     PushDeviceRecord,
@@ -245,6 +248,12 @@ RATE_LIMITED_PREFIXES = (
 bearer = HTTPBearer(auto_error=False)
 
 
+def route_path(request: Request) -> str:
+    """Rota declarada (ex.: /expenses/{expense_id}); evita registrar valores da URL."""
+    route = request.scope.get("route")
+    return getattr(route, "path", request.url.path)
+
+
 def create_app(
     settings: Settings | None = None, email_delivery: EmailConfirmationDelivery | None = None
 ) -> FastAPI:
@@ -252,6 +261,7 @@ def create_app(
     engine = create_engine(settings.database_url.get_secret_value(), pool_pre_ping=True)
     sessions = sessionmaker(engine, expire_on_commit=False)
     security = Security(settings.data_key.get_secret_value())
+    access_log = configurar_logs().getChild("http")
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -436,6 +446,14 @@ def create_app(
     MarketQuoteServiceDependency = Annotated[MarketQuoteService, Depends(market_quote_service)]
     Credentials = Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)]
 
+    def current_user(auth: Service, credentials: Credentials) -> User:
+        """Titular do token Bearer; sessão ausente ou inválida é recusada (SPEC-001-R08)."""
+        if not credentials:
+            raise AuthError("invalid_session")
+        return auth.authenticate(credentials.credentials)[0]
+
+    CurrentUser = Annotated[User, Depends(current_user)]
+
     @app.exception_handler(AuthError)
     async def auth_error(request: Request, error: AuthError):
         headers = {"WWW-Authenticate": "Bearer"} if error.status == 401 else {}
@@ -515,6 +533,44 @@ def create_app(
         )
         return response
 
+    # Registrado por último: envolve as proteções e registra também as recusas (RNF-12).
+    @app.middleware("http")
+    async def observability(request: Request, call_next):
+        rid = request_id(request.headers.get(REQUEST_ID_HEADER))
+        start = time.perf_counter()
+        try:
+            response = await call_next(request)
+        except Exception as error:
+            # SPEC-060-R08: erro não tratado vira 500 genérico e é registrado com a pilha.
+            access_log.error(
+                "unhandled_error",
+                exc_info=error,
+                extra={
+                    "request_id": rid,
+                    "method": request.method,
+                    "path": route_path(request),
+                    "status": 500,
+                    "error_type": type(error).__name__,
+                },
+            )
+            response = JSONResponse(
+                {"detail": "internal_error", "request_id": rid}, status_code=500
+            )
+            response.headers["Cache-Control"] = "no-store"
+        response.headers[REQUEST_ID_HEADER] = rid
+        access_log.log(
+            logging.WARNING if response.status_code >= 500 else logging.INFO,
+            "request",
+            extra={
+                "request_id": rid,
+                "method": request.method,
+                "path": route_path(request),
+                "status": response.status_code,
+                "duration_ms": round((time.perf_counter() - start) * 1000, 1),
+            },
+        )
+        return response
+
     def token_response(response: Response, tokens: tuple[str, str]) -> TokenOutput:
         access, refresh = tokens
         response.set_cookie(
@@ -529,10 +585,7 @@ def create_app(
         return TokenOutput(access_token=access, expires_in=settings.access_seconds)
 
     @app.get(f"{COOKIE_PATH}/account/deletion-preview", tags=["profile"])
-    def deletion_preview(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        auth.authenticate(credentials.credentials)
+    def deletion_preview(_user: CurrentUser):
         return {
             "deleted": [
                 "perfil e credenciais",
@@ -554,11 +607,8 @@ def create_app(
 
     @app.delete(f"{COOKIE_PATH}/account", status_code=204, tags=["profile"])
     def delete_account(
-        data: AccountDeletionInput, response: Response, auth: Service, credentials: Credentials
+        data: AccountDeletionInput, response: Response, auth: Service, user: CurrentUser
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         auth.delete_account(user.id, data.current_password.get_secret_value())
         response.delete_cookie(
             COOKIE, path=COOKIE_PATH, secure=True, httponly=True, samesite="strict"
@@ -568,37 +618,27 @@ def create_app(
     def collect_usage_event(
         data: UsageEventInput,
         background_tasks: BackgroundTasks,
-        auth: Service,
-        credentials: Credentials,
+        user: CurrentUser,
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         background_tasks.add_task(persist_usage_event, user.id, data.module, data.action)
 
     @app.get(f"{ADMIN_PREFIX}/users", response_model=AdminUsersPageOutput, tags=["admin"])
     def list_admin_users(
         auth: Service,
-        credentials: Credentials,
+        user: CurrentUser,
         page: int = Query(default=1, ge=1),
         page_size: int = Query(default=20, ge=1, le=100),
         query: str | None = Query(default=None, max_length=100),
         status: str | None = Query(default=None, max_length=20),
         profile: str | None = Query(default=None, max_length=40),
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         auth.require_admin(user)
         return auth.list_admin_users(query, status, profile, page, page_size, user.id)
 
     @app.get(
         f"{COOKIE_PATH}/webhooks", response_model=list[WebhookSubscriptionOutput], tags=["webhooks"]
     )
-    def list_webhooks(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def list_webhooks(auth: Service, user: CurrentUser):
         return WebhookService(
             auth.db, security, auth, app.state.webhook_delivery
         ).list_subscriptions(user.id)
@@ -609,19 +649,13 @@ def create_app(
         status_code=201,
         tags=["webhooks"],
     )
-    def create_webhook(data: WebhookSubscriptionInput, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def create_webhook(data: WebhookSubscriptionInput, auth: Service, user: CurrentUser):
         return WebhookService(
             auth.db, security, auth, app.state.webhook_delivery
         ).create_subscription(user.id, data.url)
 
     @app.delete(f"{COOKIE_PATH}/webhooks/{{subscription_id}}", status_code=204, tags=["webhooks"])
-    def disable_webhook(subscription_id: uuid.UUID, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def disable_webhook(subscription_id: uuid.UUID, auth: Service, user: CurrentUser):
         WebhookService(auth.db, security, auth, app.state.webhook_delivery).disable_subscription(
             user.id, subscription_id
         )
@@ -631,10 +665,7 @@ def create_app(
         response_model=list[WebhookAttemptOutput],
         tags=["webhooks"],
     )
-    def list_webhook_attempts(subscription_id: uuid.UUID, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def list_webhook_attempts(subscription_id: uuid.UUID, auth: Service, user: CurrentUser):
         return WebhookService(auth.db, security, auth, app.state.webhook_delivery).list_attempts(
             user.id, subscription_id
         )
@@ -645,11 +676,8 @@ def create_app(
         tags=["webhooks"],
     )
     def retry_webhook_attempt(
-        subscription_id: uuid.UUID, attempt_id: uuid.UUID, auth: Service, credentials: Credentials
+        subscription_id: uuid.UUID, attempt_id: uuid.UUID, auth: Service, user: CurrentUser
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         return WebhookService(auth.db, security, auth, app.state.webhook_delivery).retry_attempt(
             user.id, subscription_id, attempt_id
         )
@@ -657,14 +685,11 @@ def create_app(
     @app.get(f"{ADMIN_PREFIX}/engagement", response_model=EngagementOutput, tags=["admin"])
     def engagement_report(
         auth: Service,
-        credentials: Credentials,
+        user: CurrentUser,
         start: date | None = None,
         end: date | None = None,
         inactive_days: int = Query(default=30, ge=1, le=365),
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         return EngagementService(auth.db, auth).report(user, start, end, inactive_days)
 
     @app.get(
@@ -674,14 +699,11 @@ def create_app(
     )
     def investor_profile_distribution(
         auth: Service,
-        credentials: Credentials,
+        user: CurrentUser,
         start: date | None = None,
         end: date | None = None,
     ):
         """SPEC-062: distribuição agregada por resultado do quiz, filtrável por cadastro."""
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         return ProfileDistributionService(auth.db, auth).distribution(user, start, end)
 
     # ---------- SPEC-044/045: vínculo entre usuários e despesas compartilhadas ----------
@@ -839,11 +861,8 @@ def create_app(
 
     @app.patch(f"{COOKIE_PATH}/password", status_code=204, tags=["auth"])
     def change_password(
-        data: PasswordChangeInput, response: Response, auth: Service, credentials: Credentials
+        data: PasswordChangeInput, response: Response, auth: Service, user: CurrentUser
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         auth.change_password(
             user.id, data.current_password.get_secret_value(), data.new_password.get_secret_value()
         )
@@ -852,10 +871,8 @@ def create_app(
         )
 
     @app.get(f"{COOKIE_PATH}/me", response_model=PublicUser, tags=["auth"])
-    def me(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        return auth.authenticate(credentials.credentials)[0]
+    def me(user: CurrentUser):
+        return user
 
     def profile_output(auth: AuthService, user_id: uuid.UUID) -> ProfileOutput:
         user, pending_email, preferences = auth.profile(user_id)
@@ -866,10 +883,7 @@ def create_app(
         )
 
     @app.get(PROFILE_PREFIX, response_model=ProfileOutput, tags=["auth"])
-    def profile(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def profile(auth: Service, user: CurrentUser):
         return profile_output(auth, user.id)
 
     @app.get(
@@ -877,47 +891,31 @@ def create_app(
         response_model=list[QuizQuestionOutput],
         tags=["auth"],
     )
-    def investor_profile_quiz(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        auth.authenticate(credentials.credentials)
+    def investor_profile_quiz(auth: Service, _user: CurrentUser):
         return QUIZ_QUESTIONS
 
     @app.get(f"{COOKIE_PATH}/investor-profile", response_model=InvestorProfileOutput, tags=["auth"])
-    def get_investor_profile(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def get_investor_profile(auth: Service, user: CurrentUser):
         return auth.investor_profile(user.id)
 
     @app.put(f"{COOKIE_PATH}/investor-profile", response_model=QuizResultOutput, tags=["auth"])
-    def complete_investor_profile(data: QuizAnswersInput, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def complete_investor_profile(data: QuizAnswersInput, auth: Service, user: CurrentUser):
         return auth.complete_quiz(user.id, data.answers)
 
     @app.get(COMPANY_PREFIX, response_model=list[PublicCompanyOutput], tags=["companies"])
     def search_companies(
-        auth: Service,
         companies: CompanyServiceDependency,
-        credentials: Credentials,
+        _user: CurrentUser,
         query: str | None = Query(default=None, min_length=1, max_length=120),
         limit: int = Query(default=10, ge=1, le=20),
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        auth.authenticate(credentials.credentials)
         return companies.search(query, limit)
 
     # SPEC-027: registrada antes de /{company_id}, que capturaria "watchlist" como UUID.
     @app.get(
         "/api/v1/companies/watchlist", response_model=list[WatchlistOutput], tags=["companies"]
     )
-    def list_watchlist(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def list_watchlist(auth: Service, user: CurrentUser):
         return [WatchlistOutput.model_validate(item) for item in auth.list_watchlist(user.id)]
 
     @app.get(
@@ -925,13 +923,9 @@ def create_app(
     )
     def get_company(
         company_id: uuid.UUID,
-        auth: Service,
         companies: CompanyServiceDependency,
-        credentials: Credentials,
+        _user: CurrentUser,
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        auth.authenticate(credentials.credentials)
         return companies.company(company_id)
 
     @app.get(
@@ -941,16 +935,12 @@ def create_app(
     )
     def list_official_documents(
         company_id: uuid.UUID,
-        auth: Service,
         companies: CompanyServiceDependency,
-        credentials: Credentials,
+        _user: CurrentUser,
         document_type: str | None = Query(default=None, pattern="^(DFP|ITR|FRE|IPE)$"),
         starts_on: date | None = None,
         ends_on: date | None = None,
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        auth.authenticate(credentials.credentials)
         if starts_on is not None and ends_on is not None and starts_on > ends_on:
             raise AuthError("invalid_document_date_range", 422)
         return companies.documents(company_id, document_type, starts_on, ends_on)
@@ -962,15 +952,11 @@ def create_app(
     )
     def list_financial_indicators(
         company_id: uuid.UUID,
-        auth: Service,
         companies: CompanyServiceDependency,
-        credentials: Credentials,
+        _user: CurrentUser,
         metric: str | None = Query(default=None, pattern="^(net_revenue|net_income|equity)$"),
         period_kind: str | None = Query(default=None, pattern="^(annual|quarterly)$"),
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        auth.authenticate(credentials.credentials)
         return companies.financial_indicators(company_id, metric, period_kind)
 
     @app.post(
@@ -980,13 +966,9 @@ def create_app(
     )
     def check_official_document_link(
         document_id: uuid.UUID,
-        auth: Service,
         companies: CompanyServiceDependency,
-        credentials: Credentials,
+        _user: CurrentUser,
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        auth.authenticate(credentials.credentials)
         return companies.check_link(document_id)
 
     @app.get(
@@ -996,18 +978,12 @@ def create_app(
         ticker: str,
         auth: Service,
         quotes: MarketQuoteServiceDependency,
-        credentials: Credentials,
+        _user: CurrentUser,
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        auth.authenticate(credentials.credentials)
         return quotes.quote(ticker)
 
     @app.patch(PROFILE_PREFIX, response_model=ProfileOutput, tags=["auth"])
-    def update_profile(data: ProfileUpdateInput, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def update_profile(data: ProfileUpdateInput, auth: Service, user: CurrentUser):
         updated = auth.update_profile(
             user.id,
             data.name,
@@ -1025,10 +1001,7 @@ def create_app(
         response_model=AdvancedMetricsPreferenceOutput,
         tags=["auth"],
     )
-    def advanced_metrics_preference(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def advanced_metrics_preference(auth: Service, user: CurrentUser):
         return AdvancedMetricsPreferenceOutput.model_validate(
             auth.advanced_metrics_preference(user.id)
         )
@@ -1039,34 +1012,22 @@ def create_app(
         tags=["auth"],
     )
     def set_advanced_metrics_preference(
-        data: AdvancedMetricsPreferenceInput, auth: Service, credentials: Credentials
+        data: AdvancedMetricsPreferenceInput, auth: Service, user: CurrentUser
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         return AdvancedMetricsPreferenceOutput.model_validate(
             auth.set_advanced_metrics_preference(user.id, data.enabled)
         )
 
     @app.patch(f"{PROFILE_PREFIX}/preferences", response_model=PreferencesOutput, tags=["auth"])
-    def update_preferences(data: PreferencesInput, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def update_preferences(data: PreferencesInput, auth: Service, user: CurrentUser):
         return PreferencesOutput.model_validate(auth.update_preferences(user.id, data.model_dump()))
 
     @app.get(CATEGORY_PREFIX, response_model=list[CategoryOutput], tags=["categories"])
-    def list_categories(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def list_categories(auth: Service, user: CurrentUser):
         return [CategoryOutput.model_validate(item) for item in auth.list_categories(user.id)]
 
     @app.post(CATEGORY_PREFIX, response_model=CategoryOutput, status_code=201, tags=["categories"])
-    def create_category(data: CategoryCreateInput, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def create_category(data: CategoryCreateInput, auth: Service, user: CurrentUser):
         return CategoryOutput.model_validate(auth.create_category(user.id, data.name, data.color))
 
     @app.patch(
@@ -1078,11 +1039,8 @@ def create_app(
         category_key: str,
         data: CategoryVisibilityInput,
         auth: Service,
-        credentials: Credentials,
+        user: CurrentUser,
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         return CategoryOutput.model_validate(
             auth.set_default_category_visibility(user.id, category_key, data.active)
         )
@@ -1092,10 +1050,7 @@ def create_app(
         response_model=FinancialSourcesOutput,
         tags=["financial"],
     )
-    def list_financial_sources(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def list_financial_sources(auth: Service, user: CurrentUser):
         return FinancialSourcesOutput.model_validate(auth.list_financial_sources(user.id))
 
     @app.post(
@@ -1104,10 +1059,7 @@ def create_app(
         status_code=201,
         tags=["financial"],
     )
-    def create_account(data: AccountCreateInput, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def create_account(data: AccountCreateInput, auth: Service, user: CurrentUser):
         return AccountOutput.model_validate(
             auth.create_account(user.id, data.name, data.account_type, data.initial_balance)
         )
@@ -1118,10 +1070,7 @@ def create_app(
         status_code=201,
         tags=["financial"],
     )
-    def create_credit_card(data: CreditCardCreateInput, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def create_credit_card(data: CreditCardCreateInput, auth: Service, user: CurrentUser):
         return CreditCardOutput.model_validate(
             auth.create_credit_card(
                 user.id,
@@ -1139,20 +1088,14 @@ def create_app(
         tags=["financial"],
     )
     def update_credit_card(
-        card_id: uuid.UUID, data: CreditCardUpdateInput, auth: Service, credentials: Credentials
+        card_id: uuid.UUID, data: CreditCardUpdateInput, auth: Service, user: CurrentUser
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         return CreditCardOutput.model_validate(
             auth.update_card_alert_threshold(user.id, card_id, data.alert_threshold)
         )
 
     @app.get(f"{FINANCIAL_PREFIX}/net-worth", response_model=NetWorthOutput, tags=["financial"])
-    def get_net_worth(auth: Service, credentials: Credentials, as_of: date | None = None):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def get_net_worth(auth: Service, user: CurrentUser, as_of: date | None = None):
         return NetWorthOutput.model_validate(auth.net_worth(user.id, as_of))
 
     @app.post(
@@ -1160,10 +1103,7 @@ def create_app(
         response_model=StressCompareOutput,
         tags=["financial"],
     )
-    def compare_financial_stress(data: StressCompareInput, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def compare_financial_stress(data: StressCompareInput, auth: Service, user: CurrentUser):
         from app.domain.financial_stress import StressScenario
 
         return StressCompareOutput.model_validate(
@@ -1180,10 +1120,7 @@ def create_app(
         response_model=InvestmentAllocationOutput,
         tags=["financial"],
     )
-    def get_investment_allocation(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def get_investment_allocation(auth: Service, user: CurrentUser):
         return InvestmentAllocationOutput.model_validate(auth.investment_allocation(user.id))
 
     @app.put(
@@ -1191,12 +1128,7 @@ def create_app(
         response_model=InvestmentAllocationOutput,
         tags=["financial"],
     )
-    def put_investment_targets(
-        data: InvestmentTargetInput, auth: Service, credentials: Credentials
-    ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def put_investment_targets(data: InvestmentTargetInput, auth: Service, user: CurrentUser):
         return InvestmentAllocationOutput.model_validate(
             auth.set_investment_targets(user.id, data.targets)
         )
@@ -1210,11 +1142,8 @@ def create_app(
         asset_id: uuid.UUID,
         data: InvestmentClassInput,
         auth: Service,
-        credentials: Credentials,
+        user: CurrentUser,
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         return InvestmentAllocationOutput.model_validate(
             auth.classify_investment_asset(user.id, asset_id, data.asset_class)
         )
@@ -1224,10 +1153,7 @@ def create_app(
         response_model=InvestmentAllocationOutput,
         tags=["financial"],
     )
-    def delete_investment_asset_class(asset_id: uuid.UUID, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def delete_investment_asset_class(asset_id: uuid.UUID, auth: Service, user: CurrentUser):
         return InvestmentAllocationOutput.model_validate(
             auth.unclassify_investment_asset(user.id, asset_id)
         )
@@ -1237,10 +1163,7 @@ def create_app(
         response_model=NetWorthHeatmapOutput,
         tags=["financial"],
     )
-    def get_net_worth_heatmap(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def get_net_worth_heatmap(auth: Service, user: CurrentUser):
         return NetWorthHeatmapOutput.model_validate(auth.net_worth_heatmap(user.id))
 
     @app.get(
@@ -1249,11 +1172,8 @@ def create_app(
         tags=["financial"],
     )
     def get_net_worth_history(
-        auth: Service, credentials: Credentials, start: date | None = None, end: date | None = None
+        auth: Service, user: CurrentUser, start: date | None = None, end: date | None = None
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         history = auth.net_worth_history(user.id, start, end)
         return [NetWorthSnapshotOutput.model_validate(item) for item in history]
 
@@ -1263,10 +1183,7 @@ def create_app(
         status_code=201,
         tags=["financial"],
     )
-    def capture_net_worth_snapshot(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def capture_net_worth_snapshot(auth: Service, user: CurrentUser):
         return NetWorthSnapshotOutput.model_validate(auth.capture_net_worth_snapshot(user.id))
 
     @app.get(
@@ -1275,14 +1192,10 @@ def create_app(
         tags=["education"],
     )
     def education_articles(
-        auth: Service,
-        credentials: Credentials,
+        user: CurrentUser,
         q: str = Query(default="", max_length=100),
         lang: str = Query(default="pt", pattern="^(pt|en)$"),
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         return [
             EducationalArticleOutput.model_validate(article)
             for article in search_articles(q, lang, user.investor_profile)
@@ -1295,13 +1208,9 @@ def create_app(
     )
     def education_article(
         article_key: str,
-        auth: Service,
-        credentials: Credentials,
+        _user: CurrentUser,
         lang: str = Query(default="pt", pattern="^(pt|en)$"),
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        auth.authenticate(credentials.credentials)
         article = get_article(article_key, lang)
         if article is None:
             raise AuthError("educational_article_not_found", 404)
@@ -1310,10 +1219,7 @@ def create_app(
     @app.get(
         f"{FINANCIAL_PREFIX}/health-score", response_model=HealthScoreOutput, tags=["financial"]
     )
-    def get_health_score(auth: Service, credentials: Credentials, competence: date | None = None):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def get_health_score(auth: Service, user: CurrentUser, competence: date | None = None):
         return HealthScoreOutput.model_validate(auth.health_score(user.id, competence))
 
     @app.get(
@@ -1321,10 +1227,7 @@ def create_app(
         response_model=list[NamedAssetGoalOutput],
         tags=["financial"],
     )
-    def list_named_asset_goals(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def list_named_asset_goals(auth: Service, user: CurrentUser):
         return [
             NamedAssetGoalOutput.model_validate(item)
             for item in auth.list_named_asset_goals(user.id)
@@ -1336,10 +1239,7 @@ def create_app(
         status_code=201,
         tags=["financial"],
     )
-    def create_named_asset_goal(data: NamedAssetGoalInput, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def create_named_asset_goal(data: NamedAssetGoalInput, auth: Service, user: CurrentUser):
         return NamedAssetGoalOutput.model_validate(
             auth.create_named_asset_goal(user.id, data.model_dump())
         )
@@ -1349,10 +1249,7 @@ def create_app(
         status_code=204,
         tags=["financial"],
     )
-    def delete_named_asset_goal(goal_id: uuid.UUID, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def delete_named_asset_goal(goal_id: uuid.UUID, auth: Service, user: CurrentUser):
         auth.delete_named_asset_goal(user.id, goal_id)
         return Response(status_code=204)
 
@@ -1362,10 +1259,7 @@ def create_app(
         status_code=201,
         tags=["financial"],
     )
-    def create_net_worth_item(data: NetWorthItemInput, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def create_net_worth_item(data: NetWorthItemInput, auth: Service, user: CurrentUser):
         return NetWorthItemOutput.model_validate(
             auth.create_net_worth_item(user.id, **data.model_dump())
         )
@@ -1376,11 +1270,8 @@ def create_app(
         tags=["financial"],
     )
     def update_net_worth_item(
-        item_id: uuid.UUID, data: NetWorthItemUpdateInput, auth: Service, credentials: Credentials
+        item_id: uuid.UUID, data: NetWorthItemUpdateInput, auth: Service, user: CurrentUser
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         return NetWorthItemOutput.model_validate(
             auth.update_net_worth_item(user.id, item_id, data.model_dump(exclude_unset=True))
         )
@@ -1388,10 +1279,7 @@ def create_app(
     @app.delete(
         f"{FINANCIAL_PREFIX}/net-worth/items/{{item_id}}", status_code=204, tags=["financial"]
     )
-    def delete_net_worth_item(item_id: uuid.UUID, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def delete_net_worth_item(item_id: uuid.UUID, auth: Service, user: CurrentUser):
         auth.delete_net_worth_item(user.id, item_id)
         return Response(status_code=204)
 
@@ -1459,10 +1347,7 @@ def create_app(
         response_model=list[ExternalApiGrantOutput],
         tags=["external-integrations"],
     )
-    def external_grants(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def external_grants(auth: Service, user: CurrentUser):
         return ExternalApiService(auth.db, security, auth).list_grants(user.id)
 
     @app.post(
@@ -1471,10 +1356,7 @@ def create_app(
         status_code=201,
         tags=["external-integrations"],
     )
-    def create_external_grant(data: ExternalApiGrantInput, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def create_external_grant(data: ExternalApiGrantInput, auth: Service, user: CurrentUser):
         return ExternalApiService(auth.db, security, auth).create_grant(
             user.id, data.name, data.scopes
         )
@@ -1484,10 +1366,7 @@ def create_app(
         status_code=204,
         tags=["external-integrations"],
     )
-    def revoke_external_grant(grant_id: uuid.UUID, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def revoke_external_grant(grant_id: uuid.UUID, auth: Service, user: CurrentUser):
         ExternalApiService(auth.db, security, auth).revoke_grant(user.id, grant_id)
 
     @app.get(
@@ -1540,10 +1419,7 @@ def create_app(
         response_model=list[ConfirmedFinancingOutput],
         tags=["financial"],
     )
-    def list_confirmed_financings(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def list_confirmed_financings(auth: Service, user: CurrentUser):
         return [
             ConfirmedFinancingOutput.model_validate(item)
             for item in auth.list_confirmed_financings(user.id)
@@ -1556,11 +1432,8 @@ def create_app(
         tags=["financial"],
     )
     def confirm_real_financing(
-        data: ConfirmFinancingInput, request: Request, auth: Service, credentials: Credentials
+        data: ConfirmFinancingInput, request: Request, auth: Service, user: CurrentUser
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         return ConfirmedFinancingOutput.model_validate(
             auth.confirm_real_financing(user.id, data.model_dump(), idempotency_key(request))
         )
@@ -1571,11 +1444,8 @@ def create_app(
         tags=["financial"],
     )
     def financing_comparison_route(
-        data: FinancingComparisonInput, auth: Service, credentials: Credentials
+        data: FinancingComparisonInput, auth: Service, user: CurrentUser
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         auth.require_category_owner(user.id)
         from dataclasses import asdict
 
@@ -1587,10 +1457,7 @@ def create_app(
         response_model=FinancingOutput,
         tags=["financial"],
     )
-    def simulate_financing_route(data: FinancingInput, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def simulate_financing_route(data: FinancingInput, auth: Service, user: CurrentUser):
         auth.require_category_owner(user.id)
         plan = simulate_financing(
             data.asset_value, data.down_payment, data.installments, data.annual_rate
@@ -1600,10 +1467,7 @@ def create_app(
         return FinancingOutput.model_validate(asdict(plan))
 
     @app.post(f"{FINANCIAL_PREFIX}/calculator", response_model=CalculatorOutput, tags=["financial"])
-    def calculator(data: CalculatorInput, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def calculator(data: CalculatorInput, auth: Service, user: CurrentUser):
         auth.require_category_owner(user.id)
         data, source = with_rate_source(data, auth)
         return calculator_result(data, user.investor_profile, source)
@@ -1613,10 +1477,7 @@ def create_app(
         response_model=TaxProjectionOutput,
         tags=["financial"],
     )
-    def fixed_income_projection(data: TaxProjectionInput, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def fixed_income_projection(data: TaxProjectionInput, auth: Service, user: CurrentUser):
         auth.require_category_owner(user.id)
         data, source = with_rate_source(data, auth)
         calculation = calculator_result(data, user.investor_profile, source)
@@ -1636,12 +1497,7 @@ def create_app(
         status_code=201,
         tags=["financial"],
     )
-    def save_fixed_income_simulation(
-        data: SimulationCreateInput, auth: Service, credentials: Credentials
-    ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def save_fixed_income_simulation(data: SimulationCreateInput, auth: Service, user: CurrentUser):
         auth.require_category_owner(user.id)
         data, source = with_rate_source(data, auth)
         calculation = calculator_result(data, user.investor_profile, source)
@@ -1678,11 +1534,8 @@ def create_app(
         ticker: str,
         auth: Service,
         quotes: MarketQuoteServiceDependency,
-        credentials: Credentials,
+        user: CurrentUser,
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         if not auth.advanced_metrics_preference(user.id)["enabled"]:
             raise AuthError("advanced_metrics_disabled", 403)
         selic = auth.indicator("selic")
@@ -1698,11 +1551,8 @@ def create_app(
         data: ForeignCurrencySimulationInput,
         auth: Service,
         exchange_rates: ExchangeRateServiceDependency,
-        credentials: Credentials,
+        user: CurrentUser,
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         rate = exchange_rates.rate(data.currency)
         calculation = calcular_projecao_moeda_estrangeira(
             initial_amount=data.initial_amount,
@@ -1750,11 +1600,8 @@ def create_app(
         data: VariableIncomeSimulationInput,
         auth: Service,
         quotes: MarketQuoteServiceDependency,
-        credentials: Credentials,
+        user: CurrentUser,
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         result = projetar(
             inicial=data.initial_amount,
             aporte=data.monthly_contribution,
@@ -1818,10 +1665,7 @@ def create_app(
     @app.get(
         f"{FINANCIAL_PREFIX}/simulations", response_model=list[SimulationOutput], tags=["financial"]
     )
-    def list_simulations(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def list_simulations(auth: Service, user: CurrentUser):
         return [SimulationOutput.model_validate(item) for item in auth.list_simulations(user.id)]
 
     @app.post(
@@ -1829,12 +1673,7 @@ def create_app(
         response_model=SimulationComparisonOutput,
         tags=["financial"],
     )
-    def compare_simulations(
-        data: SimulationComparisonInput, auth: Service, credentials: Credentials
-    ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def compare_simulations(data: SimulationComparisonInput, auth: Service, user: CurrentUser):
         return SimulationComparisonOutput.model_validate(
             auth.compare_simulations(user.id, data.simulation_ids)
         )
@@ -1844,10 +1683,7 @@ def create_app(
         response_model=IndicatorOutput,
         tags=["financial"],
     )
-    def indicator(code: str, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def indicator(code: str, auth: Service, user: CurrentUser):
         auth.require_category_owner(user.id)
         return IndicatorOutput.model_validate(auth.indicator(code))
 
@@ -1856,10 +1692,7 @@ def create_app(
         response_model=list[TreasuryBondRateOutput],
         tags=["financial"],
     )
-    def treasury_bonds(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def treasury_bonds(auth: Service, user: CurrentUser):
         auth.require_category_owner(user.id)
         return [TreasuryBondRateOutput.model_validate(item) for item in auth.treasury_rates()]
 
@@ -1868,10 +1701,7 @@ def create_app(
         response_model=TargetContributionOutput,
         tags=["financial"],
     )
-    def target_contribution(data: TargetContributionInput, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def target_contribution(data: TargetContributionInput, auth: Service, user: CurrentUser):
         auth.require_category_owner(user.id)
         needed = aporte_necessario(
             alvo=data.target_amount,
@@ -1889,10 +1719,7 @@ def create_app(
         )
 
     @app.get(NOTIFICATION_PREFIX, response_model=list[NotificationOutput], tags=["notifications"])
-    def list_notifications(unread_only: bool = False, *, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def list_notifications(unread_only: bool = False, *, auth: Service, user: CurrentUser):
         return [
             NotificationOutput.model_validate(item)
             for item in auth.list_notifications(user.id, unread_only)
@@ -1903,10 +1730,7 @@ def create_app(
         response_model=list[NotificationPreferenceOutput],
         tags=["notifications"],
     )
-    def list_notification_preferences(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def list_notification_preferences(auth: Service, user: CurrentUser):
         return [
             NotificationPreferenceOutput.model_validate(item)
             for item in auth.notification_preferences(user.id)
@@ -1918,11 +1742,8 @@ def create_app(
         tags=["notifications"],
     )
     def update_notification_preference(
-        kind: str, data: NotificationPreferenceInput, auth: Service, credentials: Credentials
+        kind: str, data: NotificationPreferenceInput, auth: Service, user: CurrentUser
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         return NotificationPreferenceOutput.model_validate(
             auth.update_notification_preference(user.id, kind, data.enabled)
         )
@@ -1932,27 +1753,18 @@ def create_app(
         response_model=WatchlistMutationOutput,
         tags=["companies"],
     )
-    def add_watchlist(company_id: uuid.UUID, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def add_watchlist(company_id: uuid.UUID, auth: Service, user: CurrentUser):
         created, item = auth.add_watchlist(user.id, company_id)
         return WatchlistMutationOutput(created=created, item=WatchlistOutput.model_validate(item))
 
     @app.delete("/api/v1/companies/{company_id}/watchlist", status_code=204, tags=["companies"])
-    def remove_watchlist(company_id: uuid.UUID, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def remove_watchlist(company_id: uuid.UUID, auth: Service, user: CurrentUser):
         auth.remove_watchlist(user.id, company_id)
 
     @app.post(
         "/api/v1/companies/documents/{document_id}/watchlist-notifications", tags=["companies"]
     )
-    def notify_watchlist_document(document_id: uuid.UUID, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        auth.authenticate(credentials.credentials)
+    def notify_watchlist_document(document_id: uuid.UUID, auth: Service, _user: CurrentUser):
         return {"created": auth.notify_watchlist_document(document_id)}
 
     @app.post(
@@ -1960,12 +1772,7 @@ def create_app(
         response_model=NotificationEventOutput,
         tags=["notifications"],
     )
-    def receive_notification_event(
-        data: NotificationEventInput, auth: Service, credentials: Credentials
-    ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def receive_notification_event(data: NotificationEventInput, auth: Service, user: CurrentUser):
         created, notification = auth.create_notification(user.id, data.kind, data.source_key)
         if created:
             WebhookService(
@@ -1981,10 +1788,7 @@ def create_app(
         response_model=NotificationOutput,
         tags=["notifications"],
     )
-    def mark_notification_read(notification_id: uuid.UUID, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def mark_notification_read(notification_id: uuid.UUID, auth: Service, user: CurrentUser):
         return NotificationOutput.model_validate(
             auth.mark_notification_read(user.id, notification_id)
         )
@@ -2007,10 +1811,7 @@ def create_app(
     @app.put(
         f"{FINANCIAL_PREFIX}/budget-goals", response_model=BudgetProgressOutput, tags=["financial"]
     )
-    def upsert_budget_goal(data: BudgetGoalInput, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def upsert_budget_goal(data: BudgetGoalInput, auth: Service, user: CurrentUser):
         goal = auth.upsert_budget_goal(user.id, data.model_dump())
         return BudgetProgressOutput.model_validate(
             {**goal, "actual": Decimal("0"), "percentage": Decimal("0"), "status": "on_track"}
@@ -2039,10 +1840,7 @@ def create_app(
         response_model=list[CategorySpendingOutput],
         tags=["financial"],
     )
-    def spending_by_category(start: str, end: str, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def spending_by_category(start: str, end: str, auth: Service, user: CurrentUser):
         try:
             start_month = date.fromisoformat(f"{start}-01")
             end_month = date.fromisoformat(f"{end}-01")
@@ -2074,10 +1872,7 @@ def create_app(
         response_model=list[RecurringIncomeOutput],
         tags=["financial"],
     )
-    def list_recurring_incomes(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def list_recurring_incomes(auth: Service, user: CurrentUser):
         return [
             RecurringIncomeOutput.model_validate(item)
             for item in auth.list_recurring_incomes(user.id)
@@ -2121,11 +1916,8 @@ def create_app(
         income_id: uuid.UUID,
         data: RecurringIncomeUpdateInput,
         auth: Service,
-        credentials: Credentials,
+        user: CurrentUser,
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         return RecurringIncomeOutput.model_validate(
             auth.update_recurring_income(user.id, income_id, data.model_dump())
         )
@@ -2133,10 +1925,7 @@ def create_app(
     @app.delete(
         f"{FINANCIAL_PREFIX}/recurring-incomes/{{income_id}}", status_code=204, tags=["financial"]
     )
-    def delete_recurring_income(income_id: uuid.UUID, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def delete_recurring_income(income_id: uuid.UUID, auth: Service, user: CurrentUser):
         auth.delete_recurring_income(user.id, income_id)
 
     def idempotency_key(request: Request) -> str:
@@ -2150,10 +1939,7 @@ def create_app(
         response_model=list[OneTimeIncomeOutput],
         tags=["financial"],
     )
-    def list_one_time_incomes(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def list_one_time_incomes(auth: Service, user: CurrentUser):
         return [
             OneTimeIncomeOutput.model_validate(item) for item in auth.list_one_time_incomes(user.id)
         ]
@@ -2168,11 +1954,8 @@ def create_app(
         data: OneTimeIncomeCreateInput,
         request: Request,
         auth: Service,
-        credentials: Credentials,
+        user: CurrentUser,
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         return OneTimeIncomeOutput.model_validate(
             auth.create_one_time_income(
                 user.id,
@@ -2193,11 +1976,8 @@ def create_app(
         income_id: uuid.UUID,
         data: OneTimeIncomeUpdateInput,
         auth: Service,
-        credentials: Credentials,
+        user: CurrentUser,
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         return OneTimeIncomeOutput.model_validate(
             auth.update_one_time_income(user.id, income_id, data.model_dump())
         )
@@ -2205,17 +1985,11 @@ def create_app(
     @app.delete(
         f"{FINANCIAL_PREFIX}/one-time-incomes/{{income_id}}", status_code=204, tags=["financial"]
     )
-    def delete_one_time_income(income_id: uuid.UUID, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def delete_one_time_income(income_id: uuid.UUID, auth: Service, user: CurrentUser):
         auth.delete_one_time_income(user.id, income_id)
 
     @app.get(f"{FINANCIAL_PREFIX}/bonuses", response_model=list[BonusOutput], tags=["financial"])
-    def list_bonuses(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def list_bonuses(auth: Service, user: CurrentUser):
         return [BonusOutput.model_validate(item) for item in auth.list_bonuses(user.id)]
 
     @app.post(
@@ -2228,11 +2002,8 @@ def create_app(
         data: BonusCreateInput,
         request: Request,
         auth: Service,
-        credentials: Credentials,
+        user: CurrentUser,
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         return BonusOutput.model_validate(
             auth.create_bonus(
                 user.id,
@@ -2248,19 +2019,11 @@ def create_app(
     @app.patch(
         f"{FINANCIAL_PREFIX}/bonuses/{{bonus_id}}", response_model=BonusOutput, tags=["financial"]
     )
-    def update_bonus(
-        bonus_id: uuid.UUID, data: BonusUpdateInput, auth: Service, credentials: Credentials
-    ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def update_bonus(bonus_id: uuid.UUID, data: BonusUpdateInput, auth: Service, user: CurrentUser):
         return BonusOutput.model_validate(auth.update_bonus(user.id, bonus_id, data.model_dump()))
 
     @app.delete(f"{FINANCIAL_PREFIX}/bonuses/{{bonus_id}}", status_code=204, tags=["financial"])
-    def delete_bonus(bonus_id: uuid.UUID, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def delete_bonus(bonus_id: uuid.UUID, auth: Service, user: CurrentUser):
         auth.delete_bonus(user.id, bonus_id)
 
     @app.get(
@@ -2294,10 +2057,7 @@ def create_app(
         return BalanceSummaryOutput.model_validate(auth.balance_summary(user.id, selected))
 
     @app.get(f"{FINANCIAL_PREFIX}/expenses", response_model=list[ExpenseOutput], tags=["financial"])
-    def list_expenses(auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def list_expenses(auth: Service, user: CurrentUser):
         return [ExpenseOutput.model_validate(item) for item in auth.list_expenses(user.id)]
 
     def export_period(start: str | None, end: str | None, month: str | None, year: int | None):
@@ -2564,15 +2324,12 @@ def create_app(
     @app.get(f"{FINANCIAL_PREFIX}/exports/csv", tags=["financial"])
     def export_csv(
         auth: Service,
-        credentials: Credentials,
+        user: CurrentUser,
         start: str | None = None,
         end: str | None = None,
         month: str | None = None,
         year: int | None = None,
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         auth.require_category_owner(user.id)
         start_date, end_date = export_period(start, end, month, year)
         data = StringIO()
@@ -2597,15 +2354,12 @@ def create_app(
     @app.get(f"{FINANCIAL_PREFIX}/exports/pdf", tags=["financial"])
     def export_pdf(
         auth: Service,
-        credentials: Credentials,
+        user: CurrentUser,
         start: str | None = None,
         end: str | None = None,
         month: str | None = None,
         year: int | None = None,
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         auth.require_category_owner(user.id)
         start_date, end_date = export_period(start, end, month, year)
         entries = auth.statement_entries(user.id, start_date, end_date)
@@ -2643,11 +2397,8 @@ def create_app(
         tags=["financial"],
     )
     def create_expense(
-        data: ExpenseCreateInput, request: Request, auth: Service, credentials: Credentials
+        data: ExpenseCreateInput, request: Request, auth: Service, user: CurrentUser
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         return ExpenseOutput.model_validate(
             auth.create_expense(user.id, data.model_dump(), idempotency_key(request))
         )
@@ -2658,20 +2409,14 @@ def create_app(
         tags=["financial"],
     )
     def update_expense(
-        expense_id: uuid.UUID, data: ExpenseUpdateInput, auth: Service, credentials: Credentials
+        expense_id: uuid.UUID, data: ExpenseUpdateInput, auth: Service, user: CurrentUser
     ):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
         return ExpenseOutput.model_validate(
             auth.update_expense(user.id, expense_id, data.model_dump())
         )
 
     @app.delete(f"{FINANCIAL_PREFIX}/expenses/{{expense_id}}", status_code=204, tags=["financial"])
-    def delete_expense(expense_id: uuid.UUID, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def delete_expense(expense_id: uuid.UUID, auth: Service, user: CurrentUser):
         auth.delete_expense(user.id, expense_id)
 
     @app.get(
@@ -2698,10 +2443,7 @@ def create_app(
         response_model=RevokeAllSessionsOutput,
         tags=["auth"],
     )
-    def revoke_all_sessions(response: Response, auth: Service, credentials: Credentials):
-        if not credentials:
-            raise AuthError("invalid_session")
-        user, _ = auth.authenticate(credentials.credentials)
+    def revoke_all_sessions(response: Response, auth: Service, user: CurrentUser):
         count = auth.revoke_all_sessions(user.id)
         response.delete_cookie(
             COOKIE, path=COOKIE_PATH, secure=True, httponly=True, samesite="strict"

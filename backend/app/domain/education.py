@@ -162,8 +162,10 @@ def _fold(value: str) -> str:
 
 def get_article(key: str, language: str) -> dict[str, str | bool] | None:
     entry = next((article for article in ARTICLES if article.key == key), None)
-    if entry is None:
-        return None
+    return None if entry is None else _render(entry, language)
+
+
+def _render(entry: Article, language: str) -> dict[str, str | bool]:
     use_english = language == "en"
     return {
         "key": entry.key,
@@ -205,4 +207,4 @@ def search_articles(query: str, language: str, profile: str | None) -> list[dict
             entry.key,
         )
     )
-    return [get_article(article.key, language) for article in ranked[:20]]
+    return [_render(article, language) for article in ranked[:20]]
