@@ -156,6 +156,10 @@ O [registro central](questoes-abertas.md) distingue decisões adotadas tecnicame
 
 - OPEN-18 — solução técnica implementada em 2026-10-23: bloqueio por e-mail normalizado, concorrência serializada no PostgreSQL, respostas genéricas e Retry-After. Ver ADR-007 e registro de execução.
 
+### Correções da varredura de QA (2026-11-03)
+
+Escopo do limite de RNF-13 ampliado: toda escrita (`POST`, `PUT`, `PATCH`, `DELETE`) sob `/api/v1` passa pelo limite de 100 pedidos por minuto por cliente e grupo de endpoint; antes, `PUT` e as rotas de compartilhamento, webhooks, integrações externas, perfil de investidor e telemetria ficavam fora. Identidade do cliente (OPEN-02): IP da conexão; `X-Forwarded-For` só é aceito quando a conexão vem de proxy listado em `FINNOVA_TRUSTED_PROXIES`, usando o endereço mais à direita que não é proxy confiável. O bloqueio por conta de SPEC-001-R11 permanece como exigido; o risco de bloqueio direcionado por terceiros foi registrado em OPEN-34 e a revelação de e-mail cadastrado em OPEN-35, ambos para decisão humana. Erros não tratados geram log JSON com `request_id`, tipo e pilha resumida, sem mensagem nem dado pessoal (SPEC-001-R09). Testes `test_SPEC_001_R07_*` e `test_SPEC_001_R09_*` em `backend/tests/test_qa_2026_11_correcoes.py`; ver [registro da varredura](../09-qualidade/evidencias/qa-pre-comercializacao-2026-11-03.md).
+
 ## 14. Definition of Done da Spec
 
 - [ ] Mapa revisado e aprovado pelo grupo, com responsável, data e evidência reais.

@@ -22,6 +22,19 @@ class Settings(BaseSettings):
     initial_admin_email: str | None = None
     # ADR-009: rotinas agendadas que consultam fontes oficiais; desligadas por padrão (C-17).
     official_sources_sync: bool = False
+    # RNF-13: proxies reversos confiáveis (IPs/CIDR separados por vírgula). Só deles se aceita
+    # X-Forwarded-For para identificar o cliente; vazio = usa o IP da conexão.
+    trusted_proxies: str = ""
+    # RNF-04: requisições simultâneas admitidas; excedentes aguardam até queue_timeout_seconds
+    # e depois recebem 503 server_busy. O pool de conexões deve superar esse limite.
+    max_concurrent_requests: int = 30
+    queue_timeout_seconds: float = 10
+    db_pool_size: int = 20
+    db_max_overflow: int = 20
+    db_pool_timeout_seconds: int = 10
+    # Inicialização: novas tentativas se o banco ainda não estiver disponível (fail-closed).
+    startup_attempts: int = 10
+    startup_retry_seconds: float = 3
 
     @field_validator("jwt_secret")
     @classmethod
@@ -62,6 +75,15 @@ class Settings(BaseSettings):
             raise ValueError("Durations and rate limit must be positive")
         if self.rate_limit > 100:
             raise ValueError("RNF-13 allows at most 100 requests per minute")
+        if min(self.max_concurrent_requests, self.db_pool_size, self.startup_attempts) <= 0:
+            raise ValueError("Concurrency, pool size and startup attempts must be positive")
+        if self.max_concurrent_requests >= self.db_pool_size + self.db_max_overflow:
+            raise ValueError("max_concurrent_requests must be below the database pool capacity")
+        if self.max_concurrent_requests > 35:
+            raise ValueError("max_concurrent_requests must leave threadpool headroom (<= 35)")
+        from app.infrastructure.runtime import parse_trusted_proxies
+
+        parse_trusted_proxies(self.trusted_proxies)
         return self
 
 

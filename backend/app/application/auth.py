@@ -1518,7 +1518,12 @@ class AuthService:
             Decimal("0"),
         )
 
+    KNOWN_INDICATORS = ("selic", "cdi", "ipca")
+
     def indicator(self, code: str) -> dict[str, object]:
+        # Código fora do catálogo é erro do cliente; 503 só quando o cache do código falta (C-08).
+        if code not in self.KNOWN_INDICATORS:
+            raise AuthError("indicator_not_found", 404)
         record = self.db.get(MarketIndicatorRecord, code)
         if record is None:
             raise AuthError("indicator_unavailable", 503)
@@ -1673,15 +1678,20 @@ class AuthService:
             "origin": "manual",
         }
 
+    @staticmethod
+    def _started_months(start: date, as_of: date) -> int:
+        """Competências iniciadas de `start` até o mês de `as_of`, inclusive (0 se futuro)."""
+        if start > as_of:
+            return 0
+        return (as_of.year - start.year) * 12 + as_of.month - start.month + 1
+
     def _account_current_balance(self, record: AccountRecord, as_of: date) -> Decimal:
         # Recurring records contribute once for each started calendar month through the as-of month.
         recurring = sum(
-            row.amount
-            * ((as_of.year - row.starts_on.year) * 12 + as_of.month - row.starts_on.month + 1)
+            row.amount * self._started_months(row.starts_on, as_of)
             for row in self.db.scalars(
                 select(RecurringIncomeRecord).where(RecurringIncomeRecord.account_id == record.id)
             )
-            if row.starts_on <= as_of
         )
         one_time = sum(
             (
@@ -1693,13 +1703,16 @@ class AuthService:
             ),
             Decimal("0"),
         )
+        # Despesa recorrente repete em cada competência desde `occurred_on`, a mesma regra do
+        # resumo mensal (balance_summary), do extrato e da fatura; pontual conta uma vez.
         expenses = sum(
             (
-                row.amount
+                row.amount * self._started_months(row.occurred_on, as_of)
+                if row.recurring
+                else (row.amount if row.occurred_on <= as_of else Decimal("0"))
                 for row in self.db.scalars(
                     select(ExpenseRecord).where(ExpenseRecord.account_id == record.id)
                 )
-                if row.occurred_on <= as_of
             ),
             Decimal("0"),
         )
@@ -2538,12 +2551,13 @@ class AuthService:
             raise AuthError("invalid_period", 400)
         self.require_category_owner(user_id)
         totals: dict[str, Decimal] = {}
+        records = list(
+            self.db.scalars(select(ExpenseRecord).where(ExpenseRecord.user_id == user_id))
+        )
         current = start.replace(day=1)
         while current <= end.replace(day=1):
             month_start, month_end = self.month_bounds(current)
-            for record in self.db.scalars(
-                select(ExpenseRecord).where(ExpenseRecord.user_id == user_id)
-            ):
+            for record in records:
                 if (record.recurring and record.occurred_on < month_end) or (
                     not record.recurring and month_start <= record.occurred_on < month_end
                 ):
@@ -2663,7 +2677,20 @@ class AuthService:
             for index, amount in enumerate(amounts)
         ]
         self.db.add_all(records)
-        self.db.commit()
+        try:
+            self.db.commit()
+        except IntegrityError:
+            # RNF-24: reenvio concorrente com a mesma chave devolve o lançamento já gravado.
+            self.db.rollback()
+            existing = self.db.scalar(
+                select(ExpenseRecord).where(
+                    ExpenseRecord.user_id == user_id,
+                    ExpenseRecord.idempotency_key == idempotency_key,
+                )
+            )
+            if existing is None:
+                raise
+            return self.expense_output(existing)
         return self.expense_output(records[0])
 
     def list_expenses(self, user_id: uuid.UUID) -> list[dict[str, object]]:

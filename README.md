@@ -43,6 +43,8 @@ cd backend && uv run --frozen python -m app.jobs.indicator_sync && uv run --froz
 
 Cada rotina imprime o resultado por item (`updated`, `kept` ou `failed`); `failed` mantém o último valor (C-08). Testes e CI nunca chamam as fontes reais (C-17).
 
+Operação: a API registra um log JSON por requisição e por erro não tratado (com `X-Request-ID`), limita as requisições simultâneas por processo (excedentes aguardam e depois recebem `503 server_busy`) e, ao iniciar, aguarda o banco antes de atender. Atrás de proxy reverso, configure `FINNOVA_TRUSTED_PROXIES` para o rate limit identificar o cliente. Variáveis em `backend/.env.example`; resultados da última varredura de QA em [evidências](docs/09-qualidade/evidencias/qa-pre-comercializacao-2026-11-03.md).
+
 ## Documentação
 
 | Documento | Conteúdo |
